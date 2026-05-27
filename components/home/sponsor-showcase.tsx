@@ -1,42 +1,39 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { CalendarDays, Gift, Megaphone, ShieldCheck, Sparkles, Trophy } from 'lucide-react'
+import { BadgeDollarSign, CalendarDays, Gift, Megaphone, ShieldCheck, Sparkles, Trophy } from 'lucide-react'
+import { PAYMENT_INFO } from '@/lib/payment'
 
 const prizeHighlights = [
   {
-    title: 'Premios destacados',
-    copy: 'Muestra aqui el premio principal, combos especiales o beneficios de la semana.',
+    title: 'Premio principal',
+    copy: 'El destaque de la semana aparece primero para que el visitante entienda que se juega y por que conviene entrar.',
     icon: Trophy,
-    tone: 'from-amber-400 to-orange-500',
+    tone: 'from-amber-300 to-orange-500',
   },
   {
-    title: 'Sorteos especiales',
-    copy: 'Reserva este bloque para fechas fuertes, rondas relampago o bingos tematicos.',
+    title: 'Rondas especiales',
+    copy: 'Fechas tematicas, bingos relampago o premios sorpresa pueden comunicarse sin agregar pasos al formulario.',
     icon: CalendarDays,
-    tone: 'from-emerald-400 to-teal-500',
+    tone: 'from-emerald-300 to-teal-500',
   },
   {
-    title: 'Bonos y promos',
-    copy: 'Un lugar visible para anunciar bonificaciones, codigos o premios sorpresa.',
+    title: 'Promos visibles',
+    copy: 'El espacio de combos o beneficios ayuda a vender mas cartones sin repetir el mismo mensaje de confianza.',
     icon: Gift,
-    tone: 'from-sky-400 to-blue-500',
+    tone: 'from-sky-300 to-blue-500',
   },
 ]
 
-const sponsorSlots = [
-  'Sponsor principal',
-  'Banner lateral',
-  'Promo del sorteo',
-]
+const sponsorSlots = ['Marca invitada', 'Combo del sorteo', 'Premio sorpresa']
 
 export function SponsorShowcase() {
   return (
     <section className="border-y border-amber-400/10 bg-zinc-950/55 py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900/70 shadow-2xl shadow-black/20">
-            <div className="grid min-h-[360px] sm:grid-cols-[240px_minmax(0,1fr)]">
-              <div className="flex items-center justify-center border-b border-white/10 bg-gradient-to-br from-amber-400/18 via-red-500/10 to-emerald-400/12 p-8 sm:border-b-0 sm:border-r">
+        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900/75 shadow-2xl shadow-black/20">
+            <div className="grid min-h-[390px] sm:grid-cols-[230px_minmax(0,1fr)]">
+              <div className="relative flex items-center justify-center border-b border-white/10 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.35),transparent_14rem),linear-gradient(140deg,rgba(239,68,68,0.22),rgba(16,185,129,0.16))] p-8 sm:border-b-0 sm:border-r">
                 <Image
                   src="/logo-contexto.svg"
                   alt="Lucky Bingo Bear"
@@ -47,25 +44,25 @@ export function SponsorShowcase() {
               </div>
 
               <div className="flex flex-col justify-center p-6 sm:p-8">
-                <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-200">
+                <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-sm font-bold text-amber-200">
                   <Sparkles className="h-4 w-4" />
-                  Sorteos con presencia visual
+                  Premios, precios y cartones
                 </div>
                 <h2
-                  className="max-w-2xl text-3xl font-bold text-white sm:text-4xl"
+                  className="max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl"
                   style={{ fontFamily: 'var(--font-fredoka)' }}
                 >
-                  Mas contexto para que cada bingo se sienta activo
+                  Una landing que muestra el juego antes de pedir el pago
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
-                  Usa esta zona para presentar premios, marcas amigas, fechas importantes y mensajes del sorteo sin sacar
-                  al usuario del camino principal de participacion.
+                  El visitante ve el monto configurado, la mecanica del carton y los espacios de premio en el mismo
+                  tramo visual. Menos explicacion repetida, mas decision rapida.
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <Metric value="75" label="bolillas" />
-                  <Metric value="24/7" label="carton online" />
-                  <Metric value="Live" label="sorteo visible" />
+                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={PAYMENT_INFO.amount} label="monto" />
+                  <Metric value="1" label="carton unico" />
+                  <Metric value="75" label="numeros" />
                 </div>
               </div>
             </div>
@@ -82,12 +79,12 @@ export function SponsorShowcase() {
                 >
                   <div className="flex gap-4">
                     <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${item.tone} text-white shadow-lg`}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${item.tone} text-zinc-950 shadow-lg`}
                     >
                       <Icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                      <h3 className="text-lg font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                         {item.title}
                       </h3>
                       <p className="mt-1 text-sm leading-relaxed text-zinc-400">{item.copy}</p>
@@ -100,13 +97,13 @@ export function SponsorShowcase() {
         </div>
 
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          <VisualPanel title="Cartones en pantalla">
+          <VisualPanel title="Carton digital">
             <MiniBingoCard />
           </VisualPanel>
-          <VisualPanel title="Premios y combos">
+          <VisualPanel title="Premio destacado">
             <PrizeVisual />
           </VisualPanel>
-          <VisualPanel title="Momento del sorteo">
+          <VisualPanel title="Bolillas cantadas">
             <DrawVisual />
           </VisualPanel>
         </div>
@@ -121,11 +118,14 @@ export function SponsorShowcase() {
   )
 }
 
-function Metric({ value, label }: { value: string; label: string }) {
+function Metric({ value, label, icon }: { value: string; label: string; icon?: ReactNode }) {
   return (
-    <div className="rounded-md border border-white/10 bg-black/25 p-4">
-      <p className="text-2xl font-black text-white">{value}</p>
-      <p className="mt-1 text-xs font-medium uppercase tracking-wide text-amber-200">{label}</p>
+    <div className="min-h-24 rounded-md border border-white/10 bg-black/25 p-4">
+      <div className="flex items-center gap-2 text-white">
+        {icon}
+        <p className="text-xl font-black leading-tight break-words">{value}</p>
+      </div>
+      <p className="mt-2 text-xs font-bold uppercase text-amber-200">{label}</p>
     </div>
   )
 }
@@ -133,9 +133,9 @@ function Metric({ value, label }: { value: string; label: string }) {
 function VisualPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900/70">
-      <div className="flex h-48 items-center justify-center bg-black/25 p-5">{children}</div>
+      <div className="flex h-52 items-center justify-center bg-black/25 p-5">{children}</div>
       <div className="border-t border-white/10 px-5 py-4">
-        <p className="font-semibold text-white">{title}</p>
+        <p className="font-bold text-white">{title}</p>
       </div>
     </div>
   )
@@ -179,9 +179,10 @@ function PrizeVisual() {
       <div className="absolute right-8 top-10 h-14 w-14 rounded-full bg-sky-400 text-center text-lg font-black leading-[3.5rem] text-zinc-950 shadow-xl">
         54
       </div>
-      <div className="rounded-lg border border-amber-300/45 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
+      <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
         <Trophy className="mx-auto mb-2 h-9 w-9" />
         <p className="text-2xl font-black">PREMIO</p>
+        <p className="text-xs font-bold uppercase">principal</p>
       </div>
     </div>
   )
@@ -208,7 +209,7 @@ function DrawVisual() {
           </div>
         ))}
       </div>
-      <div className="absolute bottom-4 right-4 rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-xs font-bold uppercase tracking-wide text-red-200">
+      <div className="absolute bottom-4 right-4 rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-xs font-bold uppercase text-red-200">
         En vivo
       </div>
     </div>
@@ -224,17 +225,17 @@ function AdSlot({ title }: { title: string }) {
       <div className="relative flex h-full flex-col justify-between gap-5">
         <div className="flex items-center gap-2 text-amber-200">
           <Megaphone className="h-4 w-4" />
-          <p className="text-xs font-bold uppercase tracking-wide">Publicidad</p>
+          <p className="text-xs font-bold uppercase">Espacio visual</p>
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+          <h3 className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
             {title}
           </h3>
-          <p className="mt-1 text-sm text-zinc-400">Tu marca, premio o promocion puede ir aqui.</p>
+          <p className="mt-1 text-sm text-zinc-400">Ideal para destacar sponsors, premios reales o beneficios activos.</p>
         </div>
-        <div className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-200">
+        <div className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-200">
           <ShieldCheck className="h-4 w-4" />
-          Espacio listo
+          Listo para actualizar
         </div>
       </div>
     </div>

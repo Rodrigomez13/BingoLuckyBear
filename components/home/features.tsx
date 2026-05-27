@@ -1,84 +1,75 @@
+import { Eye, LockKeyhole, MonitorSmartphone, ReceiptText } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 const features = [
   {
-    title: 'Carton Unico',
-    description: 'Cada carton tiene un identificador unico e irrepetible que garantiza la transparencia del sorteo.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-      </svg>
-    ),
+    title: 'Carton para guardar',
+    description: 'El jugador obtiene su codigo y puede descargar o consultar el carton cuando lo necesite.',
+    icon: ReceiptText,
+    color: 'bg-sky-400 text-zinc-950',
   },
   {
-    title: 'Proceso Seguro',
-    description: 'Tus datos estan protegidos y el comprobante de pago se almacena de forma segura.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
+    title: 'Diseñado para celular',
+    description: 'La compra, el comprobante y el vivo se leen bien desde pantallas chicas.',
+    icon: MonitorSmartphone,
+    color: 'bg-emerald-400 text-zinc-950',
   },
   {
-    title: 'Facil Participacion',
-    description: 'Solo necesitas completar un formulario y subir tu comprobante. Sin complicaciones.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
+    title: 'Control de comprobantes',
+    description: 'El admin revisa participantes, pagos y cartones desde una vista operativa.',
+    icon: LockKeyhole,
+    color: 'bg-amber-400 text-zinc-950',
   },
   {
-    title: 'Acceso Inmediato',
-    description: 'Una vez registrado, podras ver tu carton inmediatamente desde tu navegador.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      </svg>
-    ),
+    title: 'Resultados a la vista',
+    description: 'Ganadores y numeros cantados quedan publicados para consulta posterior.',
+    icon: Eye,
+    color: 'bg-red-400 text-zinc-950',
   },
 ]
 
 export function Features() {
   return (
-    <section className="py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 
-            className="text-4xl md:text-5xl font-bold text-white mb-4"
+    <section className="bg-black/20 py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-14 max-w-3xl">
+          <p className="mb-3 text-sm font-black uppercase text-amber-300">Experiencia</p>
+          <h2
+            className="text-4xl font-black leading-tight text-white md:text-5xl"
             style={{ fontFamily: 'var(--font-fredoka)' }}
           >
-            Por Que Elegirnos
+            Mas profesional para quien compra y para quien organiza
           </h2>
-          <p className="text-lg text-zinc-300 max-w-2xl mx-auto">
-            Lucky Bingo Bear te ofrece una experiencia de sorteo transparente, segura y divertida.
+          <p className="mt-4 text-lg leading-relaxed text-zinc-300">
+            Estos beneficios evitan repetir el mismo argumento: hablan de carton, mobile, operacion y resultados.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {features.map((feature, index) => (
-            <Card 
-              key={index}
-              className="border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:border-amber-400/60 hover:shadow-md"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white flex-shrink-0">
-                    {feature.icon}
+        <div className="grid gap-5 md:grid-cols-2">
+          {features.map((feature) => {
+            const Icon = feature.icon
+
+            return (
+              <Card
+                key={feature.title}
+                className="border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:border-amber-400/60 hover:shadow-md"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md ${feature.color}`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                        {feature.title}
+                      </h3>
+                      <p className="mt-2 leading-relaxed text-zinc-400">{feature.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      {feature.title}
-                    </h3>
-                    <p className="text-zinc-400 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </section>

@@ -132,8 +132,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
     try {
       const canvas = document.createElement('canvas')
       const scale = 2
-      const width = 900
-      const height = 1240
+      const width = 720
+      const height = 980
       canvas.width = width * scale
       canvas.height = height * scale
 
@@ -151,28 +151,28 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
 
       ctx.strokeStyle = '#f59e0b'
       ctx.lineWidth = 4
-      drawRoundedRect(ctx, 42, 42, width - 84, height - 84, 26)
+      drawRoundedRect(ctx, 32, 32, width - 64, height - 64, 22)
       ctx.stroke()
 
       try {
         const logo = await loadLogoImage()
-        const logoSize = 132
-        ctx.drawImage(logo, width / 2 - logoSize / 2, 58, logoSize, logoSize)
+        const logoSize = 76
+        ctx.drawImage(logo, width / 2 - logoSize / 2, 48, logoSize, logoSize)
       } catch {
-        drawLogoMark(ctx, width / 2, 128, 58)
+        drawLogoMark(ctx, width / 2, 86, 38)
       }
-      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 225, 720, 50, '900')
-      drawCenteredText(ctx, raffleName, width / 2, 274, 700, 28, '500', '#fde68a')
+      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 150, 610, 38, '900')
+      drawCenteredText(ctx, raffleName, width / 2, 190, 610, 22, '600', '#fde68a')
 
       ctx.fillStyle = '#f59e0b'
-      drawRoundedRect(ctx, width / 2 - 170, 306, 340, 54, 24)
+      drawRoundedRect(ctx, width / 2 - 145, 216, 290, 42, 20)
       ctx.fill()
-      drawCenteredText(ctx, card.card_number, width / 2, 334, 290, 26, '900', '#111827')
+      drawCenteredText(ctx, card.card_number, width / 2, 238, 245, 22, '900', '#111827')
 
-      const gridX = 84
-      const gridY = 420
-      const cellSize = 146
-      const headerHeight = 82
+      const gridX = 80
+      const gridY = 292
+      const cellSize = 112
+      const headerHeight = 58
       const headerColors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6']
 
       ctx.lineWidth = 6
@@ -184,7 +184,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
         ctx.fillStyle = headerColors[index]
         ctx.fillRect(gridX + index * cellSize, gridY, cellSize, headerHeight)
         ctx.fillStyle = '#ffffff'
-        drawCenteredText(ctx, letter, gridX + index * cellSize + cellSize / 2, gridY + headerHeight / 2, 100, 54, '900')
+        drawCenteredText(ctx, letter, gridX + index * cellSize + cellSize / 2, gridY + headerHeight / 2, 80, 38, '900')
       })
 
       rows.forEach((row, rowIndex) => {
@@ -199,12 +199,12 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
           ctx.lineWidth = 2
           ctx.strokeRect(x, y, cellSize, cellSize)
 
-          drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, 108, cell === 'FREE' ? 26 : 48, '900')
+          drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, 86, cell === 'FREE' ? 20 : 38, '900')
         })
       })
 
-      drawCenteredText(ctx, card.full_name, width / 2, 1150, 760, 32, '800', '#fff7ed')
-      drawCenteredText(ctx, formattedDate, width / 2, 1190, 760, 22, '500', '#fcd34d')
+      drawCenteredText(ctx, card.full_name, width / 2, 920, 610, 26, '800', '#fff7ed')
+      drawCenteredText(ctx, formattedDate, width / 2, 950, 610, 18, '500', '#fcd34d')
 
       const link = document.createElement('a')
       link.download = `bingo-card-${card.card_number}.png`
@@ -327,18 +327,18 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
           <BingoCardVisual />
 
           {/* Action Buttons */}
-          <div className="flex gap-3 mt-4">
+          <div className="grid gap-3 mt-4 sm:grid-cols-2">
             <Button
               onClick={() => setShowModal(true)}
               variant="outline"
-              className="flex-1 border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+              className="w-full border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
             >
               <Eye className="w-4 h-4 mr-2" />
               Ver Carton Completo
             </Button>
             <Button
               onClick={downloadCard}
-              className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
             >
               <Download className="w-4 h-4 mr-2" />
               Descargar

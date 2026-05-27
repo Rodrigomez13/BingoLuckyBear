@@ -1,100 +1,122 @@
 import Link from 'next/link'
+import { ArrowRight, Gift, Radio, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BearLogo } from '@/components/bear-logo'
 import { BingoMachineVisual } from './bingo-machine-visual'
 
+const heroStats = [
+  { value: '75', label: 'bolillas oficiales' },
+  { value: '5x5', label: 'carton digital' },
+  { value: 'Live', label: 'sorteo en vivo' },
+]
+
+const floatingBalls = [
+  { number: 7, className: 'left-[7%] top-28 bg-red-500' },
+  { number: 21, className: 'right-[8%] top-36 bg-amber-400 text-zinc-950' },
+  { number: 45, className: 'left-[18%] bottom-28 bg-emerald-500' },
+  { number: 63, className: 'right-[13%] bottom-20 bg-sky-500' },
+]
+
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Floating bingo balls */}
-        <div className="absolute top-32 left-[10%] animate-bounce" style={{ animationDelay: '0s', animationDuration: '3s' }}>
-          <BingoBall number={7} color="bg-red-500" />
-        </div>
-        <div className="absolute top-48 right-[15%] animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '3.5s' }}>
-          <BingoBall number={21} color="bg-amber-500" />
-        </div>
-        <div className="absolute bottom-32 left-[20%] animate-bounce" style={{ animationDelay: '1s', animationDuration: '4s' }}>
-          <BingoBall number={45} color="bg-green-500" />
-        </div>
-        <div className="absolute bottom-48 right-[10%] animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '3.2s' }}>
-          <BingoBall number={63} color="bg-blue-500" />
-        </div>
+    <section className="relative isolate min-h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(251,191,36,0.22),transparent_28rem),radial-gradient(circle_at_88%_28%,rgba(16,185,129,0.14),transparent_24rem),radial-gradient(circle_at_50%_100%,rgba(239,68,68,0.12),transparent_28rem)]" />
+      <div className="absolute inset-0 -z-10 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:44px_44px]" />
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {floatingBalls.map((ball) => (
+          <BingoBall key={ball.number} number={ball.number} className={ball.className} />
+        ))}
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-        <div className="text-center space-y-8">
-          {/* Main Logo */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <BearLogo
-                size={280}
-                variant="context"
-                className="relative h-auto w-[min(72vw,280px)] drop-shadow-2xl"
-              />
-            </div>
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 overflow-hidden px-4 py-14 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:px-8">
+        <div className="min-w-0 text-center lg:text-left">
+          <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-md border border-amber-300/30 bg-amber-300/10 px-2 py-2 text-xs font-bold text-amber-100 sm:px-3 sm:text-sm">
+            <Sparkles className="h-4 w-4" />
+            <span className="min-w-0">Bingo online con cartones, premios y vivo</span>
           </div>
 
-          {/* Title */}
-          <div className="space-y-4">
-            <h1 
-              className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-orange-400"
-              style={{ fontFamily: 'var(--font-fredoka)' }}
-            >
-              Lucky Bingo Bear
-            </h1>
-            <p className="text-xl md:text-2xl text-zinc-200 max-w-2xl mx-auto leading-relaxed">
-              Participa en nuestros emocionantes sorteos de bingo y gana{' '}
-              <span className="font-bold text-amber-300">increibles premios</span>
-            </p>
-          </div>
+          <h1
+            className="text-4xl font-black leading-[0.95] text-white sm:text-6xl md:text-7xl"
+            style={{ fontFamily: 'var(--font-fredoka)' }}
+          >
+            Lucky
+            <span className="block bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500 bg-clip-text text-transparent">
+              Bingo Bear
+            </span>
+          </h1>
 
-          <BingoMachineVisual />
+          <p className="mx-auto mt-6 max-w-[34ch] text-base leading-relaxed text-zinc-200 sm:max-w-2xl sm:text-xl lg:mx-0">
+            Compra tu carton digital, guarda tu codigo y segui el sorteo en vivo con bolillas cantadas, premio destacado
+            y ganadores publicados.
+          </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button 
-              asChild 
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+            <Button
+              asChild
               size="lg"
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-lg px-8 py-6 shadow-lg shadow-amber-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-amber-500/40"
+              className="h-14 bg-amber-400 px-7 text-base font-black text-zinc-950 shadow-xl shadow-amber-500/25 hover:bg-amber-300"
             >
               <Link href="/participar">
-                Solicitar Mi Carton
+                Solicitar mi carton
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button 
-              asChild 
-              variant="outline" 
+            <Button
+              asChild
+              variant="outline"
               size="lg"
-              className="border-2 border-amber-400/50 bg-transparent text-amber-100 hover:bg-amber-400/10 font-semibold text-lg px-8 py-6"
+              className="h-14 border-2 border-white/20 bg-white/5 px-7 text-base font-bold text-white hover:bg-white/10"
             >
-              <Link href="#como-funciona">
-                Como Funciona
+              <Link href="/en-vivo">
+                <Radio className="mr-2 h-5 w-5" />
+                Ver sorteo
               </Link>
             </Button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-xl mx-auto pt-12">
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-amber-300" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                100+
+          <div className="mt-10 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-2xl">
+            {heroStats.map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-white/10 bg-white/[0.06] p-3 backdrop-blur sm:p-4">
+                <p className="text-2xl font-black text-white sm:text-3xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  {stat.value}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold uppercase leading-tight text-amber-100 sm:text-xs">
+                  {stat.label}
+                </p>
               </div>
-              <div className="text-sm text-zinc-400">Participantes</div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mx-auto w-full max-w-[520px] min-w-0 overflow-hidden px-1 py-2">
+          <div className="absolute left-2 top-10 z-10 rounded-lg border border-emerald-300/30 bg-emerald-400 px-3 py-3 text-zinc-950 shadow-2xl shadow-emerald-950/30 sm:-left-2 sm:px-4">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5" />
+              <p className="text-sm font-black uppercase">Premio activo</p>
             </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-orange-300" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                50+
+            <p className="text-xs font-bold">Publicado en cada sorteo</p>
+          </div>
+
+          <div className="absolute bottom-16 right-2 z-10 rounded-lg border border-sky-300/30 bg-sky-400 px-3 py-3 text-zinc-950 shadow-2xl shadow-sky-950/30 sm:-right-1 sm:px-4">
+            <div className="flex items-center gap-2">
+              <Ticket className="h-5 w-5" />
+              <p className="text-sm font-black uppercase">Carton unico</p>
+            </div>
+            <p className="text-xs font-bold">Codigo LBB listo</p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-lg border border-amber-300/25 bg-zinc-950/75 p-5 shadow-2xl shadow-black/40 backdrop-blur">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <BearLogo size={92} variant="context" className="h-auto w-24 drop-shadow-xl" />
+              <div className="text-right">
+                <p className="text-xs font-bold uppercase text-amber-200">Proximo carton</p>
+                <p className="text-3xl font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  BINGO
+                </p>
               </div>
-              <div className="text-sm text-zinc-400">Sorteos</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-amber-300" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                25+
-              </div>
-              <div className="text-sm text-zinc-400">Ganadores</div>
-            </div>
+            <BingoMachineVisual />
           </div>
         </div>
       </div>
@@ -102,12 +124,13 @@ export function HeroSection() {
   )
 }
 
-function BingoBall({ number, color }: { number: number; color: string }) {
+function BingoBall({ number, className }: { number: number; className: string }) {
   return (
-    <div className={`w-12 h-12 ${color} rounded-full flex items-center justify-center shadow-lg`}>
-      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-        <span className="font-bold text-gray-800 text-sm">{number}</span>
-      </div>
+    <div
+      className={`absolute hidden h-14 w-14 animate-bounce items-center justify-center rounded-full text-sm font-black text-white shadow-xl md:flex ${className}`}
+      style={{ animationDuration: `${3 + (number % 4) * 0.35}s` }}
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-zinc-950">{number}</span>
     </div>
   )
 }

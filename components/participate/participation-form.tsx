@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { FileText, Image as ImageIcon, ShieldCheck } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { CalendarDays, FileText, Gift, Image as ImageIcon, ShieldCheck, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,6 +15,10 @@ interface Raffle {
   id: string
   name: string
   description: string | null
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
 }
 
 interface BingoCard {
@@ -172,7 +177,33 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
         )}
       </div>
 
-      <PaymentInstructions />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premio" value={raffle.prize || 'A confirmar'} />
+        <RaffleDetail icon={<WalletCards className="h-5 w-5" />} label="Monto" value={raffle.amount || 'Ver datos de pago'} />
+        <RaffleDetail
+          icon={<CalendarDays className="h-5 w-5" />}
+          label="Fecha"
+          value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+        />
+      </div>
+
+      {!!raffle.additional_prizes?.length && (
+        <div className="rounded-lg border border-amber-400/20 bg-zinc-950/75 p-4">
+          <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase text-amber-200">
+            <Gift className="h-4 w-4" />
+            Mas premios
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {raffle.additional_prizes.map((item, index) => (
+              <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <PaymentInstructions amount={raffle.amount} />
 
       {/* Form */}
       <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
@@ -421,6 +452,18 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
           </form>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function RaffleDetail({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-zinc-950/75 p-4 text-center">
+      <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-amber-400/15 text-amber-200">
+        {icon}
+      </div>
+      <p className="text-xs font-bold uppercase text-amber-200">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
     </div>
   )
 }

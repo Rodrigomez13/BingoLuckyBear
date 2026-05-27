@@ -14,6 +14,10 @@ interface Raffle {
   name: string
   description: string | null
   is_active: boolean
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
   draw_started_at?: string | null

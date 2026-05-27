@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Clock, Crown, Radio, Ticket } from 'lucide-react'
+import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getBingoLetter, getCountdownRemainingSeconds } from '@/lib/bingo'
 
@@ -13,6 +13,10 @@ interface Raffle {
   name: string
   description: string | null
   is_active: boolean
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
   draw_started_at?: string | null
@@ -114,10 +118,31 @@ export function LiveWall() {
             {raffle.description && <p className="mt-5 max-w-2xl text-xl leading-relaxed text-zinc-300">{raffle.description}</p>}
 
             <div className="mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
+              <Stat icon={<Gift className="h-6 w-6" />} label="Premio" value={raffle.prize || 'A confirmar'} compact />
+              <Stat icon={<WalletCards className="h-6 w-6" />} label="Monto" value={raffle.amount || 'A confirmar'} compact />
+              <Stat
+                icon={<CalendarDays className="h-6 w-6" />}
+                label="Fecha"
+                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+                compact
+              />
               <Stat icon={<Clock className="h-6 w-6" />} label="Cuenta regresiva" value={formatTime(remaining)} />
               <Stat label="Ultimo numero" value={lastNumber ? `${getBingoLetter(lastNumber)}-${lastNumber}` : '--'} />
               <Stat label="Cartones" value={String(participantCount)} />
             </div>
+
+            {!!raffle.additional_prizes?.length && (
+              <div className="mt-5 max-w-4xl rounded-lg border border-amber-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-200">Premios extra</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {raffle.additional_prizes.map((item, index) => (
+                    <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <aside className="rounded-lg border border-amber-400/25 bg-zinc-950/75 p-5 shadow-2xl shadow-black/35 backdrop-blur">
@@ -163,14 +188,14 @@ export function LiveWall() {
   )
 }
 
-function Stat({ icon, label, value }: { icon?: ReactNode; label: string; value: string }) {
+function Stat({ icon, label, value, compact = false }: { icon?: ReactNode; label: string; value: string; compact?: boolean }) {
   return (
     <div className="rounded-lg border border-white/10 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
         {icon}
         {label}
       </p>
-      <p className="mt-3 text-4xl font-black text-white">{value}</p>
+      <p className={`mt-3 break-words font-black text-white ${compact ? 'text-xl' : 'text-4xl'}`}>{value}</p>
     </div>
   )
 }

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { BarChart3, Clock, ExternalLink, Radio, Ticket, Trophy } from 'lucide-react'
+import { BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Plus, Radio, Ticket, Trash2, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,10 @@ interface Raffle {
   id: string
   name: string
   description: string | null
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
   is_active: boolean
   created_at: string
   admin_id: string
@@ -40,6 +44,10 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [prize, setPrize] = useState('')
+  const [additionalPrizes, setAdditionalPrizes] = useState<string[]>([])
+  const [amount, setAmount] = useState('')
+  const [drawDate, setDrawDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
   const router = useRouter()
@@ -48,6 +56,8 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const finishedCount = raffles.filter((raffle) => raffle.draw_status === 'finished').length
   const liveCount = raffles.filter((raffle) => raffle.draw_status === 'running').length
   const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
+
+  const cleanAdditionalPrizes = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -65,6 +75,10 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
         .insert({
           name,
           description: description || null,
+          prize: prize || null,
+          additional_prizes: cleanAdditionalPrizes(additionalPrizes),
+          amount: amount || null,
+          draw_date: drawDate || null,
           admin_id: user.id,
           is_active: false,
         })
@@ -76,6 +90,10 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       setRaffles([data, ...raffles])
       setName('')
       setDescription('')
+      setPrize('')
+      setAdditionalPrizes([])
+      setAmount('')
+      setDrawDate('')
       setShowForm(false)
     } catch (error) {
       console.error('Error creating raffle:', error)
@@ -138,21 +156,22 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       <header className="bg-zinc-950/80 backdrop-blur-md border-b border-amber-400/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <BearLogo size={40} />
-              <div>
-                <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <div className="min-w-0">
+                <span className="block truncate font-bold text-lg text-white sm:text-xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
                   Panel Admin
                 </span>
-                <p className="text-xs text-zinc-400">{user.email}</p>
+                <p className="max-w-[160px] truncate text-xs text-zinc-400 sm:max-w-none">{user.email}</p>
               </div>
             </div>
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+              className="shrink-0 border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
             >
-              Cerrar Sesion
+              <span className="hidden sm:inline">Cerrar Sesion</span>
+              <span className="sm:hidden">Salir</span>
             </Button>
           </div>
         </div>
@@ -194,7 +213,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
             </p>
             <p className="mt-1 text-sm text-zinc-400">Usalos para compartir participacion, proyectar el vivo o mostrar resultados.</p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid gap-2 sm:grid-cols-3">
             <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
               <Link href="/participar" target="_blank">
                 Participar
@@ -219,7 +238,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
         <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           {/* Left Column - Raffles List */}
           <div className="min-w-0 space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Mis Sorteos
               </h2>
@@ -259,6 +278,82 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                         placeholder="Describe el sorteo..."
                         className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                       />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="prize" className="text-zinc-300">Premio principal</Label>
+                        <Input
+                          id="prize"
+                          value={prize}
+                          onChange={(e) => setPrize(e.target.value)}
+                          placeholder="Ej: $50.000 + combo sorpresa"
+                          className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-zinc-300">Monto del carton</Label>
+                        <Input
+                          id="amount"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="Ej: $2.000"
+                          className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="drawDate" className="text-zinc-300">Fecha del sorteo</Label>
+                      <Input
+                        id="drawDate"
+                        type="datetime-local"
+                        value={drawDate}
+                        onChange={(e) => setDrawDate(e.target.value)}
+                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label className="text-zinc-300">Mas premios</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setAdditionalPrizes((current) => [...current, ''])}
+                          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Agregar
+                        </Button>
+                      </div>
+                      {additionalPrizes.length === 0 ? (
+                        <p className="text-sm text-zinc-500">Opcional: agrega premios secundarios, combos o menciones especiales.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {additionalPrizes.map((item, index) => (
+                            <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                              <Input
+                                value={item}
+                                onChange={(event) =>
+                                  setAdditionalPrizes((current) =>
+                                    current.map((value, itemIndex) => (itemIndex === index ? event.target.value : value))
+                                  )
+                                }
+                                placeholder={`Premio adicional ${index + 1}`}
+                                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setAdditionalPrizes((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                                className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Eliminar premio</span>
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <Button 
                       type="submit" 
@@ -311,6 +406,22 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                           {raffle.description && (
                             <p className="text-sm text-zinc-400 truncate">{raffle.description}</p>
                           )}
+                          <div className="mt-3 grid gap-2 text-xs text-zinc-300">
+                            <RaffleMeta icon={<Gift className="h-3.5 w-3.5" />} value={raffle.prize || 'Premio sin cargar'} />
+                            <RaffleMeta
+                              icon={<Trophy className="h-3.5 w-3.5" />}
+                              value={
+                                raffle.additional_prizes?.length
+                                  ? `${raffle.additional_prizes.length} premio${raffle.additional_prizes.length !== 1 ? 's' : ''} extra`
+                                  : 'Sin premios extra'
+                              }
+                            />
+                            <RaffleMeta icon={<DollarSign className="h-3.5 w-3.5" />} value={raffle.amount || 'Monto sin cargar'} />
+                            <RaffleMeta
+                              icon={<CalendarDays className="h-3.5 w-3.5" />}
+                              value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'Fecha sin cargar'}
+                            />
+                          </div>
                           <p className="text-xs text-zinc-500 mt-1">
                             Creado: {new Date(raffle.created_at).toLocaleDateString('es-ES')}
                           </p>
@@ -318,7 +429,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             {raffle.bingo_cards?.[0]?.count ?? 0} carton{(raffle.bingo_cards?.[0]?.count ?? 0) !== 1 ? 'es' : ''}
                           </p>
                         </div>
-                        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="grid shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant={raffle.is_active ? 'destructive' : 'default'}
@@ -405,5 +516,14 @@ function AdminMetric({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function RaffleMeta({ icon, value }: { icon: ReactNode; value: string }) {
+  return (
+    <p className="flex min-w-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1">
+      <span className="shrink-0 text-amber-200">{icon}</span>
+      <span className="truncate">{value}</span>
+    </p>
   )
 }

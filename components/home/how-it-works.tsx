@@ -1,89 +1,75 @@
+import { CreditCard, FileCheck2, Radio, TicketCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 const steps = [
   {
-    step: 1,
-    title: 'Espera el Sorteo',
-    description: 'Cuando un sorteo este activo, podras participar. Te avisaremos por nuestras redes.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    step: '01',
+    title: 'Elegis el sorteo',
+    description: 'Revisas premio, monto y estado activo antes de avanzar.',
+    icon: TicketCheck,
   },
   {
-    step: 2,
-    title: 'Completa tus Datos',
-    description: 'Ingresa tu informacion personal y sube el comprobante de tu transferencia.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
+    step: '02',
+    title: 'Envias el pago',
+    description: 'Completas tus datos y adjuntas el comprobante desde el formulario.',
+    icon: CreditCard,
   },
   {
-    step: 3,
-    title: 'Recibe tu Carton',
-    description: 'Se generara automaticamente tu carton unico con un codigo exclusivo.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-      </svg>
-    ),
+    step: '03',
+    title: 'Recibis tu carton',
+    description: 'La app genera un carton 5x5 con codigo LBB para identificar tu jugada.',
+    icon: FileCheck2,
   },
   {
-    step: 4,
-    title: 'Participa y Gana',
-    description: 'Sigue el sorteo en vivo y cruza los dedos. Tu carton podria ser el ganador!',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-      </svg>
-    ),
+    step: '04',
+    title: 'Seguis el vivo',
+    description: 'Miras las bolillas cantadas y despues consultas ganadores publicados.',
+    icon: Radio,
   },
 ]
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="py-24 bg-black/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 
-            className="text-4xl md:text-5xl font-bold text-white mb-4"
-            style={{ fontFamily: 'var(--font-fredoka)' }}
-          >
-            Como Funciona
-          </h2>
-          <p className="text-lg text-zinc-300 max-w-2xl mx-auto">
-            Participar es muy facil. Sigue estos simples pasos y podras tener tu carton de bingo en minutos.
+    <section id="como-funciona" className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-14 grid gap-4 lg:grid-cols-[0.8fr_1fr] lg:items-end">
+          <div>
+            <p className="mb-3 text-sm font-black uppercase text-amber-300">Participar</p>
+            <h2
+              className="text-4xl font-black leading-tight text-white md:text-5xl"
+              style={{ fontFamily: 'var(--font-fredoka)' }}
+            >
+              Cuatro pasos, sin vueltas
+            </h2>
+          </div>
+          <p className="max-w-2xl text-lg leading-relaxed text-zinc-300 lg:justify-self-end">
+            El recorrido ahora separa decision, pago, carton y sorteo. Cada pantalla cumple una funcion clara.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((item) => (
-            <Card 
-              key={item.step} 
-              className="relative overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:border-amber-400/60 hover:shadow-lg hover:-translate-y-1"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
-              <CardContent className="pt-8 pb-6 px-6">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-amber-400/15 flex items-center justify-center text-amber-300">
-                    {item.icon}
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {steps.map((item) => {
+            const Icon = item.icon
+
+            return (
+              <Card
+                key={item.step}
+                className="relative overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/60 hover:shadow-lg"
+              >
+                <div className="absolute right-4 top-3 text-5xl font-black text-white/[0.05]">{item.step}</div>
+                <CardContent className="p-6">
+                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-lg bg-amber-400 text-zinc-950">
+                    <Icon className="h-7 w-7" />
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
-                    {item.step}
-                  </div>
-                  <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  <p className="mb-2 text-xs font-black uppercase text-amber-300">Paso {item.step}</p>
+                  <h3 className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                     {item.title}
                   </h3>
-                  <p className="text-zinc-400 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="mt-3 text-sm leading-relaxed text-zinc-400">{item.description}</p>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </section>

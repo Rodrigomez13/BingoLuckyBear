@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { Clock, Crown, Radio, Ticket } from 'lucide-react'
+import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getBingoLetter, getCountdownRemainingSeconds } from '@/lib/bingo'
@@ -12,6 +13,10 @@ interface Raffle {
   name: string
   description: string | null
   is_active: boolean
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
   draw_started_at?: string | null
@@ -95,6 +100,29 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             </h2>
             {raffle.description && <p className="mt-2 max-w-2xl text-sm text-zinc-300">{raffle.description}</p>}
 
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <LiveInfo icon={<Gift className="h-4 w-4" />} label="Premio" value={raffle.prize || 'A confirmar'} />
+              <LiveInfo icon={<WalletCards className="h-4 w-4" />} label="Monto" value={raffle.amount || 'A confirmar'} />
+              <LiveInfo
+                icon={<CalendarDays className="h-4 w-4" />}
+                label="Fecha"
+                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+              />
+            </div>
+
+            {!!raffle.additional_prizes?.length && (
+              <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
+                <p className="mb-2 text-xs font-bold uppercase text-amber-300">Premios extra</p>
+                <div className="flex flex-wrap gap-2">
+                  {raffle.additional_prizes.map((item, index) => (
+                    <span key={`${item}-${index}`} className="rounded-md bg-amber-400/10 px-3 py-1 text-sm font-semibold text-amber-100">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
                 <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-amber-300">
@@ -144,5 +172,17 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
         </div>
       </div>
     </section>
+  )
+}
+
+function LiveInfo({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-white/[0.04] p-3">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase text-amber-300">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
+    </div>
   )
 }

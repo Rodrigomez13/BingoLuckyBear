@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ClipboardCopy, ExternalLink, RefreshCw, Search, Trophy, Users } from 'lucide-react'
+import { CalendarDays, ClipboardCopy, DollarSign, ExternalLink, Gift, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,10 @@ interface Raffle {
   id: string
   name: string
   description: string | null
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
   is_active: boolean
   created_at: string
   draw_status?: 'idle' | 'running' | 'finished' | null
@@ -51,6 +55,14 @@ interface RaffleParticipantsProps {
 }
 
 const BINGO_HEADERS = ['B', 'I', 'N', 'G', 'O']
+
+function toDateTimeLocalValue(value: string | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return offsetDate.toISOString().slice(0, 16)
+}
 
 function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | null; drawnNumbers?: number[] }) {
   const rows = getBingoRows(numbers)
@@ -101,9 +113,16 @@ function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | n
 export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipantsProps) {
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingDetails, setIsSavingDetails] = useState(false)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [winnerOnly, setWinnerOnly] = useState(false)
+  const [details, setDetails] = useState({
+    prize: raffle.prize ?? '',
+    additional_prizes: raffle.additional_prizes ?? [],
+    amount: raffle.amount ?? '',
+    draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+  })
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true)
@@ -128,6 +147,15 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     fetchCards()
   }, [fetchCards])
 
+  useEffect(() => {
+    setDetails({
+      prize: raffle.prize ?? '',
+      additional_prizes: raffle.additional_prizes ?? [],
+      amount: raffle.amount ?? '',
+      draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+    })
+  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.draw_date])
+
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const winnerCards = useMemo(
     () => cards.filter((card) => getWinningLines(card.bingo_numbers, drawnNumbers).length > 0),
@@ -149,6 +177,32 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
   const copyToClipboard = async (path: string) => {
     await navigator.clipboard.writeText(`${window.location.origin}${path}`)
+  }
+
+  const saveRaffleDetails = async () => {
+    setIsSavingDetails(true)
+    try {
+      const supabase = createClient()
+      const payload = {
+        prize: details.prize || null,
+        additional_prizes: details.additional_prizes.map((item) => item.trim()).filter(Boolean),
+        amount: details.amount || null,
+        draw_date: details.draw_date || null,
+      }
+      const { data, error } = await supabase
+        .from('raffles')
+        .update(payload)
+        .eq('id', raffle.id)
+        .select('*')
+        .single()
+
+      if (error) throw error
+      onRaffleUpdated(data as Raffle)
+    } catch (error) {
+      console.error('Error updating raffle details:', error)
+    } finally {
+      setIsSavingDetails(false)
+    }
   }
 
   const exportToCSV = () => {
@@ -184,6 +238,123 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       <DrawControls raffle={raffle} cards={cards} onRaffleUpdated={onRaffleUpdated} />
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Gift className="h-5 w-5 text-amber-300" />
+            Premio, monto y fecha
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_210px_auto] lg:items-end">
+            <div className="space-y-2">
+              <label htmlFor="raffle-prize" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <Gift className="h-4 w-4 text-amber-200" />
+                Premio principal
+              </label>
+              <Input
+                id="raffle-prize"
+                value={details.prize}
+                onChange={(event) => setDetails((current) => ({ ...current, prize: event.target.value }))}
+                placeholder="Ej: $50.000 + premio sorpresa"
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="raffle-amount" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <DollarSign className="h-4 w-4 text-amber-200" />
+                Monto
+              </label>
+              <Input
+                id="raffle-amount"
+                value={details.amount}
+                onChange={(event) => setDetails((current) => ({ ...current, amount: event.target.value }))}
+                placeholder="$2.000"
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="raffle-date" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <CalendarDays className="h-4 w-4 text-amber-200" />
+                Fecha
+              </label>
+              <Input
+                id="raffle-date"
+                type="datetime-local"
+                value={details.draw_date}
+                onChange={(event) => setDetails((current) => ({ ...current, draw_date: event.target.value }))}
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={saveRaffleDetails}
+              disabled={isSavingDetails}
+              className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300 lg:w-auto"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {isSavingDetails ? 'Guardando' : 'Guardar'}
+            </Button>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-white">Premios adicionales</p>
+                <p className="text-sm text-zinc-400">Agrega todos los premios secundarios que quieras mostrar.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDetails((current) => ({ ...current, additional_prizes: [...current.additional_prizes, ''] }))}
+                className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar premio
+              </Button>
+            </div>
+
+            {details.additional_prizes.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {details.additional_prizes.map((item, index) => (
+                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <Input
+                      value={item}
+                      onChange={(event) =>
+                        setDetails((current) => ({
+                          ...current,
+                          additional_prizes: current.additional_prizes.map((value, itemIndex) =>
+                            itemIndex === index ? event.target.value : value
+                          ),
+                        }))
+                      }
+                      placeholder={`Premio adicional ${index + 1}`}
+                      className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setDetails((current) => ({
+                          ...current,
+                          additional_prizes: current.additional_prizes.filter((_, itemIndex) => itemIndex !== index),
+                        }))
+                      }
+                      className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Eliminar premio</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-500">Todavia no agregaste premios adicionales.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
       <CardHeader>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
@@ -200,7 +371,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               {cards.length} participante{cards.length !== 1 ? 's' : ''} registrado{cards.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <Button
               onClick={() => copyToClipboard('/participar')}
               variant="outline"
@@ -347,8 +518,8 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
-          {selectedCard && (
-            <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(112px,300px)] gap-0">
+            {selectedCard && (
+            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(112px,300px)] lg:overflow-hidden">
               <div className="min-w-0 space-y-4 p-4 sm:p-5">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>
@@ -399,7 +570,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                 </div>
               </div>
 
-              <div className="border-l border-zinc-800 bg-zinc-900/60 p-3 sm:p-5">
+              <div className="border-t border-zinc-800 bg-zinc-900/60 p-3 sm:p-5 lg:border-l lg:border-t-0">
                 <p className="mb-3 text-sm font-medium text-zinc-300">Comprobante de Pago</p>
                 <ReceiptPreview pathname={selectedCard.payment_receipt_url} />
               </div>

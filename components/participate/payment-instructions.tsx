@@ -5,17 +5,20 @@ import { Check, ClipboardCopy, Landmark, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PAYMENT_INFO } from '@/lib/payment'
 
-const paymentRows = [
-  { label: 'Titular', value: PAYMENT_INFO.holder },
-  { label: 'Alias', value: PAYMENT_INFO.alias },
-  { label: 'CBU/CVU', value: PAYMENT_INFO.cbu },
-  { label: 'Banco/Billetera', value: PAYMENT_INFO.bank },
-  { label: 'Concepto', value: PAYMENT_INFO.concept },
-  { label: 'Monto', value: PAYMENT_INFO.amount },
-]
+interface PaymentInstructionsProps {
+  amount?: string | null
+}
 
-export function PaymentInstructions() {
+export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
   const [copied, setCopied] = useState<string | null>(null)
+  const paymentRows = [
+    { label: 'Titular', value: PAYMENT_INFO.holder },
+    { label: 'Alias', value: PAYMENT_INFO.alias },
+    { label: 'CBU/CVU', value: PAYMENT_INFO.cbu },
+    { label: 'Banco/Billetera', value: PAYMENT_INFO.bank },
+    { label: 'Concepto', value: PAYMENT_INFO.concept },
+    { label: 'Monto', value: amount || PAYMENT_INFO.amount },
+  ]
 
   const copyValue = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value)
