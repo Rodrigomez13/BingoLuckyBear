@@ -72,7 +72,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
   return (
     <section className={compact ? '' : 'px-4 py-10 sm:px-6 lg:px-8'}>
       <div className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-2xl shadow-black/30 backdrop-blur">
-        <div className="grid gap-0 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="p-5 sm:p-7">
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <Badge className="bg-red-500 text-white hover:bg-red-500">
@@ -116,18 +116,18 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             </div>
           </div>
 
-          <div className="border-t border-white/10 bg-black/30 p-5 lg:border-l lg:border-t-0">
+          <div className="min-w-0 border-t border-white/10 bg-black/30 p-4 sm:p-5 lg:border-l lg:border-t-0">
             <p className="mb-3 text-sm font-semibold text-zinc-200">Bolillero</p>
-            <div className="grid max-h-52 grid-cols-5 gap-2 overflow-auto pr-1">
+            <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-2">
               {drawnNumbers.length === 0 ? (
-                <div className="col-span-5 rounded-md border border-dashed border-white/15 p-5 text-center text-sm text-zinc-400">
+                <div className="w-full flex-none rounded-md border border-dashed border-white/15 p-5 text-center text-sm text-zinc-400">
                   Todavia no salieron numeros.
                 </div>
               ) : (
                 [...drawnNumbers].reverse().map((number) => (
                   <div
                     key={number}
-                    className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20"
+                    className="flex h-14 w-14 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-base font-black text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-16 sm:w-16"
                   >
                     {number}
                   </div>

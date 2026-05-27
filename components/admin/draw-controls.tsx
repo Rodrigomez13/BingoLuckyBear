@@ -107,7 +107,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-5 p-4 sm:p-6">
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cuenta</p>
@@ -127,7 +127,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+        <div className="grid gap-3 xl:grid-cols-[180px_1fr]">
           <div className="space-y-2">
             <Label htmlFor="countdown" className="text-zinc-300">
               Minutos de cuenta regresiva
@@ -142,11 +142,11 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
               className="border-white/10 bg-white/10 text-white"
             />
           </div>
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-end">
             <Button
               onClick={() => runAction('start')}
               disabled={isSaving}
-              className="bg-emerald-500 font-bold text-white hover:bg-emerald-600"
+              className="w-full bg-emerald-500 font-bold text-white hover:bg-emerald-600 xl:w-auto"
             >
               <Play className="mr-2 h-4 w-4" />
               Iniciar
@@ -154,18 +154,38 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             <Button
               onClick={() => runAction('draw')}
               disabled={isSaving || drawnNumbers.length >= 75}
-              className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300"
+              className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300 xl:w-auto"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Cantar numero
             </Button>
-            <Button onClick={() => runAction('finish')} disabled={isSaving} variant="secondary">
+            <Button onClick={() => runAction('finish')} disabled={isSaving} variant="secondary" className="w-full xl:w-auto">
               Finalizar
             </Button>
-            <Button onClick={() => runAction('reset')} disabled={isSaving} variant="destructive">
+            <Button onClick={() => runAction('reset')} disabled={isSaving} variant="destructive" className="w-full xl:w-auto">
               <RotateCcw className="mr-2 h-4 w-4" />
               Reiniciar
             </Button>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-white/10 bg-black/20 p-3">
+          <p className="mb-3 text-sm font-semibold text-zinc-200">Numeros que ya salieron</p>
+          <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1">
+            {drawnNumbers.length === 0 ? (
+              <div className="w-full flex-none rounded-md border border-dashed border-white/10 p-4 text-center text-sm text-zinc-500">
+                Todavia no se canto ningun numero.
+              </div>
+            ) : (
+              [...drawnNumbers].reverse().map((number) => (
+                <div
+                  key={number}
+                  className="flex h-12 w-12 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20"
+                >
+                  {number}
+                </div>
+              ))
+            )}
           </div>
         </div>
 

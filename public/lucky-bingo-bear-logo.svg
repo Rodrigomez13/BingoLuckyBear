@@ -1,0 +1,53 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#FFD84D"/>
+<stop offset="100%" stop-color="#FFB300"/>
+</linearGradient>
+<filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+<feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.4"/>
+</filter>
+</defs>
+
+<rect width="800" height="800" fill="#05060A"/>
+
+<circle cx="400" cy="330" r="250" fill="url(#gold)" opacity="0.12"/>
+<circle cx="400" cy="360" r="270" stroke="url(#gold)" stroke-width="10"/>
+
+<circle cx="260" cy="210" r="70" fill="#F5A300"/>
+<circle cx="260" cy="210" r="38" fill="#FFE89A"/>
+
+<circle cx="540" cy="210" r="70" fill="#F5A300"/>
+<circle cx="540" cy="210" r="38" fill="#FFE89A"/>
+
+<circle cx="400" cy="320" r="190" fill="#F5A300" filter="url(#shadow)"/>
+
+<ellipse cx="400" cy="380" rx="90" ry="75" fill="#FFF0C8"/>
+
+<circle cx="340" cy="300" r="28" fill="#111"/>
+<circle cx="460" cy="300" r="28" fill="#111"/>
+
+<circle cx="350" cy="290" r="8" fill="#FFF"/>
+<circle cx="470" cy="290" r="8" fill="#FFF"/>
+
+<ellipse cx="400" cy="360" rx="32" ry="24" fill="#8B3E00"/>
+<path d="M355 405 Q400 445 445 405" stroke="#7A2D00" stroke-width="10" stroke-linecap="round" fill="none"/>
+
+<circle cx="220" cy="500" r="60" fill="#3BB54A" stroke="#FFF" stroke-width="8"/>
+<text x="220" y="520" text-anchor="middle" fill="#111" font-size="46" font-family="Arial" font-weight="bold">7</text>
+
+<circle cx="580" cy="500" r="60" fill="#E53935" stroke="#FFF" stroke-width="8"/>
+<text x="580" y="520" text-anchor="middle" fill="#111" font-size="46" font-family="Arial" font-weight="bold">28</text>
+
+<rect x="90" y="500" width="620" height="170" rx="35" fill="#0F4D1F" stroke="url(#gold)" stroke-width="10"/>
+
+<text x="400" y="575" text-anchor="middle" fill="#FFD84D" font-size="78" font-family="Arial Black" font-weight="900">LUCKY</text>
+
+<text x="400" y="655" text-anchor="middle" fill="#FFF7E2" font-size="110" font-family="Arial Black" font-weight="900">BINGO</text>
+
+<path d="M220 680 H580 L540 740 H260 Z" fill="#145A32" stroke="#FFD84D" stroke-width="6"/>
+
+<text x="400" y="725" text-anchor="middle" fill="#FFF7E2" font-size="54" font-family="Arial Black" font-weight="900">BEAR</text>
+
+<text x="400" y="780" text-anchor="middle" fill="#D4A017" font-size="24" font-family="Arial">SUERTE • DIVERSIÓN • PREMIOS</text>
+</svg>

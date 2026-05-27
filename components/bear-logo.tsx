@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 interface BearLogoProps {
   size?: number
   sad?: boolean
@@ -5,6 +7,18 @@ interface BearLogoProps {
 }
 
 export function BearLogo({ size = 60, sad = false, className = '' }: BearLogoProps) {
+  if (!sad) {
+    return (
+      <Image
+        src="/lucky-bingo-bear-logo.svg"
+        alt="Lucky Bingo Bear"
+        width={size}
+        height={size}
+        className={`object-contain ${className}`}
+      />
+    )
+  }
+
   return (
     <svg
       width={size}

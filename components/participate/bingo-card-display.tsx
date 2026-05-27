@@ -65,12 +65,75 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
     ctx.closePath()
   }
 
-  const downloadCard = () => {
+  const drawCenteredText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    fontSize: number,
+    weight = '700',
+    color = '#ffffff'
+  ) => {
+    let size = fontSize
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = color
+
+    do {
+      ctx.font = `${weight} ${size}px Arial`
+      size -= 1
+    } while (ctx.measureText(text).width > maxWidth && size > 14)
+
+    ctx.fillText(text, x, y)
+  }
+
+  const drawLogoMark = (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) => {
+    const gradient = ctx.createLinearGradient(x - radius, y - radius, x + radius, y + radius)
+    gradient.addColorStop(0, '#fbbf24')
+    gradient.addColorStop(1, '#f97316')
+
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = '#451a03'
+    ctx.beginPath()
+    ctx.arc(x - radius * 0.42, y - radius * 0.58, radius * 0.22, 0, Math.PI * 2)
+    ctx.arc(x + radius * 0.42, y - radius * 0.58, radius * 0.22, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = '#fff7ed'
+    ctx.beginPath()
+    ctx.arc(x, y + radius * 0.14, radius * 0.48, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = '#451a03'
+    ctx.beginPath()
+    ctx.arc(x - radius * 0.18, y - radius * 0.04, radius * 0.06, 0, Math.PI * 2)
+    ctx.arc(x + radius * 0.18, y - radius * 0.04, radius * 0.06, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.beginPath()
+    ctx.arc(x, y + radius * 0.18, radius * 0.08, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  const loadLogoImage = () =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new window.Image()
+      image.onload = () => resolve(image)
+      image.onerror = reject
+      image.src = '/lucky-bingo-bear-logo.svg'
+    })
+
+  const downloadCard = async () => {
     try {
       const canvas = document.createElement('canvas')
       const scale = 2
-      const width = 760
-      const height = 980
+      const width = 900
+      const height = 1240
       canvas.width = width * scale
       canvas.height = height * scale
 
@@ -81,65 +144,47 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
 
       const background = ctx.createLinearGradient(0, 0, width, height)
       background.addColorStop(0, '#09090b')
-      background.addColorStop(0.58, '#18181b')
-      background.addColorStop(1, '#451a03')
+      background.addColorStop(0.62, '#18181b')
+      background.addColorStop(1, '#3f1d08')
       ctx.fillStyle = background
       ctx.fillRect(0, 0, width, height)
 
-      ctx.fillStyle = '#fbbf24'
-      ctx.beginPath()
-      ctx.arc(108, 104, 46, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#78350f'
-      ctx.beginPath()
-      ctx.arc(91, 72, 15, 0, Math.PI * 2)
-      ctx.arc(125, 72, 15, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#fff7ed'
-      ctx.beginPath()
-      ctx.arc(108, 112, 25, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#451a03'
-      ctx.beginPath()
-      ctx.arc(99, 100, 4, 0, Math.PI * 2)
-      ctx.arc(117, 100, 4, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillText('●', 103, 119)
+      ctx.strokeStyle = '#f59e0b'
+      ctx.lineWidth = 4
+      drawRoundedRect(ctx, 42, 42, width - 84, height - 84, 26)
+      ctx.stroke()
 
-      ctx.fillStyle = '#ffffff'
-      ctx.font = '700 42px Arial'
-      ctx.fillText('Lucky Bingo Bear', 172, 100)
-
-      ctx.fillStyle = '#fde68a'
-      ctx.font = '24px Arial'
-      ctx.fillText(raffleName, 172, 137)
+      try {
+        const logo = await loadLogoImage()
+        const logoSize = 132
+        ctx.drawImage(logo, width / 2 - logoSize / 2, 58, logoSize, logoSize)
+      } catch {
+        drawLogoMark(ctx, width / 2, 128, 58)
+      }
+      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 225, 720, 50, '900')
+      drawCenteredText(ctx, raffleName, width / 2, 274, 700, 28, '500', '#fde68a')
 
       ctx.fillStyle = '#f59e0b'
-      drawRoundedRect(ctx, 172, 158, 250, 42, 18)
+      drawRoundedRect(ctx, width / 2 - 170, 306, 340, 54, 24)
       ctx.fill()
-      ctx.fillStyle = '#111827'
-      ctx.font = '700 22px Arial'
-      ctx.fillText(card.card_number, 195, 186)
+      drawCenteredText(ctx, card.card_number, width / 2, 334, 290, 26, '900', '#111827')
 
-      const gridX = 70
-      const gridY = 260
-      const cellSize = 124
-      const headerHeight = 78
+      const gridX = 84
+      const gridY = 420
+      const cellSize = 146
+      const headerHeight = 82
       const headerColors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6']
 
       ctx.lineWidth = 6
       ctx.strokeStyle = '#fbbf24'
-      drawRoundedRect(ctx, gridX - 3, gridY - 3, cellSize * 5 + 6, headerHeight + cellSize * 5 + 6, 12)
+      drawRoundedRect(ctx, gridX - 3, gridY - 3, cellSize * 5 + 6, headerHeight + cellSize * 5 + 6, 16)
       ctx.stroke()
 
       BINGO_HEADERS.forEach((letter, index) => {
         ctx.fillStyle = headerColors[index]
         ctx.fillRect(gridX + index * cellSize, gridY, cellSize, headerHeight)
         ctx.fillStyle = '#ffffff'
-        ctx.font = '900 48px Arial'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(letter, gridX + index * cellSize + cellSize / 2, gridY + headerHeight / 2)
+        drawCenteredText(ctx, letter, gridX + index * cellSize + cellSize / 2, gridY + headerHeight / 2, 100, 54, '900')
       })
 
       rows.forEach((row, rowIndex) => {
@@ -154,21 +199,12 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
           ctx.lineWidth = 2
           ctx.strokeRect(x, y, cellSize, cellSize)
 
-          ctx.fillStyle = '#ffffff'
-          ctx.font = cell === 'FREE' ? '800 24px Arial' : '900 42px Arial'
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.fillText(String(cell), x + cellSize / 2, y + cellSize / 2)
+          drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, 108, cell === 'FREE' ? 26 : 48, '900')
         })
       })
 
-      ctx.textAlign = 'center'
-      ctx.fillStyle = '#fff7ed'
-      ctx.font = '700 28px Arial'
-      ctx.fillText(card.full_name, width / 2, 920)
-      ctx.fillStyle = '#fcd34d'
-      ctx.font = '20px Arial'
-      ctx.fillText(formattedDate, width / 2, 950)
+      drawCenteredText(ctx, card.full_name, width / 2, 1150, 760, 32, '800', '#fff7ed')
+      drawCenteredText(ctx, formattedDate, width / 2, 1190, 760, 22, '500', '#fcd34d')
 
       const link = document.createElement('a')
       link.download = `bingo-card-${card.card_number}.png`
@@ -180,21 +216,23 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
   }
 
   const BingoCardVisual = ({ forDownload = false }: { forDownload?: boolean }) => (
-    <div 
-      className={`bg-gradient-to-br from-zinc-950 via-zinc-900 to-amber-950 ${forDownload ? 'p-8' : 'p-4'} rounded-lg`}
+    <div
+      className={`rounded-lg bg-gradient-to-br from-zinc-950/95 via-zinc-900/95 to-amber-950/90 ${
+        forDownload ? 'p-3 sm:p-4' : 'p-4'
+      }`}
     >
       {/* Card Header */}
       <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <BearLogo size={forDownload ? 48 : 32} />
+          <BearLogo size={forDownload ? 42 : 32} />
           <h2
-            className={`font-bold text-white ${forDownload ? 'text-2xl' : 'text-lg'}`}
+            className={`font-bold text-white ${forDownload ? 'text-xl sm:text-2xl' : 'text-lg'}`}
             style={{ fontFamily: 'var(--font-fredoka)' }}
           >
             Lucky Bingo Bear
           </h2>
         </div>
-        <p className={`text-amber-200 ${forDownload ? 'text-base' : 'text-sm'}`}>{raffleName}</p>
+        <p className={`text-amber-200 ${forDownload ? 'text-sm sm:text-base' : 'text-sm'}`}>{raffleName}</p>
         <Badge className="mt-2 bg-amber-500 hover:bg-amber-500 text-white">
           <Hash className="w-3 h-3 mr-1" />
           {card.card_number}
@@ -225,7 +263,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={`
-                  ${forDownload ? 'h-16 text-xl' : 'h-12 text-lg'} 
+                  ${forDownload ? 'h-11 text-base sm:h-14 sm:text-lg' : 'h-12 text-lg'} 
                   flex items-center justify-center font-bold border-r last:border-r-0 border-amber-200
                   ${cell === 'FREE' 
                     ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white' 
@@ -249,7 +287,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
       </div>
 
       {/* Card Footer */}
-      <div className={`mt-4 text-center ${forDownload ? 'text-base' : 'text-sm'} text-amber-100`}>
+      <div className={`mt-3 text-center ${forDownload ? 'text-sm' : 'text-sm'} text-amber-100`}>
         <p className="font-medium">{card.full_name}</p>
         <p className="text-amber-300">{formattedDate}</p>
       </div>
@@ -320,20 +358,20 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
 
       {/* Full Screen Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-          <div className="relative bg-zinc-950 rounded-lg max-w-md w-full max-h-[90vh] overflow-auto border border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
+          <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-[min(94vw,430px)] flex-col overflow-hidden rounded-lg border border-amber-400/25 bg-zinc-950/95 shadow-2xl shadow-black/50">
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 z-10 p-2 bg-zinc-900 hover:bg-zinc-800 rounded-full transition-colors"
+              className="absolute right-3 top-3 z-20 rounded-full bg-zinc-900/90 p-2 transition-colors hover:bg-zinc-800"
             >
               <X className="w-5 h-5 text-amber-200" />
             </button>
             
-            <div className="p-2">
+            <div className="min-h-0 flex-1 p-3 sm:p-4">
               <BingoCardVisual forDownload={true} />
             </div>
 
-            <div className="p-4 border-t border-zinc-800">
+            <div className="shrink-0 border-t border-zinc-800 bg-zinc-950/95 p-3">
               <Button
                 onClick={downloadCard}
                 className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"

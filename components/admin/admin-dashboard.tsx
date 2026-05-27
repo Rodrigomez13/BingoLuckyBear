@@ -151,9 +151,9 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           {/* Left Column - Raffles List */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Mis Sorteos
@@ -280,7 +280,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           </div>
 
           {/* Right Column - Participants */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0">
             {selectedRaffle ? (
               <RaffleParticipants
                 raffle={selectedRaffle}
