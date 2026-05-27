@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { DrawControls } from './draw-controls'
 
 interface Raffle {
   id: string
@@ -26,6 +27,10 @@ interface Raffle {
   description: string | null
   is_active: boolean
   created_at: string
+  draw_status?: 'idle' | 'running' | 'finished' | null
+  countdown_seconds?: number | null
+  draw_started_at?: string | null
+  drawn_numbers?: number[] | null
 }
 
 interface BingoCard {
@@ -38,13 +43,15 @@ interface BingoCard {
   email: string
   payment_receipt_url: string
   created_at: string
+  bingo_numbers: number[][]
 }
 
 interface RaffleParticipantsProps {
   raffle: Raffle
+  onRaffleUpdated: (raffle: Raffle) => void
 }
 
-export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
+export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipantsProps) {
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
@@ -99,11 +106,14 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
   }
 
   return (
-    <Card className="border-amber-200 bg-white/80">
+    <div className="space-y-5">
+      <DrawControls raffle={raffle} cards={cards} onRaffleUpdated={onRaffleUpdated} />
+
+      <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-amber-900 flex items-center gap-2">
+            <CardTitle className="text-white flex items-center gap-2">
               {raffle.name}
               <Badge 
                 variant={raffle.is_active ? 'default' : 'secondary'}
@@ -112,7 +122,7 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
                 {raffle.is_active ? 'Activo' : 'Inactivo'}
               </Badge>
             </CardTitle>
-            <p className="text-sm text-amber-600 mt-1">
+            <p className="text-sm text-zinc-400 mt-1">
               {cards.length} participante{cards.length !== 1 ? 's' : ''} registrado{cards.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -120,7 +130,7 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
             onClick={exportToCSV}
             disabled={cards.length === 0}
             variant="outline"
-            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
           >
             Exportar CSV
           </Button>
@@ -133,9 +143,9 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
           </div>
         ) : cards.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-amber-700">No hay participantes registrados aun.</p>
+            <p className="text-zinc-300">No hay participantes registrados aun.</p>
             {raffle.is_active && (
-              <p className="text-sm text-amber-600 mt-2">
+              <p className="text-sm text-zinc-500 mt-2">
                 Comparte el link del sorteo para que las personas puedan participar.
               </p>
             )}
@@ -145,24 +155,24 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-amber-800">Carton</TableHead>
-                  <TableHead className="text-amber-800">Nombre</TableHead>
-                  <TableHead className="text-amber-800">DNI</TableHead>
-                  <TableHead className="text-amber-800">Telefono</TableHead>
-                  <TableHead className="text-amber-800">Fecha</TableHead>
-                  <TableHead className="text-amber-800">Acciones</TableHead>
+                  <TableHead className="text-amber-200">Carton</TableHead>
+                  <TableHead className="text-amber-200">Nombre</TableHead>
+                  <TableHead className="text-amber-200">DNI</TableHead>
+                  <TableHead className="text-amber-200">Telefono</TableHead>
+                  <TableHead className="text-amber-200">Fecha</TableHead>
+                  <TableHead className="text-amber-200">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cards.map((card) => (
-                  <TableRow key={card.id} className="hover:bg-amber-50">
-                    <TableCell className="font-mono font-bold text-amber-700">
+                  <TableRow key={card.id} className="border-zinc-800 hover:bg-white/5">
+                    <TableCell className="font-mono font-bold text-amber-300">
                       {card.card_number}
                     </TableCell>
                     <TableCell>{card.full_name}</TableCell>
                     <TableCell>{card.dni}</TableCell>
                     <TableCell>{card.phone}</TableCell>
-                    <TableCell className="text-sm text-amber-600">
+                    <TableCell className="text-sm text-zinc-400">
                       {new Date(card.created_at).toLocaleDateString('es-ES')}
                     </TableCell>
                     <TableCell>
@@ -170,7 +180,7 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
                         size="sm"
                         variant="outline"
                         onClick={() => setSelectedCard(card)}
-                        className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                        className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
                       >
                         Ver Detalles
                       </Button>
@@ -185,53 +195,53 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl border-zinc-800 bg-zinc-950 text-zinc-100">
           <DialogHeader>
-            <DialogTitle className="text-amber-900">
+            <DialogTitle className="text-white">
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
           {selectedCard && (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-amber-100 to-orange-100 p-4 rounded-lg text-center">
-                <p className="text-sm text-amber-700">Numero de Carton</p>
-                <p className="text-2xl font-bold font-mono text-amber-900">
+              <div className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 rounded-lg text-center">
+                <p className="text-sm text-zinc-950">Numero de Carton</p>
+                <p className="text-2xl font-bold font-mono text-zinc-950">
                   {selectedCard.card_number}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-amber-600">Nombre Completo</p>
-                  <p className="font-medium text-amber-900">{selectedCard.full_name}</p>
+                  <p className="text-sm text-zinc-400">Nombre Completo</p>
+                  <p className="font-medium text-white">{selectedCard.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-amber-600">DNI</p>
-                  <p className="font-medium text-amber-900">{selectedCard.dni}</p>
+                  <p className="text-sm text-zinc-400">DNI</p>
+                  <p className="font-medium text-white">{selectedCard.dni}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-amber-600">Telefono</p>
-                  <p className="font-medium text-amber-900">{selectedCard.phone}</p>
+                  <p className="text-sm text-zinc-400">Telefono</p>
+                  <p className="font-medium text-white">{selectedCard.phone}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-amber-600">Email</p>
-                  <p className="font-medium text-amber-900">{selectedCard.email}</p>
+                  <p className="text-sm text-zinc-400">Email</p>
+                  <p className="font-medium text-white">{selectedCard.email}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-sm text-amber-600">Direccion</p>
-                  <p className="font-medium text-amber-900">{selectedCard.address}</p>
+                  <p className="text-sm text-zinc-400">Direccion</p>
+                  <p className="font-medium text-white">{selectedCard.address}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-sm text-amber-600">Fecha de Registro</p>
-                  <p className="font-medium text-amber-900">
+                  <p className="text-sm text-zinc-400">Fecha de Registro</p>
+                  <p className="font-medium text-white">
                     {new Date(selectedCard.created_at).toLocaleString('es-ES')}
                   </p>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm text-amber-600 mb-2">Comprobante de Pago</p>
-                <div className="border border-amber-200 rounded-lg overflow-hidden bg-gray-50">
+                <p className="text-sm text-zinc-400 mb-2">Comprobante de Pago</p>
+                <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900">
                   <img
                     src={`/api/file?pathname=${encodeURIComponent(selectedCard.payment_receipt_url)}`}
                     alt="Comprobante de pago"
@@ -244,5 +254,6 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
         </DialogContent>
       </Dialog>
     </Card>
+    </div>
   )
 }

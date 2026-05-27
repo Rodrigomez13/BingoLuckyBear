@@ -44,28 +44,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] p-4 text-zinc-100">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-amber-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-orange-200/30 rounded-full blur-3xl" />
+        <div className="absolute left-8 top-20 h-24 w-24 rounded-full border-8 border-amber-400/25" />
+        <div className="absolute bottom-24 right-12 flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20">
+          21
+        </div>
       </div>
       
-      <Card className="w-full max-w-md relative z-10 border-amber-200/50 shadow-2xl bg-white/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md relative z-10 border-zinc-800 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/30 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <BearLogo size={80} />
           </div>
-          <CardTitle className="text-2xl font-bold text-amber-900">
+          <CardTitle className="text-2xl font-bold text-white">
             Panel Administrador
           </CardTitle>
-          <CardDescription className="text-amber-700">
+          <CardDescription className="text-zinc-400">
             Ingresa tus credenciales para gestionar los sorteos
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-amber-900">Correo electronico</Label>
+              <Label htmlFor="email" className="text-zinc-300">Correo electronico</Label>
               <Input
                 id="email"
                 type="email"
@@ -73,22 +75,22 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-amber-900">Contrasena</Label>
+              <Label htmlFor="password" className="text-zinc-300">Contrasena</Label>
               <Input
                 id="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 p-2 rounded-md">{error}</p>
+              <p className="text-sm text-red-100 bg-red-500/10 border border-red-400/30 p-2 rounded-md">{error}</p>
             )}
             <Button 
               type="submit" 
@@ -101,7 +103,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <Link 
               href="/" 
-              className="text-sm text-amber-700 hover:text-amber-900 underline underline-offset-4"
+              className="text-sm text-amber-200 hover:text-white underline underline-offset-4"
             >
               Volver al inicio
             </Link>

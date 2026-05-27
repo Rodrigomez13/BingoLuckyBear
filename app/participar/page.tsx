@@ -7,12 +7,17 @@ import { NoActiveRaffle } from '@/components/participate/no-active-raffle'
 import { BearLogo } from '@/components/bear-logo'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { LiveDrawCard } from '@/components/live/live-draw-card'
 
 interface Raffle {
   id: string
   name: string
   description: string | null
   is_active: boolean
+  draw_status?: 'idle' | 'running' | 'finished' | null
+  countdown_seconds?: number | null
+  draw_started_at?: string | null
+  drawn_numbers?: number[] | null
 }
 
 interface BingoCard {
@@ -39,6 +44,9 @@ export default function ParticipatePage() {
     setSessionToken(token)
 
     fetchActiveRaffle(token)
+    const interval = window.setInterval(() => fetchActiveRaffle(token), 5000)
+
+    return () => window.clearInterval(interval)
   }, [])
 
   const fetchActiveRaffle = async (token: string) => {
@@ -73,28 +81,28 @@ export default function ParticipatePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <BearLogo size={80} className="mx-auto mb-4 animate-bounce" />
-          <p className="text-amber-700 font-medium">Cargando...</p>
+          <p className="text-amber-200 font-medium">Cargando...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-amber-100 sticky top-0 z-50">
+      <header className="bg-zinc-950/80 backdrop-blur-md border-b border-amber-400/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
               <BearLogo size={40} />
-              <span className="font-bold text-xl text-amber-900" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Lucky Bingo Bear
               </span>
             </Link>
-            <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
+            <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
               <Link href="/">Volver al Inicio</Link>
             </Button>
           </div>
@@ -102,10 +110,16 @@ export default function ParticipatePage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-12">
+        {activeRaffle && <LiveDrawCard initialRaffle={activeRaffle} compact />}
+        <div className={activeRaffle ? 'mt-8' : ''}>
         {!activeRaffle ? (
           <NoActiveRaffle />
         ) : existingCard ? (
-          <BingoCardDisplay card={existingCard} raffleName={activeRaffle.name} />
+          <BingoCardDisplay
+            card={existingCard}
+            raffleName={activeRaffle.name}
+            drawnNumbers={activeRaffle.drawn_numbers ?? []}
+          />
         ) : (
           <ParticipationForm 
             raffle={activeRaffle} 
@@ -113,6 +127,7 @@ export default function ParticipatePage() {
             onCardCreated={handleCardCreated}
           />
         )}
+        </div>
       </main>
     </div>
   )

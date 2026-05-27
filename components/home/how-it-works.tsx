@@ -45,16 +45,16 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="py-24 bg-white/50">
+    <section id="como-funciona" className="py-24 bg-black/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 
-            className="text-4xl md:text-5xl font-bold text-amber-900 mb-4"
+            className="text-4xl md:text-5xl font-bold text-white mb-4"
             style={{ fontFamily: 'var(--font-fredoka)' }}
           >
             Como Funciona
           </h2>
-          <p className="text-lg text-amber-700 max-w-2xl mx-auto">
+          <p className="text-lg text-zinc-300 max-w-2xl mx-auto">
             Participar es muy facil. Sigue estos simples pasos y podras tener tu carton de bingo en minutos.
           </p>
         </div>
@@ -63,21 +63,21 @@ export function HowItWorks() {
           {steps.map((item) => (
             <Card 
               key={item.step} 
-              className="relative overflow-hidden border-amber-100 hover:border-amber-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white"
+              className="relative overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:border-amber-400/60 hover:shadow-lg hover:-translate-y-1"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
               <CardContent className="pt-8 pb-6 px-6">
                 <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-amber-600">
+                  <div className="w-16 h-16 rounded-full bg-amber-400/15 flex items-center justify-center text-amber-300">
                     {item.icon}
                   </div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-bold text-amber-900" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                     {item.title}
                   </h3>
-                  <p className="text-amber-700 leading-relaxed">
+                  <p className="text-zinc-400 leading-relaxed">
                     {item.description}
                   </p>
                 </div>

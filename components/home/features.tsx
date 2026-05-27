@@ -46,12 +46,12 @@ export function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 
-            className="text-4xl md:text-5xl font-bold text-amber-900 mb-4"
+            className="text-4xl md:text-5xl font-bold text-white mb-4"
             style={{ fontFamily: 'var(--font-fredoka)' }}
           >
             Por Que Elegirnos
           </h2>
-          <p className="text-lg text-amber-700 max-w-2xl mx-auto">
+          <p className="text-lg text-zinc-300 max-w-2xl mx-auto">
             Lucky Bingo Bear te ofrece una experiencia de sorteo transparente, segura y divertida.
           </p>
         </div>
@@ -60,7 +60,7 @@ export function Features() {
           {features.map((feature, index) => (
             <Card 
               key={index}
-              className="border-amber-100 hover:border-amber-200 transition-all duration-300 hover:shadow-md bg-gradient-to-br from-white to-amber-50/50"
+              className="border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:border-amber-400/60 hover:shadow-md"
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -68,10 +68,10 @@ export function Features() {
                     {feature.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                    <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
                       {feature.title}
                     </h3>
-                    <p className="text-amber-700 leading-relaxed">
+                    <p className="text-zinc-400 leading-relaxed">
                       {feature.description}
                     </p>
                   </div>

@@ -20,6 +20,10 @@ interface Raffle {
   is_active: boolean
   created_at: string
   admin_id: string
+  draw_status?: 'idle' | 'running' | 'finished' | null
+  countdown_seconds?: number | null
+  draw_started_at?: string | null
+  drawn_numbers?: number[] | null
 }
 
 interface AdminDashboardProps {
@@ -121,24 +125,24 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-amber-100 sticky top-0 z-50">
+      <header className="bg-zinc-950/80 backdrop-blur-md border-b border-amber-400/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <BearLogo size={40} />
               <div>
-                <span className="font-bold text-xl text-amber-900" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                   Panel Admin
                 </span>
-                <p className="text-xs text-amber-600">{user.email}</p>
+                <p className="text-xs text-zinc-400">{user.email}</p>
               </div>
             </div>
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
             >
               Cerrar Sesion
             </Button>
@@ -151,7 +155,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           {/* Left Column - Raffles List */}
           <div className="lg:col-span-1 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-amber-900" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Mis Sorteos
               </h2>
               <Button 
@@ -164,31 +168,31 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
 
             {/* Create Raffle Form */}
             {showForm && (
-              <Card className="border-amber-200 bg-white/80">
+              <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
                 <CardHeader>
-                  <CardTitle className="text-amber-900">Crear Nuevo Sorteo</CardTitle>
+                  <CardTitle className="text-white">Crear Nuevo Sorteo</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleCreateRaffle} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-amber-800">Nombre del Sorteo</Label>
+                      <Label htmlFor="name" className="text-zinc-300">Nombre del Sorteo</Label>
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Ej: Sorteo Navidad 2024"
                         required
-                        className="border-amber-200 focus:border-amber-400"
+                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="text-amber-800">Descripcion (opcional)</Label>
+                      <Label htmlFor="description" className="text-zinc-300">Descripcion (opcional)</Label>
                       <Textarea
                         id="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Describe el sorteo..."
-                        className="border-amber-200 focus:border-amber-400"
+                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                       />
                     </div>
                     <Button 
@@ -206,19 +210,19 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
             {/* Raffles List */}
             <div className="space-y-4">
               {raffles.length === 0 ? (
-                <Card className="border-amber-200 bg-white/60">
+                <Card className="border-zinc-800 bg-zinc-950/70">
                   <CardContent className="py-8 text-center">
                     <BearLogo size={60} sad className="mx-auto mb-4 opacity-50" />
-                    <p className="text-amber-700">No tienes sorteos creados aun.</p>
-                    <p className="text-sm text-amber-600">Crea tu primer sorteo para comenzar.</p>
+                    <p className="text-zinc-300">No tienes sorteos creados aun.</p>
+                    <p className="text-sm text-zinc-500">Crea tu primer sorteo para comenzar.</p>
                   </CardContent>
                 </Card>
               ) : (
                 raffles.map((raffle) => (
                   <Card 
                     key={raffle.id} 
-                    className={`border-amber-200 cursor-pointer transition-all hover:shadow-md ${
-                      selectedRaffle?.id === raffle.id ? 'ring-2 ring-amber-400 bg-amber-50' : 'bg-white/80'
+                    className={`cursor-pointer border-zinc-800 transition-all hover:border-amber-400/50 hover:shadow-md ${
+                      selectedRaffle?.id === raffle.id ? 'ring-2 ring-amber-400 bg-amber-400/10' : 'bg-zinc-950/80'
                     }`}
                     onClick={() => setSelectedRaffle(raffle)}
                   >
@@ -226,7 +230,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-amber-900 truncate">
+                            <h3 className="font-semibold text-white truncate">
                               {raffle.name}
                             </h3>
                             <Badge 
@@ -240,9 +244,9 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             </Badge>
                           </div>
                           {raffle.description && (
-                            <p className="text-sm text-amber-600 truncate">{raffle.description}</p>
+                            <p className="text-sm text-zinc-400 truncate">{raffle.description}</p>
                           )}
-                          <p className="text-xs text-amber-500 mt-1">
+                          <p className="text-xs text-zinc-500 mt-1">
                             Creado: {new Date(raffle.created_at).toLocaleDateString('es-ES')}
                           </p>
                         </div>
@@ -262,7 +266,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             size="sm"
                             variant="outline"
                             onClick={() => deleteRaffle(raffle.id)}
-                            className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
+                            className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10 text-xs"
                           >
                             Eliminar
                           </Button>
@@ -278,15 +282,23 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           {/* Right Column - Participants */}
           <div className="lg:col-span-2">
             {selectedRaffle ? (
-              <RaffleParticipants raffle={selectedRaffle} />
+              <RaffleParticipants
+                raffle={selectedRaffle}
+                onRaffleUpdated={(updatedRaffle) => {
+                  setSelectedRaffle(updatedRaffle as Raffle)
+                  setRaffles((current) =>
+                    current.map((raffle) => (raffle.id === updatedRaffle.id ? { ...raffle, ...updatedRaffle } : raffle))
+                  )
+                }}
+              />
             ) : (
-              <Card className="border-amber-200 bg-white/60 h-full min-h-[400px]">
+              <Card className="border-zinc-800 bg-zinc-950/70 h-full min-h-[400px]">
                 <CardContent className="flex flex-col items-center justify-center h-full py-16">
                   <BearLogo size={80} className="mb-4 opacity-30" />
-                  <h3 className="text-xl font-semibold text-amber-800 mb-2">
+                  <h3 className="text-xl font-semibold text-white mb-2">
                     Selecciona un Sorteo
                   </h3>
-                  <p className="text-amber-600 text-center max-w-md">
+                  <p className="text-zinc-400 text-center max-w-md">
                     Haz clic en uno de tus sorteos para ver los participantes y sus cartones.
                   </p>
                 </CardContent>

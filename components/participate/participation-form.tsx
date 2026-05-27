@@ -140,23 +140,23 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
       <div className="text-center">
         <BearLogo size={80} className="mx-auto mb-4" />
         <h1 
-          className="text-3xl md:text-4xl font-bold text-amber-900 mb-2"
+          className="text-3xl md:text-4xl font-bold text-white mb-2"
           style={{ fontFamily: 'var(--font-fredoka)' }}
         >
           {raffle.name}
         </h1>
         {raffle.description && (
-          <p className="text-amber-700 max-w-lg mx-auto">{raffle.description}</p>
+          <p className="text-zinc-300 max-w-lg mx-auto">{raffle.description}</p>
         )}
       </div>
 
       {/* Form */}
-      <Card className="border-amber-200 bg-white/90 backdrop-blur-sm shadow-xl">
-        <CardHeader className="text-center border-b border-amber-100">
-          <CardTitle className="text-2xl text-amber-900" style={{ fontFamily: 'var(--font-fredoka)' }}>
+      <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
+        <CardHeader className="text-center border-b border-zinc-800">
+          <CardTitle className="text-2xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
             Solicitar Mi Carton
           </CardTitle>
-          <CardDescription className="text-amber-600">
+          <CardDescription className="text-zinc-400">
             Completa todos los campos para obtener tu carton de bingo
           </CardDescription>
         </CardHeader>
@@ -165,7 +165,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
             {/* Personal Info */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="full_name" className="text-amber-800 font-medium">
+                <Label htmlFor="full_name" className="text-zinc-300 font-medium">
                   Nombre Completo *
                 </Label>
                 <Input
@@ -175,11 +175,11 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                   onChange={handleInputChange}
                   placeholder="Juan Perez"
                   required
-                  className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dni" className="text-amber-800 font-medium">
+                <Label htmlFor="dni" className="text-zinc-300 font-medium">
                   DNI *
                 </Label>
                 <Input
@@ -189,13 +189,13 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                   onChange={handleInputChange}
                   placeholder="12345678"
                   required
-                  className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-amber-800 font-medium">
+              <Label htmlFor="address" className="text-zinc-300 font-medium">
                 Direccion *
               </Label>
               <Input
@@ -205,13 +205,13 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                 onChange={handleInputChange}
                 placeholder="Av. Principal 123, Ciudad"
                 required
-                className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-amber-800 font-medium">
+                <Label htmlFor="phone" className="text-zinc-300 font-medium">
                   Numero de Telefono *
                 </Label>
                 <Input
@@ -222,11 +222,11 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                   onChange={handleInputChange}
                   placeholder="+54 11 1234-5678"
                   required
-                  className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-amber-800 font-medium">
+                <Label htmlFor="email" className="text-zinc-300 font-medium">
                   Correo Electronico *
                 </Label>
                 <Input
@@ -237,22 +237,22 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                   onChange={handleInputChange}
                   placeholder="correo@ejemplo.com"
                   required
-                  className="border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                 />
               </div>
             </div>
 
             {/* File Upload */}
             <div className="space-y-2">
-              <Label htmlFor="receipt" className="text-amber-800 font-medium">
+              <Label htmlFor="receipt" className="text-zinc-300 font-medium">
                 Comprobante de Transferencia *
               </Label>
-              <p className="text-sm text-amber-600 mb-2">
+              <p className="text-sm text-zinc-400 mb-2">
                 Sube una captura de pantalla del comprobante de pago (max 5MB)
               </p>
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                  preview ? 'border-green-400 bg-green-50' : 'border-amber-300 hover:border-amber-400 bg-amber-50/50'
+                  preview ? 'border-emerald-400 bg-emerald-500/10' : 'border-amber-400/40 hover:border-amber-300 bg-white/[0.03]'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -271,7 +271,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                       alt="Vista previa" 
                       className="max-h-48 mx-auto rounded-lg shadow-md"
                     />
-                    <p className="text-sm text-green-700 font-medium">
+                    <p className="text-sm text-emerald-300 font-medium">
                       Imagen cargada correctamente
                     </p>
                     <Button
@@ -283,22 +283,22 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                         setFile(null)
                         setPreview(null)
                       }}
-                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
                     >
                       Cambiar imagen
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="w-12 h-12 mx-auto bg-amber-100 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-12 h-12 mx-auto bg-amber-400/15 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <p className="text-amber-700">
+                    <p className="text-amber-100">
                       Haz clic para subir tu comprobante
                     </p>
-                    <p className="text-xs text-amber-500">
+                    <p className="text-xs text-zinc-500">
                       PNG, JPG, JPEG hasta 5MB
                     </p>
                   </div>
@@ -329,7 +329,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
               )}
             </Button>
 
-            <p className="text-xs text-center text-amber-600">
+            <p className="text-xs text-center text-zinc-500">
               Al enviar este formulario, aceptas que tus datos sean utilizados 
               unicamente para el registro del sorteo.
             </p>
