@@ -15,18 +15,18 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createServiceClient()
 
-    const { data: card, error } = await supabase
+    const { data: cards, error } = await supabase
       .from('bingo_cards')
       .select('*')
       .eq('session_token', sessionToken)
       .eq('raffle_id', raffleId)
-      .single()
+      .order('created_at', { ascending: true })
 
-    if (error || !card) {
-      return NextResponse.json({ card: null })
+    if (error || !cards?.length) {
+      return NextResponse.json({ card: null, cards: [] })
     }
 
-    return NextResponse.json({ card })
+    return NextResponse.json({ card: cards[0], cards })
   } catch (error) {
     console.error('Error fetching card:', error)
     return NextResponse.json(

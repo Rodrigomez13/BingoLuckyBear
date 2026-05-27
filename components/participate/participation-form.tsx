@@ -11,6 +11,17 @@ import { BearLogo } from '@/components/bear-logo'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
 import { PAYMENT_METHODS } from '@/lib/payment'
 
+const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
+const MIN_RECEIPT_SIZE = 10 * 1024
+const MIN_RECEIPT_DIMENSION = 480
+const ALLOWED_RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+const ALLOWED_EXTENSIONS_BY_TYPE: Record<string, string[]> = {
+  'image/jpeg': ['jpg', 'jpeg'],
+  'image/png': ['png'],
+  'image/webp': ['webp'],
+  'application/pdf': ['pdf'],
+}
+
 interface Raffle {
   id: string
   name: string
@@ -18,6 +29,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
 }
 
@@ -32,10 +44,11 @@ interface BingoCard {
 interface ParticipationFormProps {
   raffle: Raffle
   sessionToken: string
-  onCardCreated: (card: BingoCard) => void
+  onCardsCreated: (cards: BingoCard[]) => void
+  title?: string
 }
 
-export function ParticipationForm({ raffle, sessionToken, onCardCreated }: ParticipationFormProps) {
+export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title = 'Solicitar Mi Carton' }: ParticipationFormProps) {
   const [formData, setFormData] = useState({
     full_name: '',
     dni: '',
@@ -44,6 +57,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
     email: '',
     payment_method: '',
     payment_reference: '',
+    quantity: '1',
   })
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -67,18 +81,56 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
     })
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateReceiptFile = async (selectedFile: File) => {
+    const extension = selectedFile.name.split('.').pop()?.toLowerCase() ?? ''
+
+    if (!ALLOWED_RECEIPT_TYPES.includes(selectedFile.type)) {
+      throw new Error('Solo se permiten comprobantes JPG, PNG, WebP o PDF')
+    }
+
+    if (!ALLOWED_EXTENSIONS_BY_TYPE[selectedFile.type]?.includes(extension)) {
+      throw new Error('La extension del archivo no coincide con el tipo de comprobante')
+    }
+
+    if (selectedFile.size > MAX_RECEIPT_SIZE) {
+      throw new Error('El archivo no debe superar 8MB')
+    }
+
+    if (selectedFile.size < MIN_RECEIPT_SIZE) {
+      throw new Error('El comprobante parece estar vacio o incompleto')
+    }
+
+    if (selectedFile.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(selectedFile)
+
+      try {
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new window.Image()
+          img.onload = () => resolve(img)
+          img.onerror = () => reject(new Error('No se pudo leer la imagen del comprobante'))
+          img.src = objectUrl
+        })
+
+        if (image.naturalWidth < MIN_RECEIPT_DIMENSION || image.naturalHeight < MIN_RECEIPT_DIMENSION) {
+          throw new Error(`La imagen debe medir al menos ${MIN_RECEIPT_DIMENSION}x${MIN_RECEIPT_DIMENSION}px`)
+        }
+      } finally {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      const isAllowedType = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(selectedFile.type)
-      if (!isAllowedType) {
-        setError('Solo se permiten comprobantes JPG, PNG, WebP o PDF')
+      try {
+        await validateReceiptFile(selectedFile)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'El comprobante no es valido')
+        e.target.value = ''
         return
       }
-      if (selectedFile.size > 8 * 1024 * 1024) {
-        setError('El archivo no debe superar 8MB')
-        return
-      }
+
       if (preview) {
         URL.revokeObjectURL(preview)
       }
@@ -101,6 +153,10 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
       }
       if (!formData.payment_method || !formData.payment_reference) {
         throw new Error('Indica el metodo de pago y el numero de operacion')
+      }
+      const quantity = Number(formData.quantity)
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+        throw new Error('La cantidad de cartones debe ser entre 1 y 10')
       }
       if (!file) {
         throw new Error('Debes subir el comprobante de pago')
@@ -131,6 +187,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
         body: JSON.stringify({
           raffle_id: raffle.id,
           ...formData,
+          quantity,
           payment_receipt_url: pathname,
           session_token: sessionToken,
         }),
@@ -146,14 +203,19 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
         throw new Error(cardData.error || 'Error al crear el carton')
       }
 
-      // Success - pass the card data to parent
-      onCardCreated({
-        id: cardData.card_id,
-        card_number: cardData.card_number,
-        full_name: formData.full_name,
-        created_at: new Date().toISOString(),
-        bingo_numbers: cardData.bingo_numbers,
-      })
+      const createdCards = cardData.cards?.length
+        ? cardData.cards
+        : [
+            {
+              id: cardData.card_id,
+              card_number: cardData.card_number,
+              full_name: formData.full_name,
+              created_at: new Date().toISOString(),
+              bingo_numbers: cardData.bingo_numbers,
+            },
+          ]
+
+      onCardsCreated(createdCards)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -203,13 +265,29 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
         </div>
       )}
 
+      {!!raffle.bundle_offers?.length && (
+        <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
+          <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase text-emerald-100">
+            <WalletCards className="h-4 w-4" />
+            Promos por cantidad
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {raffle.bundle_offers.map((item, index) => (
+              <div key={`${item}-${index}`} className="rounded-md border border-emerald-300/20 bg-black/20 px-3 py-2 text-sm font-semibold text-white">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <PaymentInstructions amount={raffle.amount} />
 
       {/* Form */}
       <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
         <CardHeader className="text-center border-b border-zinc-800">
           <CardTitle className="text-2xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
-            Solicitar Mi Carton
+            {title}
           </CardTitle>
           <CardDescription className="text-zinc-400">
             Completa todos los campos para obtener tu carton de bingo
@@ -346,6 +424,40 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
               </div>
             </div>
 
+            <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <WalletCards className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
+                <div>
+                  <h3 className="font-bold text-white">Cantidad de cartones</h3>
+                  <p className="text-sm text-zinc-300">
+                    Cada carton se genera con numeros distintos y participa individualmente.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-[180px_1fr] md:items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity" className="text-zinc-300 font-medium">
+                    Cartones *
+                  </Label>
+                  <Input
+                    id="quantity"
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    required
+                    className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                  />
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/20 p-3 text-sm text-emerald-100">
+                  Si hay promo por cantidad, transferi el monto correspondiente y adjunta el comprobante de esa compra.
+                </div>
+              </div>
+            </div>
+
             {/* File Upload */}
             <div className="space-y-2">
               <Label htmlFor="receipt" className="text-zinc-300 font-medium">
@@ -438,10 +550,10 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generando tu carton...
+                  Generando tus cartones...
                 </span>
               ) : (
-                'Obtener Mi Carton'
+                Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
               )}
             </Button>
 

@@ -17,6 +17,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
@@ -34,7 +35,7 @@ interface BingoCard {
 
 export default function ParticipatePage() {
   const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null)
-  const [existingCard, setExistingCard] = useState<BingoCard | null>(null)
+  const [existingCards, setExistingCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sessionToken, setSessionToken] = useState<string>('')
 
@@ -68,9 +69,7 @@ export default function ParticipatePage() {
         )
         const cardData = await cardRes.json()
 
-        if (cardData.card) {
-          setExistingCard(cardData.card)
-        }
+        setExistingCards(cardData.cards ?? (cardData.card ? [cardData.card] : []))
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -79,8 +78,8 @@ export default function ParticipatePage() {
     }
   }
 
-  const handleCardCreated = (card: BingoCard) => {
-    setExistingCard(card)
+  const handleCardsCreated = (cards: BingoCard[]) => {
+    setExistingCards((current) => [...current, ...cards])
   }
 
   if (isLoading) {
@@ -118,17 +117,34 @@ export default function ParticipatePage() {
         <div className={activeRaffle ? 'mt-8' : ''}>
         {!activeRaffle ? (
           <NoActiveRaffle />
-        ) : existingCard ? (
-          <BingoCardDisplay
-            card={existingCard}
-            raffleName={activeRaffle.name}
-            drawnNumbers={activeRaffle.drawn_numbers ?? []}
-          />
+        ) : existingCards.length > 0 ? (
+          <div className="space-y-8">
+            <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-center text-emerald-100">
+              Tenes {existingCards.length} carton{existingCards.length !== 1 ? 'es' : ''} para este sorteo. Cada uno participa de forma individual.
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {existingCards.map((card) => (
+                <BingoCardDisplay
+                  key={card.id}
+                  card={card}
+                  raffleName={activeRaffle.name}
+                  drawnNumbers={activeRaffle.drawn_numbers ?? []}
+                  compact
+                />
+              ))}
+            </div>
+            <ParticipationForm
+              raffle={activeRaffle}
+              sessionToken={sessionToken}
+              onCardsCreated={handleCardsCreated}
+              title="Comprar Mas Cartones"
+            />
+          </div>
         ) : (
           <ParticipationForm 
             raffle={activeRaffle} 
             sessionToken={sessionToken}
-            onCardCreated={handleCardCreated}
+            onCardsCreated={handleCardsCreated}
           />
         )}
         </div>

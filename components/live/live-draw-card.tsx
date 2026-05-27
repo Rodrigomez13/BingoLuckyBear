@@ -16,6 +16,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
@@ -116,6 +117,19 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
                 <div className="flex flex-wrap gap-2">
                   {raffle.additional_prizes.map((item, index) => (
                     <span key={`${item}-${index}`} className="rounded-md bg-amber-400/10 px-3 py-1 text-sm font-semibold text-amber-100">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!!raffle.bundle_offers?.length && (
+              <div className="mt-3 rounded-md border border-emerald-400/20 bg-emerald-500/10 p-3">
+                <p className="mb-2 text-xs font-bold uppercase text-emerald-100">Promos por cantidad</p>
+                <div className="flex flex-wrap gap-2">
+                  {raffle.bundle_offers.map((item, index) => (
+                    <span key={`${item}-${index}`} className="rounded-md bg-black/20 px-3 py-1 text-sm font-semibold text-white">
                       {item}
                     </span>
                   ))}

@@ -25,6 +25,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
   is_active: boolean
   created_at: string
@@ -64,7 +65,15 @@ function toDateTimeLocalValue(value: string | null) {
   return offsetDate.toISOString().slice(0, 16)
 }
 
-function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | null; drawnNumbers?: number[] }) {
+function MiniBingoCard({
+  numbers,
+  drawnNumbers = [],
+  prominent = false,
+}: {
+  numbers: number[][] | null
+  drawnNumbers?: number[]
+  prominent?: boolean
+}) {
   const rows = getBingoRows(numbers)
 
   if (rows.length === 0) {
@@ -76,10 +85,10 @@ function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | n
   }
 
   return (
-    <div className="rounded-md border border-amber-400/40 bg-zinc-950 p-2">
+    <div className={`rounded-md border border-amber-400/40 bg-zinc-950 p-2 ${prominent ? 'shadow-xl shadow-amber-950/20' : ''}`}>
       <div className="grid grid-cols-5 overflow-hidden rounded-t-sm">
         {BINGO_HEADERS.map((letter) => (
-          <div key={letter} className="bg-amber-400 py-1 text-center text-xs font-black text-zinc-950">
+          <div key={letter} className={`bg-amber-400 py-1 text-center font-black text-zinc-950 ${prominent ? 'text-base sm:text-lg' : 'text-xs'}`}>
             {letter}
           </div>
         ))}
@@ -92,7 +101,9 @@ function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | n
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
-                className={`flex aspect-square items-center justify-center border border-zinc-800 text-xs font-bold ${
+                className={`flex aspect-square items-center justify-center border border-zinc-800 font-bold ${
+                  prominent ? 'text-base sm:text-lg' : 'text-xs'
+                } ${
                   cell === 'FREE'
                     ? 'bg-amber-500 text-white'
                     : marked
@@ -121,6 +132,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
     amount: raffle.amount ?? '',
+    bundle_offers: raffle.bundle_offers ?? [],
     draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
   })
 
@@ -152,9 +164,10 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       prize: raffle.prize ?? '',
       additional_prizes: raffle.additional_prizes ?? [],
       amount: raffle.amount ?? '',
+      bundle_offers: raffle.bundle_offers ?? [],
       draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
     })
-  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.draw_date])
+  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.bundle_offers, raffle.draw_date])
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const winnerCards = useMemo(
@@ -187,6 +200,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
         prize: details.prize || null,
         additional_prizes: details.additional_prizes.map((item) => item.trim()).filter(Boolean),
         amount: details.amount || null,
+        bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
         draw_date: details.draw_date || null,
       }
       const { data, error } = await supabase
@@ -351,6 +365,62 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               <p className="mt-3 text-sm text-zinc-500">Todavia no agregaste premios adicionales.</p>
             )}
           </div>
+
+          <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-white">Promos por cantidad</p>
+                <p className="text-sm text-zinc-400">Ejemplo: 2 cartones por $3.500, 5 cartones por $8.000.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDetails((current) => ({ ...current, bundle_offers: [...current.bundle_offers, ''] }))}
+                className="border-emerald-400/40 bg-transparent text-emerald-200 hover:bg-emerald-400/10"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar promo
+              </Button>
+            </div>
+
+            {details.bundle_offers.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {details.bundle_offers.map((item, index) => (
+                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <Input
+                      value={item}
+                      onChange={(event) =>
+                        setDetails((current) => ({
+                          ...current,
+                          bundle_offers: current.bundle_offers.map((value, itemIndex) =>
+                            itemIndex === index ? event.target.value : value
+                          ),
+                        }))
+                      }
+                      placeholder={`Promo ${index + 1}`}
+                      className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setDetails((current) => ({
+                          ...current,
+                          bundle_offers: current.bundle_offers.filter((_, itemIndex) => itemIndex !== index),
+                        }))
+                      }
+                      className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Eliminar promo</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-500">Todavia no agregaste promos por cantidad.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -512,15 +582,15 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(94vw,920px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(96vw,1180px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
           <DialogHeader className="border-b border-zinc-800 px-5 py-4">
             <DialogTitle className="text-white">
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
             {selectedCard && (
-            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(112px,300px)] lg:overflow-hidden">
-              <div className="min-w-0 space-y-4 p-4 sm:p-5">
+            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,0.95fr)_minmax(260px,0.8fr)_minmax(220px,320px)] xl:overflow-hidden">
+              <div className="min-w-0 space-y-4 border-b border-zinc-800 p-4 sm:p-5 xl:border-b-0">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>
                   <p className="break-all font-mono text-2xl font-bold text-zinc-950">
@@ -564,13 +634,19 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                     </p>
                   </div>
                 </div>
-                <div>
-                  <p className="mb-2 text-sm font-medium text-zinc-300">Carton asignado</p>
-                  <MiniBingoCard numbers={selectedCard.bingo_numbers} drawnNumbers={raffle.drawn_numbers ?? []} />
-                </div>
               </div>
 
-              <div className="border-t border-zinc-800 bg-zinc-900/60 p-3 sm:p-5 lg:border-l lg:border-t-0">
+              <div className="border-b border-zinc-800 bg-black/20 p-4 sm:p-5 xl:border-b-0 xl:border-l">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-zinc-300">Carton asignado</p>
+                  <Badge className="bg-amber-400 text-zinc-950 hover:bg-amber-400">
+                    {selectedCard.card_number}
+                  </Badge>
+                </div>
+                <MiniBingoCard numbers={selectedCard.bingo_numbers} drawnNumbers={raffle.drawn_numbers ?? []} prominent />
+              </div>
+
+              <div className="bg-zinc-900/60 p-3 sm:p-5 xl:border-l xl:border-zinc-800">
                 <p className="mb-3 text-sm font-medium text-zinc-300">Comprobante de Pago</p>
                 <ReceiptPreview pathname={selectedCard.payment_receipt_url} />
               </div>

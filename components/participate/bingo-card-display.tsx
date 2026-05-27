@@ -20,6 +20,7 @@ interface BingoCardDisplayProps {
   card: BingoCard
   raffleName: string
   drawnNumbers?: number[]
+  compact?: boolean
 }
 
 const BINGO_HEADERS = ['B', 'I', 'N', 'G', 'O']
@@ -31,7 +32,7 @@ const HEADER_COLORS = [
   'bg-blue-500',
 ]
 
-export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoCardDisplayProps) {
+export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false }: BingoCardDisplayProps) {
   const [showModal, setShowModal] = useState(false)
 
   const formattedDate = new Date(card.created_at).toLocaleDateString('es-ES', {
@@ -297,7 +298,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
   return (
     <div className="space-y-6">
       {/* Success Message */}
-      <div className="text-center">
+      {!compact && <div className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/15 mb-4">
           <CheckCircle className="w-8 h-8 text-emerald-300" />
         </div>
@@ -312,7 +313,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
             ? `Tu carton completo: ${winningLines.join(', ')}`
             : 'Tu carton de bingo ha sido generado exitosamente'}
         </p>
-      </div>
+      </div>}
 
       {isWinner && (
         <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-emerald-100">

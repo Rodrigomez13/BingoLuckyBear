@@ -16,6 +16,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null
@@ -137,6 +138,19 @@ export function LiveWall() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   {raffle.additional_prizes.map((item, index) => (
                     <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!!raffle.bundle_offers?.length && (
+              <div className="mt-5 max-w-4xl rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-5 shadow-xl shadow-black/20">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-emerald-100">Promos por cantidad</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {raffle.bundle_offers.map((item, index) => (
+                    <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-black/20 px-3 py-2 font-semibold text-white">
                       {item}
                     </div>
                   ))}

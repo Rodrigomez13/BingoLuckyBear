@@ -43,6 +43,25 @@ function generateBingoNumbers(): number[][] {
   return card
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+function hasReasonableLength(value: string, min: number, max: number) {
+  const length = value.trim().length
+  return length >= min && length <= max
+}
+
+function normalizeQuantity(value: unknown) {
+  const quantity = Number(value ?? 1)
+
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+    return null
+  }
+
+  return quantity
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -56,8 +75,10 @@ export async function POST(request: Request) {
       payment_receipt_url,
       payment_method,
       payment_reference,
+      quantity: requestedQuantity,
       session_token 
     } = body
+    const quantity = normalizeQuantity(requestedQuantity)
 
     // Validate all required fields
     if (!raffle_id || !full_name || !dni || !address || !phone || !email || !payment_receipt_url || !session_token) {
@@ -70,6 +91,36 @@ export async function POST(request: Request) {
     if (!payment_method || !payment_reference) {
       return NextResponse.json(
         { error: 'Indica el metodo de pago y el numero de operacion del comprobante' },
+        { status: 400 }
+      )
+    }
+
+    if (!quantity) {
+      return NextResponse.json(
+        { error: 'La cantidad de cartones debe ser entre 1 y 10' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      !hasReasonableLength(full_name, 3, 120) ||
+      !hasReasonableLength(address, 6, 180) ||
+      !hasReasonableLength(phone, 6, 40) ||
+      !hasReasonableLength(dni, 6, 20)
+    ) {
+      return NextResponse.json(
+        { error: 'Revisa nombre, DNI, direccion y telefono. Hay datos incompletos o demasiado largos.' },
+        { status: 400 }
+      )
+    }
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: 'Ingresa un correo electronico valido' }, { status: 400 })
+    }
+
+    if (!/^[a-zA-Z0-9 .:_-]{4,60}$/.test(payment_reference.trim())) {
+      return NextResponse.json(
+        { error: 'El numero de operacion debe tener entre 4 y 60 caracteres validos' },
         { status: 400 }
       )
     }
@@ -92,69 +143,58 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if this session already has a card for this raffle
-    const { data: existingCard } = await supabase
-      .from('bingo_cards')
-      .select('id, card_number')
-      .eq('raffle_id', raffle_id)
-      .eq('session_token', session_token)
-      .single()
+    const seenCards = new Set<string>()
+    const cardsToInsert = Array.from({ length: quantity }, () => {
+      let bingo_numbers = generateBingoNumbers()
+      let signature = JSON.stringify(bingo_numbers)
 
-    if (existingCard) {
-      return NextResponse.json(
-        { error: 'Ya tienes un carton para este sorteo', card_number: existingCard.card_number },
-        { status: 409 }
-      )
-    }
+      while (seenCards.has(signature)) {
+        bingo_numbers = generateBingoNumbers()
+        signature = JSON.stringify(bingo_numbers)
+      }
 
-    // Generate unique card number
-    const card_number = `LBB-${nanoid(8).toUpperCase()}`
+      seenCards.add(signature)
 
-    // Generate bingo card numbers
-    const bingo_numbers = generateBingoNumbers()
-
-    // Insert the card
-    const insertPayload = {
-      card_number,
-      raffle_id,
-      full_name,
-      dni,
-      address,
-      phone,
-      email,
-      payment_receipt_url,
-      payment_method,
-      payment_reference,
-      session_token,
-      bingo_numbers,
-    }
-
-    let { data: card, error: insertError } = await supabase
-      .from('bingo_cards')
-      .insert(insertPayload)
-      .select()
-      .single()
-
-    if (insertError && /payment_(method|reference)/i.test(insertError.message)) {
-      const fallbackPayload = {
-        card_number,
+      return {
+        card_number: `LBB-${nanoid(8).toUpperCase()}`,
         raffle_id,
-        full_name,
-        dni,
-        address,
-        phone,
-        email,
+        full_name: full_name.trim(),
+        dni: dni.trim(),
+        address: address.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
         payment_receipt_url,
+        payment_method,
+        payment_reference: payment_reference.trim(),
         session_token,
         bingo_numbers,
       }
+    })
+
+    let { data: cards, error: insertError } = await supabase
+      .from('bingo_cards')
+      .insert(cardsToInsert)
+      .select()
+
+    if (insertError && /payment_(method|reference)/i.test(insertError.message)) {
+      const fallbackPayload = cardsToInsert.map((card) => ({
+        card_number: card.card_number,
+        raffle_id: card.raffle_id,
+        full_name: card.full_name,
+        dni: card.dni,
+        address: card.address,
+        phone: card.phone,
+        email: card.email,
+        payment_receipt_url: card.payment_receipt_url,
+        session_token: card.session_token,
+        bingo_numbers: card.bingo_numbers,
+      }))
       const fallback = await supabase
         .from('bingo_cards')
         .insert(fallbackPayload)
         .select()
-        .single()
 
-      card = fallback.data
+      cards = fallback.data
       insertError = fallback.error
     }
 
@@ -168,9 +208,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      card_number: card.card_number,
-      card_id: card.id,
-      bingo_numbers: card.bingo_numbers
+      quantity,
+      cards: cards ?? [],
+      card_number: cards?.[0]?.card_number,
+      card_id: cards?.[0]?.id,
+      bingo_numbers: cards?.[0]?.bingo_numbers
     })
   } catch (error) {
     console.error('Error creating card:', error)

@@ -23,6 +23,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  bundle_offers?: string[] | null
   draw_date?: string | null
   is_active: boolean
   created_at: string
@@ -47,6 +48,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const [prize, setPrize] = useState('')
   const [additionalPrizes, setAdditionalPrizes] = useState<string[]>([])
   const [amount, setAmount] = useState('')
+  const [bundleOffers, setBundleOffers] = useState<string[]>([])
   const [drawDate, setDrawDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
@@ -78,6 +80,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           prize: prize || null,
           additional_prizes: cleanAdditionalPrizes(additionalPrizes),
           amount: amount || null,
+          bundle_offers: cleanAdditionalPrizes(bundleOffers),
           draw_date: drawDate || null,
           admin_id: user.id,
           is_active: false,
@@ -93,6 +96,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       setPrize('')
       setAdditionalPrizes([])
       setAmount('')
+      setBundleOffers([])
       setDrawDate('')
       setShowForm(false)
     } catch (error) {
@@ -355,6 +359,14 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                         </div>
                       )}
                     </div>
+                    <DynamicTextList
+                      title="Promos por cantidad"
+                      emptyText="Opcional: agrega ofertas como 3 cartones por $5.000."
+                      addLabel="Agregar promo"
+                      placeholder="Ej: 3 cartones por $5.000"
+                      items={bundleOffers}
+                      onChange={setBundleOffers}
+                    />
                     <Button 
                       type="submit" 
                       disabled={isLoading}
@@ -417,6 +429,14 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                               }
                             />
                             <RaffleMeta icon={<DollarSign className="h-3.5 w-3.5" />} value={raffle.amount || 'Monto sin cargar'} />
+                            <RaffleMeta
+                              icon={<Ticket className="h-3.5 w-3.5" />}
+                              value={
+                                raffle.bundle_offers?.length
+                                  ? `${raffle.bundle_offers.length} promo${raffle.bundle_offers.length !== 1 ? 's' : ''} por cantidad`
+                                  : 'Sin promos por cantidad'
+                              }
+                            />
                             <RaffleMeta
                               icon={<CalendarDays className="h-3.5 w-3.5" />}
                               value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'Fecha sin cargar'}
@@ -525,5 +545,66 @@ function RaffleMeta({ icon, value }: { icon: ReactNode; value: string }) {
       <span className="shrink-0 text-amber-200">{icon}</span>
       <span className="truncate">{value}</span>
     </p>
+  )
+}
+
+function DynamicTextList({
+  title,
+  emptyText,
+  addLabel,
+  placeholder,
+  items,
+  onChange,
+}: {
+  title: string
+  emptyText: string
+  addLabel: string
+  placeholder: string
+  items: string[]
+  onChange: (items: string[]) => void
+}) {
+  return (
+    <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="text-zinc-300">{title}</Label>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...items, ''])}
+          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {addLabel}
+        </Button>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-zinc-500">{emptyText}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <Input
+                value={item}
+                onChange={(event) =>
+                  onChange(items.map((value, itemIndex) => (itemIndex === index ? event.target.value : value)))
+                }
+                placeholder={placeholder}
+                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
+                className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Eliminar</span>
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
