@@ -2,6 +2,47 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
 
+// Generate unique bingo numbers following standard bingo rules
+// B: 1-15, I: 16-30, N: 31-45, G: 46-60, O: 61-75
+function generateBingoNumbers(): number[][] {
+  const ranges = [
+    { min: 1, max: 15 },   // B
+    { min: 16, max: 30 },  // I
+    { min: 31, max: 45 },  // N
+    { min: 46, max: 60 },  // G
+    { min: 61, max: 75 },  // O
+  ]
+
+  const card: number[][] = []
+
+  for (let col = 0; col < 5; col++) {
+    const { min, max } = ranges[col]
+    const available = Array.from({ length: max - min + 1 }, (_, i) => min + i)
+    const column: number[] = []
+
+    // Pick 5 unique numbers for each column (or 4 for N column with free space)
+    const count = col === 2 ? 4 : 5 // N column has free space in center
+    
+    for (let i = 0; i < count; i++) {
+      const randomIndex = Math.floor(Math.random() * available.length)
+      column.push(available[randomIndex])
+      available.splice(randomIndex, 1)
+    }
+
+    // Sort numbers in column
+    column.sort((a, b) => a - b)
+
+    // For N column, insert 0 (free space) in the middle
+    if (col === 2) {
+      column.splice(2, 0, 0) // 0 represents FREE space
+    }
+
+    card.push(column)
+  }
+
+  return card
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -60,6 +101,9 @@ export async function POST(request: Request) {
     // Generate unique card number
     const card_number = `LBB-${nanoid(8).toUpperCase()}`
 
+    // Generate bingo card numbers
+    const bingo_numbers = generateBingoNumbers()
+
     // Insert the card
     const { data: card, error: insertError } = await supabase
       .from('bingo_cards')
@@ -73,6 +117,7 @@ export async function POST(request: Request) {
         email,
         payment_receipt_url,
         session_token,
+        bingo_numbers,
       })
       .select()
       .single()
@@ -88,7 +133,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       card_number: card.card_number,
-      card_id: card.id 
+      card_id: card.id,
+      bingo_numbers: card.bingo_numbers
     })
   } catch (error) {
     console.error('Error creating card:', error)

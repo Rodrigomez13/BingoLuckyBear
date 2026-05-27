@@ -18,6 +18,7 @@ interface BingoCard {
   card_number: string
   full_name: string
   created_at: string
+  bingo_numbers: number[][]
 }
 
 interface ParticipationFormProps {
@@ -124,6 +125,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
         card_number: cardData.card_number,
         full_name: formData.full_name,
         created_at: new Date().toISOString(),
+        bingo_numbers: cardData.bingo_numbers,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
