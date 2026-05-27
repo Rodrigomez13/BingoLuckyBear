@@ -17,7 +17,12 @@ export async function GET() {
       return NextResponse.json({ raffle: null })
     }
 
-    return NextResponse.json({ raffle })
+    const { count } = await supabase
+      .from('bingo_cards')
+      .select('id', { count: 'exact', head: true })
+      .eq('raffle_id', raffle.id)
+
+    return NextResponse.json({ raffle, participantCount: count ?? 0 })
   } catch (error) {
     console.error('Error fetching active raffle:', error)
     return NextResponse.json(

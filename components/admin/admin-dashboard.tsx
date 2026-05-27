@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { BarChart3, Clock, ExternalLink, Radio, Ticket, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -24,6 +27,7 @@ interface Raffle {
   countdown_seconds?: number | null
   draw_started_at?: string | null
   drawn_numbers?: number[] | null
+  bingo_cards?: { count: number }[]
 }
 
 interface AdminDashboardProps {
@@ -40,6 +44,10 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const activeRaffle = raffles.find((raffle) => raffle.is_active)
+  const finishedCount = raffles.filter((raffle) => raffle.draw_status === 'finished').length
+  const liveCount = raffles.filter((raffle) => raffle.draw_status === 'running').length
+  const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -151,6 +159,63 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminMetric
+            icon={<Ticket className="h-5 w-5" />}
+            label="Cartones emitidos"
+            value={String(totalCards)}
+            detail="Todos los sorteos"
+          />
+          <AdminMetric
+            icon={<Radio className="h-5 w-5" />}
+            label="Sorteo activo"
+            value={activeRaffle ? '1' : '0'}
+            detail={activeRaffle?.name ?? 'Ninguno activo'}
+          />
+          <AdminMetric
+            icon={<Clock className="h-5 w-5" />}
+            label="En vivo"
+            value={String(liveCount)}
+            detail="Sorteos corriendo"
+          />
+          <AdminMetric
+            icon={<Trophy className="h-5 w-5" />}
+            label="Finalizados"
+            value={String(finishedCount)}
+            detail="Con resultados"
+          />
+        </div>
+
+        <div className="mb-8 flex flex-col gap-3 rounded-lg border border-amber-400/20 bg-zinc-950/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="flex items-center gap-2 font-bold text-white">
+              <BarChart3 className="h-5 w-5 text-amber-300" />
+              Accesos publicos del sorteo
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">Usalos para compartir participacion, proyectar el vivo o mostrar resultados.</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+              <Link href="/participar" target="_blank">
+                Participar
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="border-emerald-400/40 bg-transparent text-emerald-200 hover:bg-emerald-400/10">
+              <Link href="/en-vivo" target="_blank">
+                En Vivo
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10">
+              <Link href="/ganadores" target="_blank">
+                Ganadores
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+
         <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           {/* Left Column - Raffles List */}
           <div className="min-w-0 space-y-6">
@@ -249,6 +314,9 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                           <p className="text-xs text-zinc-500 mt-1">
                             Creado: {new Date(raffle.created_at).toLocaleDateString('es-ES')}
                           </p>
+                          <p className="mt-1 text-xs font-medium text-amber-200">
+                            {raffle.bingo_cards?.[0]?.count ?? 0} carton{(raffle.bingo_cards?.[0]?.count ?? 0) !== 1 ? 'es' : ''}
+                          </p>
                         </div>
                         <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
@@ -308,5 +376,34 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
         </div>
       </main>
     </div>
+  )
+}
+
+function AdminMetric({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-lg shadow-black/15">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-zinc-400">{label}</p>
+            <p className="mt-2 text-3xl font-black text-white">{value}</p>
+            <p className="mt-1 truncate text-xs text-amber-200">{detail}</p>
+          </div>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-amber-400/15 text-amber-200">
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -25,7 +25,7 @@ interface BingoCard {
   id: string
   card_number: string
   full_name: string
-  bingo_numbers?: number[][]
+  bingo_numbers?: number[][] | null
 }
 
 interface DrawControlsProps {

@@ -6,6 +6,8 @@ import { HowItWorks } from '@/components/home/how-it-works'
 import { Features } from '@/components/home/features'
 import { Footer } from '@/components/home/footer'
 import { LiveDrawCard } from '@/components/live/live-draw-card'
+import { SponsorShowcase } from '@/components/home/sponsor-showcase'
+import { TrustSection } from '@/components/home/trust-section'
 
 export default function HomePage() {
   return (
@@ -15,7 +17,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <BearLogo size={40} />
+              <BearLogo size={50} />
               <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Lucky Bingo Bear
               </span>
@@ -26,6 +28,18 @@ export default function HomePage() {
                 className="text-amber-200 hover:text-white font-medium transition-colors"
               >
                 Participar
+              </Link>
+              <Link 
+                href="/en-vivo" 
+                className="hidden text-amber-200 hover:text-white font-medium transition-colors sm:inline"
+              >
+                En Vivo
+              </Link>
+              <Link 
+                href="/ganadores" 
+                className="hidden text-amber-200 hover:text-white font-medium transition-colors md:inline"
+              >
+                Ganadores
               </Link>
               <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
                 <Link href="/auth/login">Admin</Link>
@@ -39,6 +53,8 @@ export default function HomePage() {
       <div className="pt-16">
         <HeroSection />
         <LiveDrawCard />
+        <SponsorShowcase />
+        <TrustSection />
         <HowItWorks />
         <Features />
         <Footer />

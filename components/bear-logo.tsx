@@ -4,13 +4,16 @@ interface BearLogoProps {
   size?: number
   sad?: boolean
   className?: string
+  variant?: 'solo' | 'context'
 }
 
-export function BearLogo({ size = 60, sad = false, className = '' }: BearLogoProps) {
+export function BearLogo({ size = 100, sad = false, className = '', variant = 'solo' }: BearLogoProps) {
   if (!sad) {
+    const src = variant === 'context' ? '/logo-contexto.svg' : '/logo-solo.svg'
+
     return (
       <Image
-        src="/lucky-bingo-bear-logo.svg"
+        src={src}
         alt="Lucky Bingo Bear"
         width={size}
         height={size}

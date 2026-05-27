@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Fredoka, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import './globals.css'
 
 const fredoka = Fredoka({ subsets: ["latin"], variable: '--font-fredoka' });
@@ -13,19 +14,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
+        url: '/logo-solo.svg',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    shortcut: '/logo-solo.svg',
+    apple: '/logo-solo.svg',
   },
 }
 
@@ -38,6 +32,7 @@ export default function RootLayout({
     <html lang="es" className={`${fredoka.variable} ${inter.variable} bg-background`}>
       <body className="font-sans antialiased">
         {children}
+        <FloatingWhatsApp />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

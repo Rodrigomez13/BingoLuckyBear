@@ -8,8 +8,20 @@ export const BINGO_RANGES = [
   { letter: 'O', min: 61, max: 75 },
 ] as const
 
-export function getBingoRows(cardNumbers: number[][]) {
+export function isValidBingoCard(cardNumbers: unknown): cardNumbers is number[][] {
+  return (
+    Array.isArray(cardNumbers) &&
+    cardNumbers.length >= 5 &&
+    cardNumbers.every((column) => Array.isArray(column) && column.length >= 5)
+  )
+}
+
+export function getBingoRows(cardNumbers: number[][] | null | undefined) {
   const rows: (number | 'FREE')[][] = []
+
+  if (!isValidBingoCard(cardNumbers)) {
+    return rows
+  }
 
   for (let row = 0; row < 5; row++) {
     const rowData: (number | 'FREE')[] = []
@@ -25,13 +37,17 @@ export function getBingoRows(cardNumbers: number[][]) {
   return rows
 }
 
-export function isMarked(cell: number | 'FREE', drawnNumbers: number[]) {
-  return cell === 'FREE' || drawnNumbers.includes(cell)
+export function isMarked(cell: number | 'FREE' | undefined, drawnNumbers: number[]) {
+  return cell === 'FREE' || (typeof cell === 'number' && drawnNumbers.includes(cell))
 }
 
-export function getWinningLines(cardNumbers: number[][], drawnNumbers: number[]) {
+export function getWinningLines(cardNumbers: number[][] | null | undefined, drawnNumbers: number[]) {
   const rows = getBingoRows(cardNumbers)
   const lines: string[] = []
+
+  if (rows.length !== 5) {
+    return lines
+  }
 
   rows.forEach((row, index) => {
     if (row.every((cell) => isMarked(cell, drawnNumbers))) {
@@ -59,7 +75,7 @@ export function getWinningLines(cardNumbers: number[][], drawnNumbers: number[])
   return lines
 }
 
-export function hasWinningLine(cardNumbers: number[][], drawnNumbers: number[]) {
+export function hasWinningLine(cardNumbers: number[][] | null | undefined, drawnNumbers: number[]) {
   return getWinningLines(cardNumbers, drawnNumbers).length > 0
 }
 

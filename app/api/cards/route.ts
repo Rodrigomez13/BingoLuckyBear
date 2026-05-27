@@ -54,6 +54,8 @@ export async function POST(request: Request) {
       phone, 
       email, 
       payment_receipt_url,
+      payment_method,
+      payment_reference,
       session_token 
     } = body
 
@@ -61,6 +63,13 @@ export async function POST(request: Request) {
     if (!raffle_id || !full_name || !dni || !address || !phone || !email || !payment_receipt_url || !session_token) {
       return NextResponse.json(
         { error: 'Todos los campos son obligatorios' },
+        { status: 400 }
+      )
+    }
+
+    if (!payment_method || !payment_reference) {
+      return NextResponse.json(
+        { error: 'Indica el metodo de pago y el numero de operacion del comprobante' },
         { status: 400 }
       )
     }
@@ -105,9 +114,29 @@ export async function POST(request: Request) {
     const bingo_numbers = generateBingoNumbers()
 
     // Insert the card
-    const { data: card, error: insertError } = await supabase
+    const insertPayload = {
+      card_number,
+      raffle_id,
+      full_name,
+      dni,
+      address,
+      phone,
+      email,
+      payment_receipt_url,
+      payment_method,
+      payment_reference,
+      session_token,
+      bingo_numbers,
+    }
+
+    let { data: card, error: insertError } = await supabase
       .from('bingo_cards')
-      .insert({
+      .insert(insertPayload)
+      .select()
+      .single()
+
+    if (insertError && /payment_(method|reference)/i.test(insertError.message)) {
+      const fallbackPayload = {
         card_number,
         raffle_id,
         full_name,
@@ -118,9 +147,16 @@ export async function POST(request: Request) {
         payment_receipt_url,
         session_token,
         bingo_numbers,
-      })
-      .select()
-      .single()
+      }
+      const fallback = await supabase
+        .from('bingo_cards')
+        .insert(fallbackPayload)
+        .select()
+        .single()
+
+      card = fallback.data
+      insertError = fallback.error
+    }
 
     if (insertError) {
       console.error('Insert error:', insertError)

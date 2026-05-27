@@ -26,9 +26,13 @@ export function HeroSection() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div className="text-center space-y-8">
           {/* Main Logo */}
-          <div className="flex justify-center animate-pulse" style={{ animationDuration: '2s' }}>
+          <div className="flex justify-center">
             <div className="relative">
-              <BearLogo size={160} className="relative drop-shadow-2xl" />
+              <BearLogo
+                size={280}
+                variant="context"
+                className="relative h-auto w-[min(72vw,280px)] drop-shadow-2xl"
+              />
             </div>
           </div>
 

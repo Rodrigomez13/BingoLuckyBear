@@ -14,7 +14,7 @@ export default async function AdminPage() {
   // Fetch user's raffles
   const { data: raffles } = await supabase
     .from('raffles')
-    .select('*')
+    .select('*, bingo_cards(count)')
     .eq('admin_id', user.id)
     .order('created_at', { ascending: false })
 

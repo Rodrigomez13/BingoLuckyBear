@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { FileText, Image as ImageIcon, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { BearLogo } from '@/components/bear-logo'
+import { PaymentInstructions } from '@/components/participate/payment-instructions'
+import { PAYMENT_METHODS } from '@/lib/payment'
 
 interface Raffle {
   id: string
@@ -34,12 +37,23 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
     address: '',
     phone: '',
     email: '',
+    payment_method: '',
+    payment_reference: '',
   })
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [previewType, setPreviewType] = useState<'image' | 'pdf' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview)
+      }
+    }
+  }, [preview])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -51,16 +65,21 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      if (!selectedFile.type.startsWith('image/')) {
-        setError('Solo se permiten archivos de imagen')
+      const isAllowedType = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(selectedFile.type)
+      if (!isAllowedType) {
+        setError('Solo se permiten comprobantes JPG, PNG, WebP o PDF')
         return
       }
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('El archivo no debe superar 5MB')
+      if (selectedFile.size > 8 * 1024 * 1024) {
+        setError('El archivo no debe superar 8MB')
         return
+      }
+      if (preview) {
+        URL.revokeObjectURL(preview)
       }
       setFile(selectedFile)
       setPreview(URL.createObjectURL(selectedFile))
+      setPreviewType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image')
       setError(null)
     }
   }
@@ -74,6 +93,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
       // Validate all fields
       if (!formData.full_name || !formData.dni || !formData.address || !formData.phone || !formData.email) {
         throw new Error('Todos los campos son obligatorios')
+      }
+      if (!formData.payment_method || !formData.payment_reference) {
+        throw new Error('Indica el metodo de pago y el numero de operacion')
       }
       if (!file) {
         throw new Error('Debes subir el comprobante de pago')
@@ -149,6 +171,8 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
           <p className="text-zinc-300 max-w-lg mx-auto">{raffle.description}</p>
         )}
       </div>
+
+      <PaymentInstructions />
 
       {/* Form */}
       <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
@@ -242,13 +266,62 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
               </div>
             </div>
 
+            <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+                <div>
+                  <h3 className="font-bold text-white">Datos del pago</h3>
+                  <p className="text-sm text-zinc-300">
+                    Estos datos ayudan a validar el comprobante y evitar registros duplicados.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method" className="text-zinc-300 font-medium">
+                    Metodo de pago *
+                  </Label>
+                  <select
+                    id="payment_method"
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={(event) => setFormData({ ...formData, payment_method: event.target.value })}
+                    required
+                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                  >
+                    <option value="">Selecciona una opcion</option>
+                    {PAYMENT_METHODS.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment_reference" className="text-zinc-300 font-medium">
+                    Numero de operacion *
+                  </Label>
+                  <Input
+                    id="payment_reference"
+                    name="payment_reference"
+                    value={formData.payment_reference}
+                    onChange={handleInputChange}
+                    placeholder="Ej: 1234567890"
+                    required
+                    minLength={4}
+                    className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* File Upload */}
             <div className="space-y-2">
               <Label htmlFor="receipt" className="text-zinc-300 font-medium">
                 Comprobante de Transferencia *
               </Label>
               <p className="text-sm text-zinc-400 mb-2">
-                Sube una captura de pantalla del comprobante de pago (max 5MB)
+                Sube una captura o PDF del comprobante. Debe verse fecha, importe, destino y numero de operacion.
               </p>
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
@@ -260,19 +333,29 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                   ref={fileInputRef}
                   type="file"
                   id="receipt"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp,application/pdf"
                   onChange={handleFileChange}
                   className="hidden"
                 />
                 {preview ? (
                   <div className="space-y-3">
-                    <img 
-                      src={preview} 
-                      alt="Vista previa" 
-                      className="max-h-48 mx-auto rounded-lg shadow-md"
-                    />
+                    {previewType === 'pdf' ? (
+                      <div className="mx-auto flex max-w-sm items-center justify-center gap-3 rounded-lg border border-emerald-400/30 bg-zinc-950/70 p-4 text-left">
+                        <FileText className="h-8 w-8 shrink-0 text-emerald-300" />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{file?.name}</p>
+                          <p className="text-xs text-zinc-400">PDF listo para subir</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={preview} 
+                        alt="Vista previa" 
+                        className="max-h-48 mx-auto rounded-lg shadow-md"
+                      />
+                    )}
                     <p className="text-sm text-emerald-300 font-medium">
-                      Imagen cargada correctamente
+                      Comprobante cargado correctamente
                     </p>
                     <Button
                       type="button"
@@ -280,8 +363,12 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation()
+                        if (preview) {
+                          URL.revokeObjectURL(preview)
+                        }
                         setFile(null)
                         setPreview(null)
+                        setPreviewType(null)
                       }}
                       className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
                     >
@@ -291,15 +378,13 @@ export function ParticipationForm({ raffle, sessionToken, onCardCreated }: Parti
                 ) : (
                   <div className="space-y-2">
                     <div className="w-12 h-12 mx-auto bg-amber-400/15 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <ImageIcon className="w-6 h-6 text-amber-300" />
                     </div>
                     <p className="text-amber-100">
                       Haz clic para subir tu comprobante
                     </p>
                     <p className="text-xs text-zinc-500">
-                      PNG, JPG, JPEG hasta 5MB
+                      JPG, PNG, WebP o PDF hasta 8MB
                     </p>
                   </div>
                 )}

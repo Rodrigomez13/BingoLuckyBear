@@ -125,7 +125,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [] }: BingoC
       const image = new window.Image()
       image.onload = () => resolve(image)
       image.onerror = reject
-      image.src = '/lucky-bingo-bear-logo.svg'
+      image.src = '/logo-solo.svg'
     })
 
   const downloadCard = async () => {

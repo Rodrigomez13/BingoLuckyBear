@@ -18,12 +18,18 @@ export function Footer() {
             </div>
           </div>
           
-          <nav className="flex items-center gap-6">
+          <nav className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
             <Link href="/participar" className="text-amber-200 hover:text-white transition-colors">
               Participar
             </Link>
             <Link href="#como-funciona" className="text-amber-200 hover:text-white transition-colors">
               Como Funciona
+            </Link>
+            <Link href="/en-vivo" className="text-amber-200 hover:text-white transition-colors">
+              En Vivo
+            </Link>
+            <Link href="/ganadores" className="text-amber-200 hover:text-white transition-colors">
+              Ganadores
             </Link>
             <Link href="/auth/login" className="text-amber-200 hover:text-white transition-colors">
               Admin

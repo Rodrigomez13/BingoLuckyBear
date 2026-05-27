@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ClipboardCopy, ExternalLink, RefreshCw, Search, Trophy, Users } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DrawControls } from './draw-controls'
-import { getBingoRows, isMarked } from '@/lib/bingo'
+import { getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -35,8 +39,10 @@ interface BingoCard {
   phone: string
   email: string
   payment_receipt_url: string
+  payment_method?: string | null
+  payment_reference?: string | null
   created_at: string
-  bingo_numbers: number[][]
+  bingo_numbers: number[][] | null
 }
 
 interface RaffleParticipantsProps {
@@ -46,8 +52,16 @@ interface RaffleParticipantsProps {
 
 const BINGO_HEADERS = ['B', 'I', 'N', 'G', 'O']
 
-function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][]; drawnNumbers?: number[] }) {
+function MiniBingoCard({ numbers, drawnNumbers = [] }: { numbers: number[][] | null; drawnNumbers?: number[] }) {
   const rows = getBingoRows(numbers)
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed border-zinc-700 bg-zinc-950 p-4 text-center text-sm text-zinc-400">
+        Este carton no tiene numeros validos cargados.
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-md border border-amber-400/40 bg-zinc-950 p-2">
@@ -88,6 +102,8 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [winnerOnly, setWinnerOnly] = useState(false)
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true)
@@ -112,17 +128,42 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     fetchCards()
   }, [fetchCards])
 
-  const exportToCSV = () => {
-    if (cards.length === 0) return
+  const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
+  const winnerCards = useMemo(
+    () => cards.filter((card) => getWinningLines(card.bingo_numbers, drawnNumbers).length > 0),
+    [cards, drawnNumbers]
+  )
+  const filteredCards = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase()
 
-    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Fecha Registro']
-    const rows = cards.map(card => [
+    return cards.filter((card) => {
+      const matchesWinner = !winnerOnly || getWinningLines(card.bingo_numbers, drawnNumbers).length > 0
+      const matchesSearch =
+        !normalizedSearch ||
+        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '']
+          .some((value) => value.toLowerCase().includes(normalizedSearch))
+
+      return matchesWinner && matchesSearch
+    })
+  }, [cards, drawnNumbers, searchTerm, winnerOnly])
+
+  const copyToClipboard = async (path: string) => {
+    await navigator.clipboard.writeText(`${window.location.origin}${path}`)
+  }
+
+  const exportToCSV = () => {
+    if (filteredCards.length === 0) return
+
+    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Metodo Pago', 'Operacion', 'Fecha Registro']
+    const rows = filteredCards.map(card => [
       card.card_number,
       card.full_name,
       card.dni,
       card.address,
       card.phone,
       card.email,
+      card.payment_method ?? '',
+      card.payment_reference ?? '',
       new Date(card.created_at).toLocaleString('es-ES')
     ])
 
@@ -144,7 +185,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               {raffle.name}
@@ -159,17 +200,72 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               {cards.length} participante{cards.length !== 1 ? 's' : ''} registrado{cards.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button 
-            onClick={exportToCSV}
-            disabled={cards.length === 0}
-            variant="outline"
-            className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
-          >
-            Exportar CSV
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              onClick={() => copyToClipboard('/participar')}
+              variant="outline"
+              className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+            >
+              <ClipboardCopy className="mr-2 h-4 w-4" />
+              Copiar Link
+            </Button>
+            <Button asChild variant="outline" className="border-emerald-400/40 bg-transparent text-emerald-200 hover:bg-emerald-400/10">
+              <Link href="/en-vivo" target="_blank">
+                En Vivo
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              onClick={fetchCards}
+              variant="outline"
+              className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Actualizar
+            </Button>
+            <Button 
+              onClick={exportToCSV}
+              disabled={filteredCards.length === 0}
+              variant="outline"
+              className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+            >
+              Exportar CSV
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-5 grid gap-3 md:grid-cols-3">
+          <SummaryTile icon={<Users className="h-5 w-5" />} label="Participantes" value={String(cards.length)} />
+          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Ganadores detectados" value={String(winnerCards.length)} />
+          <SummaryTile icon={<Search className="h-5 w-5" />} label="Vista actual" value={String(filteredCards.length)} />
+        </div>
+
+        <div className="mb-5 flex flex-col gap-3 md:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar por carton, nombre, DNI, telefono, email u operacion"
+              className="border-zinc-700 bg-zinc-900 pl-9 text-white focus:border-amber-400"
+            />
+          </div>
+          <Button
+            type="button"
+            variant={winnerOnly ? 'default' : 'outline'}
+            onClick={() => setWinnerOnly((value) => !value)}
+            className={
+              winnerOnly
+                ? 'bg-emerald-500 font-bold text-white hover:bg-emerald-600'
+                : 'border-emerald-400/40 bg-transparent text-emerald-200 hover:bg-emerald-400/10'
+            }
+          >
+            <Trophy className="mr-2 h-4 w-4" />
+            Solo ganadores
+          </Button>
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
@@ -183,6 +279,10 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               </p>
             )}
           </div>
+        ) : filteredCards.length === 0 ? (
+          <div className="rounded-md border border-dashed border-zinc-700 p-8 text-center text-zinc-400">
+            No hay participantes que coincidan con los filtros.
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="hidden grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] gap-3 border-b border-zinc-800 px-3 pb-2 text-sm font-semibold text-amber-200 xl:grid">
@@ -193,41 +293,48 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               <span>Fecha</span>
               <span>Acciones</span>
             </div>
-            {cards.map((card) => (
-              <div
-                key={card.id}
-                className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] xl:items-center"
-              >
-                <div>
-                  <p className="text-xs text-zinc-500 xl:hidden">Carton</p>
-                  <p className="break-all font-mono font-bold text-amber-300">{card.card_number}</p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-zinc-500 xl:hidden">Nombre</p>
-                  <p className="truncate font-medium text-white">{card.full_name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 xl:hidden">DNI</p>
-                  <p>{card.dni}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 xl:hidden">Telefono</p>
-                  <p className="break-all">{card.phone}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 xl:hidden">Fecha</p>
-                  <p className="text-zinc-400">{new Date(card.created_at).toLocaleDateString('es-ES')}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSelectedCard(card)}
-                  className="w-full border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+            {filteredCards.map((card) => {
+              const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
+
+              return (
+                <div
+                  key={card.id}
+                  className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] xl:items-center"
                 >
-                  Ver Detalles
-                </Button>
-              </div>
-            ))}
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">Carton</p>
+                    <p className="break-all font-mono font-bold text-amber-300">{card.card_number}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-zinc-500 xl:hidden">Nombre</p>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate font-medium text-white">{card.full_name}</p>
+                      {winningLines.length > 0 && <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Bingo</Badge>}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">DNI</p>
+                    <p>{card.dni}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">Telefono</p>
+                    <p className="break-all">{card.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">Fecha</p>
+                    <p className="text-zinc-400">{new Date(card.created_at).toLocaleDateString('es-ES')}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedCard(card)}
+                    className="w-full border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+                  >
+                    Ver Detalles
+                  </Button>
+                </div>
+              )
+            })}
           </div>
         )}
       </CardContent>
@@ -271,6 +378,14 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                     <p className="text-zinc-400">Direccion</p>
                     <p className="truncate font-medium text-white">{selectedCard.address}</p>
                   </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Metodo de Pago</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payment_method ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Operacion</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payment_reference ?? 'Sin registrar'}</p>
+                  </div>
                   <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Fecha de Registro</p>
                     <p className="truncate font-medium text-white">
@@ -286,19 +401,52 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
               <div className="border-l border-zinc-800 bg-zinc-900/60 p-3 sm:p-5">
                 <p className="mb-3 text-sm font-medium text-zinc-300">Comprobante de Pago</p>
-                <div className="flex aspect-[4/5] max-h-[52dvh] items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
-                  <img
-                    src={`/api/file?pathname=${encodeURIComponent(selectedCard.payment_receipt_url)}`}
-                    alt="Comprobante de pago"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
+                <ReceiptPreview pathname={selectedCard.payment_receipt_url} />
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
     </Card>
+    </div>
+  )
+}
+
+function ReceiptPreview({ pathname }: { pathname: string }) {
+  const fileUrl = `/api/file?pathname=${encodeURIComponent(pathname)}`
+  const isPdf = pathname.toLowerCase().endsWith('.pdf')
+
+  return (
+    <div className="space-y-3">
+      <div className="flex aspect-[4/5] max-h-[52dvh] items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
+        {isPdf ? (
+          <iframe src={fileUrl} title="Comprobante de pago PDF" className="h-full w-full bg-white" />
+        ) : (
+          <img
+            src={fileUrl}
+            alt="Comprobante de pago"
+            className="h-full w-full object-contain"
+          />
+        )}
+      </div>
+      <Button asChild variant="outline" className="w-full border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+        <a href={fileUrl} target="_blank" rel="noreferrer">
+          Abrir comprobante
+          <ExternalLink className="ml-2 h-4 w-4" />
+        </a>
+      </Button>
+    </div>
+  )
+}
+
+function SummaryTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-2 text-3xl font-black text-white">{value}</p>
     </div>
   )
 }
