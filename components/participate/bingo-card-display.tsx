@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
-import { CheckCircle, Download, Eye, X, Calendar, Hash } from 'lucide-react'
+import { CheckCircle, Download, Eye, X, Hash } from 'lucide-react'
 
 interface BingoCard {
   id: string

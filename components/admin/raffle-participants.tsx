@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -48,15 +48,11 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
-  const supabase = createClient()
 
-  useEffect(() => {
-    fetchCards()
-  }, [raffle.id])
-
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
     setIsLoading(true)
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('bingo_cards')
         .select('*')
@@ -70,7 +66,11 @@ export function RaffleParticipants({ raffle }: RaffleParticipantsProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [raffle.id])
+
+  useEffect(() => {
+    fetchCards()
+  }, [fetchCards])
 
   const exportToCSV = () => {
     if (cards.length === 0) return

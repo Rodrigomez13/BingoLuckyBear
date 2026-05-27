@@ -20,6 +20,7 @@ interface BingoCard {
   card_number: string
   full_name: string
   created_at: string
+  bingo_numbers: number[][]
 }
 
 export default function ParticipatePage() {
