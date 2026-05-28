@@ -14,7 +14,7 @@ const floatingBalls = [
 
 export function HeroSection() {
   return (
-    <section className="relative isolate w-screen max-w-full overflow-hidden border-b border-white/10">
+    <section className="relative isolate w-full overflow-hidden border-b border-white/10">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(115deg,rgba(251,191,36,0.14),transparent_34%),linear-gradient(245deg,rgba(14,165,233,0.16),transparent_30%),linear-gradient(0deg,rgba(16,185,129,0.1),transparent_46%)]" />
       <div className="absolute inset-0 -z-10 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:44px_44px]" />
       <Image
@@ -34,10 +34,10 @@ export function HeroSection() {
 
       <HeroBannerSequence />
 
-      <div className="relative mx-auto flex w-screen max-w-full flex-col items-center gap-7 overflow-hidden px-4 py-9 text-center sm:px-6 md:py-12 lg:max-w-7xl lg:px-8">
-        <div className="min-w-0">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center gap-7 overflow-hidden px-4 py-9 text-center sm:px-6 md:py-12 lg:px-8">
+        <div className="w-full min-w-0">
           <h1 className="sr-only">Lucky Bingo Bear</h1>
-          <p className="mx-auto max-w-[46rem] text-balance text-base leading-relaxed text-zinc-200 sm:text-xl">
+          <p className="mx-auto w-full max-w-[20rem] text-balance text-base leading-relaxed text-zinc-200 sm:max-w-[44rem] sm:text-lg">
             Compra tu carton digital, recibi tu codigo LBB y segui cada bolilla desde una experiencia clara, rapida y
             lista para compartir.
           </p>
@@ -53,10 +53,10 @@ export function HeroSection() {
               asChild
               variant="outline"
               size="lg"
-              className="h-14 border-2 border-white/20 bg-white/5 px-7 text-base font-bold text-white hover:bg-white/10"
+              className="h-11 border border-white/20 bg-white/5 px-5 text-sm font-semibold text-white hover:bg-white/10"
             >
               <Link href="/en-vivo">
-                <Radio className="mr-2 h-5 w-5" />
+                <Radio className="mr-2 h-4 w-4" />
                 Ver sorteo
               </Link>
             </Button>
@@ -69,7 +69,7 @@ export function HeroSection() {
 
 function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-bold text-zinc-100">
+    <div className="flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-medium text-zinc-100">
       <span className="text-emerald-300">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
       <CheckCircle2 className="h-4 w-4 text-amber-300" />
@@ -80,10 +80,10 @@ function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
 function BingoBall({ number, className }: { number: number; className: string }) {
   return (
     <div
-      className={`absolute hidden h-14 w-14 animate-bounce items-center justify-center rounded-full text-sm font-black text-white shadow-xl md:flex ${className}`}
+      className={`absolute hidden h-12 w-12 animate-bounce items-center justify-center rounded-full text-sm font-bold text-white shadow-xl md:flex ${className}`}
       style={{ animationDuration: `${3 + (number % 4) * 0.35}s` }}
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-zinc-950">{number}</span>
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-950">{number}</span>
     </div>
   )
 }

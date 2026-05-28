@@ -83,7 +83,7 @@ export function LiveWall() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
         <div className="max-w-xl text-center">
           <Image src="/logo-contexto.svg" alt="Lucky Bingo Bear" width={240} height={240} className="mx-auto h-auto w-48" />
-          <h1 className="mt-6 text-4xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white">
             No hay sorteo activo
           </h1>
           <p className="mt-3 text-zinc-300">Cuando actives un sorteo desde el panel, esta pantalla se actualizara para proyectarlo.</p>
@@ -122,13 +122,13 @@ export function LiveWall() {
               priority
               className="mb-6 h-auto w-[min(54vw,260px)] drop-shadow-2xl"
             />
-            <h1 className="max-w-4xl text-5xl font-black leading-none text-white sm:text-7xl lg:text-8xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
               {raffle.name}
             </h1>
             {firstPrize && (
               <div className="mt-6 max-w-2xl rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-zinc-950 shadow-2xl shadow-amber-950/20">
-                <p className="text-sm font-black uppercase tracking-wide">Primer premio</p>
-                <p className="mt-1 break-words text-5xl font-black sm:text-6xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                <p className="text-sm font-semibold uppercase tracking-wide">Primer premio</p>
+                <p className="mt-1 break-words text-4xl font-bold tracking-tight sm:text-5xl">
                   {firstPrize}
                 </p>
               </div>
@@ -157,12 +157,12 @@ export function LiveWall() {
 
             {prizeAmounts.length > 0 && (
               <div className="mt-5 max-w-4xl rounded-lg border border-amber-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-200">Todos los premios</p>
-                <div className="grid gap-2 sm:grid-cols-3">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-200">Todos los premios</p>
+                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
                   {[1, 2, 3].map((prizeNumber) => {
                     const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
                     return (
-                    <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                    <div key={prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
                       <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
                       <span>{prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}</span>
                       <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
@@ -175,7 +175,7 @@ export function LiveWall() {
 
             {!!raffle.bundle_offers?.length && (
               <div className="mt-5 max-w-4xl rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-5 shadow-xl shadow-black/20">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-emerald-100">Promos por cantidad</p>
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-100">Promos por cantidad</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {raffle.bundle_offers.map((item, index) => (
                     <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-black/20 px-3 py-2 font-semibold text-white">
@@ -191,7 +191,7 @@ export function LiveWall() {
             <div className="rounded-md border border-white/10 bg-black/25 p-5 text-center">
               <p className="text-sm font-semibold uppercase tracking-wide text-amber-200">Numero actual</p>
               <div className="mt-5 flex aspect-square items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-orange-500 text-zinc-950 shadow-2xl shadow-amber-500/20">
-                <span className="text-7xl font-black sm:text-8xl">{lastNumber ?? '--'}</span>
+                <span className="text-6xl font-bold sm:text-7xl">{lastNumber ?? '--'}</span>
               </div>
             </div>
 
@@ -202,7 +202,7 @@ export function LiveWall() {
               </div>
               <div className="grid max-h-64 grid-cols-5 gap-2 overflow-hidden sm:grid-cols-6 lg:grid-cols-5">
                 {[...drawnNumbers].reverse().slice(0, 30).map((number) => (
-                  <div key={number} className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950">
+                  <div key={number} className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950">
                     {number}
                   </div>
                 ))}
@@ -237,7 +237,7 @@ function Stat({ icon, label, value, detail, compact = false }: { icon?: ReactNod
         {icon}
         {label}
       </p>
-      <p className={`mt-3 break-words font-black text-white ${compact ? 'text-xl' : 'text-4xl'}`}>{value}</p>
+      <p className={`mt-3 break-words font-bold text-white ${compact ? 'text-lg' : 'text-3xl'}`}>{value}</p>
       {detail && <p className="mt-1 text-sm font-semibold text-zinc-300">{detail}</p>}
     </div>
   )

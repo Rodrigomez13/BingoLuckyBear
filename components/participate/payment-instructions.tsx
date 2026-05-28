@@ -35,8 +35,8 @@ export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-amber-400 text-zinc-950">
             <WalletCards className="h-6 w-6" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold tracking-tight text-white">
               Datos para transferir
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-zinc-300">
@@ -46,9 +46,9 @@ export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
         </div>
       </div>
 
-      <div className="grid gap-3 p-5 sm:grid-cols-2">
+      <div className="grid auto-rows-fr gap-3 p-5 sm:grid-cols-2">
         {paymentRows.map((row) => (
-          <div key={row.label} className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+          <div key={row.label} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-amber-200">{row.label}</p>
             <div className="mt-2 flex items-center justify-between gap-3">
               <p className="min-w-0 break-all font-semibold text-white">{row.value}</p>

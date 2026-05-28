@@ -90,7 +90,7 @@ export default async function WinnersPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
             <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={46} height={46} className="h-11 w-11 object-contain" />
-            <span className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            <span className="text-lg font-semibold tracking-tight text-white">
               Lucky Bingo Bear
             </span>
           </Link>
@@ -98,7 +98,7 @@ export default async function WinnersPage() {
             <Link href="/en-vivo" className="hidden text-sm font-medium text-amber-200 transition-colors hover:text-white sm:inline">
               En vivo
             </Link>
-            <Button asChild className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
+            <Button asChild className="bg-amber-400 font-semibold text-zinc-950 hover:bg-amber-300">
               <Link href="/participar">Participar</Link>
             </Button>
           </nav>
@@ -112,10 +112,10 @@ export default async function WinnersPage() {
               <Crown className="mr-1 h-3.5 w-3.5" />
               Resultados oficiales
             </Badge>
-            <h1 className="max-w-4xl text-5xl font-black text-white sm:text-6xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-5xl">
               Ganadores y sorteos finalizados
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-300">
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
               Un registro publico para revisar los sorteos cerrados, los cartones ganadores y el orden de numeros cantados.
             </p>
           </div>
@@ -131,7 +131,7 @@ export default async function WinnersPage() {
         {winners.length === 0 ? (
           <div className="mt-12 rounded-lg border border-dashed border-amber-300/30 bg-zinc-950/55 p-10 text-center">
             <Trophy className="mx-auto mb-4 h-12 w-12 text-amber-300" />
-            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            <h2 className="text-xl font-semibold tracking-tight text-white">
               Todavia no hay ganadores publicados
             </h2>
             <p className="mx-auto mt-2 max-w-xl text-zinc-400">
@@ -153,7 +153,7 @@ export default async function WinnersPage() {
                           <Trophy className="mr-1 h-3.5 w-3.5" />
                           Premio {winner.prizeNumber}
                         </Badge>
-                        <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                        <h2 className="text-xl font-semibold tracking-tight text-white">
                           {winner.card.full_name}
                         </h2>
                         <p className="mt-1 text-sm text-zinc-300">{winner.raffle.name}</p>
@@ -163,7 +163,7 @@ export default async function WinnersPage() {
                     </div>
                   </div>
                   <CardContent className="space-y-5 p-5">
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
                       <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.card.card_number} />
                       <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber || lastNumber)} />
                       <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={new Date(winner.raffle.created_at).toLocaleDateString('es-ES')} />
@@ -180,7 +180,7 @@ export default async function WinnersPage() {
                       <p className="mb-3 text-sm font-semibold text-zinc-200">Numeros cantados</p>
                       <div className="flex flex-wrap gap-2">
                         {drawnNumbers.map((number) => (
-                          <span key={number} className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-zinc-950">
+                          <span key={number} className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950">
                             {number}
                           </span>
                         ))}
@@ -200,8 +200,8 @@ export default async function WinnersPage() {
 function Metric({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-md border border-white/10 bg-black/20 p-4">
-      <p className="text-3xl font-black text-white">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-amber-200">{label}</p>
+      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-200">{label}</p>
     </div>
   )
 }
@@ -209,7 +209,7 @@ function Metric({ value, label }: { value: string; label: string }) {
 function Info({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-md border border-white/10 bg-white/[0.04] p-3">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-200">
         {icon}
         {label}
       </p>

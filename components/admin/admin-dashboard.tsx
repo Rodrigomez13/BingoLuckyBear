@@ -196,7 +196,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
             <div className="flex min-w-0 items-center gap-3">
               <BearLogo size={40} />
               <div className="min-w-0">
-                <span className="block truncate font-bold text-lg text-white sm:text-xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                <span className="block truncate text-lg font-semibold tracking-tight text-white">
                   Panel Admin
                 </span>
                 <p className="max-w-[160px] truncate text-xs text-zinc-400 sm:max-w-none">{user.email}</p>
@@ -276,7 +276,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           {/* Left Column - Raffles List */}
           <div className="min-w-0 space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <h2 className="text-xl font-semibold tracking-tight text-white">
                 Mis Sorteos
               </h2>
               <Button 
@@ -499,7 +499,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                 }}
               />
             ) : (
-              <Card className="border-zinc-800 bg-zinc-950/70 h-full min-h-[400px]">
+              <Card className="h-full min-h-96 border-zinc-800 bg-zinc-950/70">
                 <CardContent className="flex flex-col items-center justify-center h-full py-16">
                   <BearLogo size={80} className="mb-4 opacity-30" />
                   <h3 className="text-xl font-semibold text-white mb-2">
@@ -535,7 +535,7 @@ function AdminMetric({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-zinc-400">{label}</p>
-            <p className="mt-2 text-3xl font-black text-white">{value}</p>
+            <p className="mt-2 text-2xl font-bold text-white">{value}</p>
             <p className="mt-1 truncate text-xs text-amber-200">{detail}</p>
           </div>
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-amber-400/15 text-amber-200">

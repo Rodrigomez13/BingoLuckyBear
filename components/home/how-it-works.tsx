@@ -30,42 +30,41 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="py-24">
+    <section id="como-funciona" className="py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 grid gap-4 lg:grid-cols-[0.8fr_1fr] lg:items-end">
+        <div className="mb-10 grid gap-4 lg:grid-cols-[0.8fr_1fr] lg:items-end">
           <div>
-            <p className="mb-3 text-sm font-black uppercase text-amber-300">Flujo</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-amber-300">Flujo</p>
             <h2
-              className="text-4xl font-black leading-tight text-white md:text-5xl"
-              style={{ fontFamily: 'var(--font-fredoka)' }}
+              className="text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl"
             >
               Cuatro pasos, sin vueltas
             </h2>
           </div>
-          <p className="max-w-2xl text-lg leading-relaxed text-zinc-300 lg:justify-self-end">
+          <p className="w-full max-w-[22rem] min-w-0 text-sm leading-relaxed text-zinc-300 sm:max-w-2xl sm:text-base lg:justify-self-end">
             El recorrido separa decision, pago, carton y sorteo para que cada participante sepa exactamente donde esta.
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((item) => {
             const Icon = item.icon
 
             return (
               <Card
                 key={item.step}
-                className="relative overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/60 hover:shadow-lg"
+                className="relative h-full overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400/50 hover:shadow-md"
               >
-                <div className="absolute right-4 top-3 text-5xl font-black text-white/[0.05]">{item.step}</div>
-                <CardContent className="p-6">
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-lg bg-amber-400 text-zinc-950">
-                    <Icon className="h-7 w-7" />
+                <div className="absolute right-4 top-3 text-4xl font-semibold text-white/[0.04]">{item.step}</div>
+                <CardContent className="flex h-full flex-col p-5">
+                  <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md bg-amber-400 text-zinc-950">
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <p className="mb-2 text-xs font-black uppercase text-amber-300">Paso {item.step}</p>
-                  <h3 className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-amber-300">Paso {item.step}</p>
+                  <h3 className="min-w-0 break-words text-base font-semibold tracking-tight text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-zinc-400">{item.description}</p>
+                  <p className="mt-3 min-w-0 break-words text-sm leading-relaxed text-zinc-400">{item.description}</p>
                 </CardContent>
               </Card>
             )

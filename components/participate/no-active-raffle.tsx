@@ -7,10 +7,9 @@ export function NoActiveRaffle() {
   return (
     <Card className="border-zinc-800 bg-zinc-950/80 max-w-xl mx-auto text-zinc-100">
       <CardContent className="py-16 text-center">
-        <BearLogo size={100} sad className="mx-auto mb-6" />
+        <BearLogo size={82} sad className="mx-auto mb-6" />
         <h1 
-          className="text-3xl font-bold text-white mb-4"
-          style={{ fontFamily: 'var(--font-fredoka)' }}
+          className="mb-4 text-2xl font-semibold tracking-tight text-white"
         >
           No Hay Sorteo Activo
         </h1>

@@ -96,12 +96,12 @@ export default function ParticipatePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
       {/* Header */}
-      <header className="bg-zinc-950/80 backdrop-blur-md border-b border-amber-400/20 sticky top-0 z-50">
+      <header className="sticky top-0 z-50 border-b border-amber-400/20 bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
-              <BearLogo size={40} />
-              <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <BearLogo size={38} />
+              <span className="text-lg font-semibold tracking-tight text-white">
                 Lucky Bingo Bear
               </span>
             </Link>
@@ -112,8 +112,12 @@ export default function ParticipatePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        {activeRaffle && <LiveDrawCard initialRaffle={activeRaffle} compact />}
+      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+        {activeRaffle && (
+          <div className="mx-auto max-w-5xl">
+            <LiveDrawCard initialRaffle={activeRaffle} compact />
+          </div>
+        )}
         <div className={activeRaffle ? 'mt-8' : ''}>
         {!activeRaffle ? (
           <NoActiveRaffle />
@@ -122,7 +126,7 @@ export default function ParticipatePage() {
             <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-center text-emerald-100">
               Tenes {existingCards.length} carton{existingCards.length !== 1 ? 'es' : ''} para este sorteo. Cada uno participa de forma individual.
             </div>
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid items-start gap-6 xl:grid-cols-2">
               {existingCards.map((card) => (
                 <BingoCardDisplay
                   key={card.id}
@@ -141,11 +145,13 @@ export default function ParticipatePage() {
             />
           </div>
         ) : (
-          <ParticipationForm 
-            raffle={activeRaffle} 
-            sessionToken={sessionToken}
-            onCardsCreated={handleCardsCreated}
-          />
+          <div className="mx-auto max-w-4xl">
+            <ParticipationForm 
+              raffle={activeRaffle} 
+              sessionToken={sessionToken}
+              onCardsCreated={handleCardsCreated}
+            />
+          </div>
         )}
         </div>
       </main>

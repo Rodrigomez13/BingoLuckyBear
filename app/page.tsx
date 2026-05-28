@@ -38,34 +38,34 @@ export default async function HomePage() {
     <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#08090d,#15111a_42%,#0d1720_78%,#09090b)] text-zinc-100">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-zinc-950/78 shadow-lg shadow-black/20 backdrop-blur-xl">
-        <div className="mx-auto w-screen max-w-full px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex min-w-0 items-center gap-3">
-              <BearLogo size={50} />
+              <BearLogo size={46} />
               <div className="hidden sm:block">
-                <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                <span className="text-lg font-semibold tracking-tight text-white">
                   Lucky Bingo Bear
                 </span>
-                <p className="-mt-1 text-[11px] font-bold uppercase text-amber-200/80">Bingo digital en vivo</p>
+                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200/75">Bingo digital en vivo</p>
               </div>
             </div>
-            <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-4 sm:text-base">
+            <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-4">
               {firstPrize && (
-                <span className="hidden items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-black uppercase text-emerald-200 lg:inline-flex">
+                <span className="hidden items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200 lg:inline-flex">
                   <Trophy className="h-4 w-4" />
                   {firstPrize}
                 </span>
               )}
               <Link 
                 href="/en-vivo" 
-                className="hidden items-center gap-1 text-amber-200 hover:text-white font-bold transition-colors sm:inline-flex"
+                className="hidden items-center gap-1 font-semibold text-amber-200 transition-colors hover:text-white sm:inline-flex"
               >
                 <Radio className="h-4 w-4" />
                 En Vivo
               </Link>
               <Link 
                 href="/ganadores" 
-                className="hidden text-amber-200 hover:text-white font-medium transition-colors md:inline"
+                className="hidden font-medium text-amber-200 transition-colors hover:text-white md:inline"
               >
                 Ganadores
               </Link>

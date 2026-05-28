@@ -22,23 +22,23 @@ const trustItems = [
 
 export function TrustSection() {
   return (
-    <section className="py-20">
+    <section className="py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-emerald-400/20 bg-zinc-950/70 p-6 shadow-2xl shadow-black/20 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center">
+        <div className="rounded-lg border border-emerald-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20 sm:p-7">
+          <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-sm font-semibold text-emerald-200">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200">
                 <ShieldCheck className="h-4 w-4" />
                 Transparencia
               </div>
-              <h2 className="text-3xl font-bold text-white sm:text-4xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <h2 className="text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
                 Confianza antes, durante y despues del sorteo
               </h2>
-              <p className="mt-3 text-zinc-300">
+              <p className="mt-3 text-sm leading-relaxed text-zinc-300">
                 La experiencia no termina al pedir el carton: el jugador puede seguir el vivo y revisar resultados cuando lo necesite.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-                <Button asChild className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
+                <Button asChild className="bg-amber-400 font-semibold text-zinc-950 hover:bg-amber-300">
                   <Link href="/en-vivo">
                     <Radio className="mr-2 h-4 w-4" />
                     Ver en vivo
@@ -53,16 +53,16 @@ export function TrustSection() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid auto-rows-fr gap-4 md:grid-cols-3">
               {trustItems.map((item) => {
                 const Icon = item.icon
 
                 return (
-                  <div key={item.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200">
+                  <div key={item.title} className="h-full rounded-lg border border-white/10 bg-white/[0.04] p-5">
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                    <h3 className="text-base font-semibold tracking-tight text-white">
                       {item.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-400">{item.copy}</p>

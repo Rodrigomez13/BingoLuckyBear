@@ -3,22 +3,22 @@ import { BearLogo } from '@/components/bear-logo'
 
 export function Footer() {
   return (
-    <footer className="border-t border-amber-400/20 bg-zinc-950 text-white py-12">
+    <footer className="border-t border-amber-400/20 bg-zinc-950 py-10 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-3">
-            <BearLogo size={50} />
+            <BearLogo size={44} />
             <div>
-              <h3 className="font-bold text-xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <h3 className="text-lg font-semibold tracking-tight">
                 Lucky Bingo Bear
               </h3>
-              <p className="text-amber-200 text-sm">
+              <p className="text-sm text-amber-200">
                 La suerte esta de tu lado
               </p>
             </div>
           </div>
           
-          <nav className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
+          <nav className="flex flex-wrap items-center justify-center gap-5 text-sm sm:gap-6">
             <Link href="#como-funciona" className="text-amber-200 hover:text-white transition-colors">
               Como Funciona
             </Link>

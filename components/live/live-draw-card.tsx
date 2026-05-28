@@ -90,9 +90,9 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
   return (
     <section className={compact ? '' : 'px-4 py-10 sm:px-6 lg:px-8'}>
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-2xl shadow-black/30 backdrop-blur">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="p-5 sm:p-7">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-xl shadow-black/30 backdrop-blur">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <Badge className="bg-red-500 text-white hover:bg-red-500">
                 <Radio className="mr-1 h-3.5 w-3.5" />
@@ -106,23 +106,20 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               )}
             </div>
 
-            <h2
-              className="text-2xl font-bold text-white sm:text-4xl"
-              style={{ fontFamily: 'var(--font-fredoka)' }}
-            >
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {raffle.name}
             </h2>
             {firstPrize && (
-              <div className="mt-4 rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-4 text-zinc-950 shadow-xl shadow-amber-950/20">
-                <p className="text-xs font-black uppercase tracking-wide">Primer premio</p>
-                <p className="mt-1 break-words text-4xl font-black sm:text-5xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              <div className="mt-4 rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-4 text-zinc-950 shadow-lg shadow-amber-950/20">
+                <p className="text-xs font-semibold uppercase tracking-wide">Primer premio</p>
+                <p className="mt-1 break-words text-3xl font-bold tracking-tight sm:text-4xl">
                   {firstPrize}
                 </p>
               </div>
             )}
             {raffle.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300">{raffle.description}</p>}
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-3">
               <LiveInfo
                 icon={<Gift className="h-4 w-4" />}
                 label="Ahora en juego"
@@ -139,12 +136,12 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
             {prizeAmounts.length > 0 && (
               <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
-                <p className="mb-2 text-xs font-bold uppercase text-amber-300">Todos los premios</p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Todos los premios</p>
+                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
                   {[1, 2, 3].map((prizeNumber) => {
                     const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
                     return (
-                    <span key={prizeNumber} className="rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
+                    <span key={prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
                       <span className="block text-xs uppercase">Premio {prizeNumber}</span>
                       {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
                       <span className="block text-xs text-zinc-400">{award ? `Con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
@@ -168,23 +165,23 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               </div>
             )}
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
                 <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-amber-300">
                   <Clock className="h-4 w-4" />
                   Cuenta regresiva
                 </p>
-                <p className="mt-2 font-mono text-4xl font-black text-white">{formatTime(remaining)}</p>
+                <p className="mt-2 font-mono text-3xl font-bold text-white">{formatTime(remaining)}</p>
               </div>
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Ultimo numero</p>
-                <p className="mt-2 text-4xl font-black text-white">
+                <p className="mt-2 text-3xl font-bold text-white">
                   {formatDrawnNumber(lastNumber)}
                 </p>
               </div>
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Numeros cantados</p>
-                <p className="mt-2 text-4xl font-black text-white">{drawnNumbers.length}<span className="text-lg text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
+                <p className="mt-2 text-3xl font-bold text-white">{drawnNumbers.length}<span className="text-base text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
               </div>
             </div>
           </div>
@@ -200,14 +197,14 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
                 [...drawnNumbers].reverse().map((number) => (
                   <div
                     key={number}
-                    className="flex h-14 w-14 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-base font-black text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-16 sm:w-16"
+                    className="flex h-12 w-12 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-14 sm:w-14"
                   >
                     {number}
                   </div>
                 ))
               )}
             </div>
-            <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-4 text-center font-bold leading-tight text-zinc-950 hover:bg-amber-300">
+            <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-3 text-center font-semibold leading-tight text-zinc-950 hover:bg-amber-300">
               <Link href="/participar" className="flex items-center justify-center">
                 <Ticket className="mr-2 h-4 w-4" />
                 {firstPrize ? `Participar por ${firstPrize}` : 'Ver mi carton'}
@@ -222,12 +219,12 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
 function LiveInfo({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail?: string }) {
   return (
-    <div className="rounded-md border border-white/10 bg-white/[0.04] p-3">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase text-amber-300">
+    <div className="h-full min-w-0 rounded-md border border-white/10 bg-white/[0.04] p-3">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-300">
         {icon}
         {label}
       </p>
-      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
+      <p className="mt-1 min-w-0 break-words text-sm font-semibold text-white">{value}</p>
       {detail && <p className="mt-1 text-xs font-semibold text-zinc-400">{detail}</p>}
     </div>
   )

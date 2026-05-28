@@ -172,29 +172,29 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
         </div>
       </CardHeader>
       <CardContent className="space-y-5 p-4 sm:p-6">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid auto-rows-fr gap-3 md:grid-cols-3">
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cuenta</p>
-            <p className="mt-1 font-mono text-3xl font-black">
+            <p className="mt-1 font-mono text-2xl font-bold">
               {String(Math.floor(remaining / 60)).padStart(2, '0')}:{String(remaining % 60).padStart(2, '0')}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Ultimo numero</p>
-            <p className="mt-1 text-3xl font-black">
+            <p className="mt-1 text-2xl font-bold">
               {formatDrawnNumber(lastNumber)}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cantados</p>
-            <p className="mt-1 text-3xl font-black">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
+            <p className="mt-1 text-2xl font-bold">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/30 bg-amber-400/10 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-200">Se esta jugando</p>
-            <p className="mt-2 text-3xl font-black text-white">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Se esta jugando</p>
+            <p className="mt-2 text-2xl font-bold text-white">
               {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
@@ -205,14 +205,14 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </div>
           <div className="rounded-md border border-white/10 bg-black/20 p-4">
             <p className="mb-3 text-sm font-semibold text-zinc-200">Orden inverso del sorteo</p>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
               {[3, 2, 1].map((prizeNumber) => {
                 const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
                 const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
 
                 return (
                   <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
-                    <p className="font-bold text-white">Premio {prizeNumber}</p>
+                    <p className="font-semibold text-white">Premio {prizeNumber}</p>
                     <p className="text-amber-100">{amount}</p>
                     <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
                   </div>
@@ -266,7 +266,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
 
         <div className="grid gap-3 rounded-md border border-sky-300/25 bg-sky-400/10 p-4 lg:grid-cols-[minmax(0,1fr)_180px_auto] lg:items-end">
           <div>
-            <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-sky-100">
+            <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-sky-100">
               <Zap className="h-4 w-4" />
               Modo automatico
             </p>
@@ -325,7 +325,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
               [...drawnNumbers].reverse().map((number) => (
                 <div
                   key={number}
-                  className="flex h-12 w-12 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20"
+                  className="flex h-11 w-11 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/20"
                 >
                   {number}
                 </div>

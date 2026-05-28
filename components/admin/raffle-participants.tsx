@@ -98,10 +98,10 @@ function MiniBingoCard({
         style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.25rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
       >
         {columnLabels.length === 9 && (
-          <div className={`bg-amber-800 py-1 text-center font-black text-amber-100 ${prominent ? 'text-sm' : 'text-[10px]'}`}>P</div>
+          <div className={`bg-amber-800 py-1 text-center font-medium leading-none text-amber-100 ${prominent ? 'text-[10px]' : 'text-[9px]'}`}>P</div>
         )}
         {columnLabels.map((letter) => (
-          <div key={letter} className={`bg-amber-400 py-1 text-center font-black text-zinc-950 ${prominent ? 'text-base sm:text-lg' : 'text-xs'}`}>
+          <div key={letter} className={`bg-amber-400 px-0.5 py-1 text-center font-medium leading-none tracking-tight text-zinc-950 ${prominent ? 'text-[9px] sm:text-[10px]' : 'text-[8px]'}`}>
             {letter}
           </div>
         ))}
@@ -113,8 +113,8 @@ function MiniBingoCard({
               ? [
                   <div
                     key={`prize-${rowIndex}`}
-                    className={`flex aspect-square items-center justify-center border border-zinc-800 bg-amber-400 font-black text-zinc-950 ${
-                      prominent ? 'text-sm' : 'text-[10px]'
+                    className={`flex aspect-square items-center justify-center border border-zinc-800 bg-amber-400 font-semibold text-zinc-950 ${
+                      prominent ? 'text-[10px]' : 'text-[9px]'
                     }`}
                   >
                     P{rowIndex + 1}
@@ -127,8 +127,8 @@ function MiniBingoCard({
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
-                className={`flex aspect-square items-center justify-center border border-zinc-800 font-bold ${
-                  prominent ? 'text-base sm:text-lg' : 'text-xs'
+                className={`flex aspect-square items-center justify-center border border-zinc-800 font-semibold ${
+                  prominent ? 'text-sm sm:text-[15px]' : 'text-xs'
                 } ${
                   cell === null
                     ? 'bg-black/50 text-transparent'
@@ -492,8 +492,8 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/25 bg-amber-400/10 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-200">Premio en juego</p>
-            <p className="mt-2 text-2xl font-black text-white">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premio en juego</p>
+            <p className="mt-2 text-xl font-bold text-white">
               {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Sorteo completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
@@ -636,7 +636,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               <div className="min-w-0 space-y-4 border-b border-zinc-800 p-4 sm:p-5 xl:border-b-0">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>
-                  <p className="break-all font-mono text-2xl font-bold text-zinc-950">
+                  <p className="break-all font-mono text-xl font-bold text-zinc-950">
                     {selectedCard.card_number}
                   </p>
                 </div>
@@ -732,11 +732,11 @@ function ReceiptPreview({ pathname }: { pathname: string }) {
 function SummaryTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-200">
         {icon}
         {label}
       </p>
-      <p className="mt-2 text-3xl font-black text-white">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
     </div>
   )
 }

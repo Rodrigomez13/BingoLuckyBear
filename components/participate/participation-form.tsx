@@ -231,10 +231,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
     <div className="space-y-6">
       {/* Raffle Info Header */}
       <div className="text-center">
-        <BearLogo size={80} className="mx-auto mb-4" />
+        <BearLogo size={68} className="mx-auto mb-4" />
         <h1 
-          className="text-3xl md:text-4xl font-bold text-white mb-2"
-          style={{ fontFamily: 'var(--font-fredoka)' }}
+          className="mb-2 text-2xl font-semibold tracking-tight text-white md:text-3xl"
         >
           {raffle.name}
         </h1>
@@ -244,16 +243,16 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
       </div>
 
       {firstPrize && (
-        <div className="rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-center text-zinc-950 shadow-2xl shadow-amber-950/20">
-          <p className="text-sm font-black uppercase tracking-wide">Primer premio</p>
-          <p className="mt-1 break-words text-5xl font-black md:text-6xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+        <div className="rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-center text-zinc-950 shadow-xl shadow-amber-950/20">
+          <p className="text-xs font-semibold uppercase tracking-wide">Primer premio</p>
+          <p className="mt-1 break-words text-3xl font-bold tracking-tight md:text-4xl">
             {firstPrize}
           </p>
-          <p className="mt-2 text-sm font-bold">El premio mayor se juega al final.</p>
+          <p className="mt-2 text-sm font-semibold">El premio mayor se juega al final.</p>
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
         <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premios" value={prizeAmounts.length === 3 ? '3 premios por fila' : 'A confirmar'} />
         <RaffleDetail icon={<WalletCards className="h-5 w-5" />} label="Monto" value={cardAmount} />
         <RaffleDetail
@@ -269,9 +268,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
             <Gift className="h-4 w-4" />
             Todos los premios
           </p>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
             {[1, 2, 3].map((prizeNumber) => (
-              <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
+              <div key={prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
                 <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
                 {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
                 <span className="mt-1 block text-xs text-zinc-400">Fila {prizeNumber}</span>
@@ -305,7 +304,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
       {/* Form */}
       <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
         <CardHeader className="text-center border-b border-zinc-800">
-          <CardTitle className="text-2xl text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
+          <CardTitle className="text-xl font-semibold tracking-tight text-white">
             {title}
           </CardTitle>
           <CardDescription className="text-zinc-400">
@@ -589,12 +588,12 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
 
 function RaffleDetail({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-zinc-950/75 p-4 text-center">
+    <div className="flex h-full min-w-0 flex-col rounded-lg border border-white/10 bg-zinc-950/75 p-4 text-center">
       <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-amber-400/15 text-amber-200">
         {icon}
       </div>
       <p className="text-xs font-bold uppercase text-amber-200">{label}</p>
-      <p className="mt-1 break-words text-sm font-semibold text-white">{value}</p>
+      <p className="mt-1 min-w-0 break-words text-sm font-semibold text-white">{value}</p>
     </div>
   )
 }

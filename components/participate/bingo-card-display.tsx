@@ -166,7 +166,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       } catch {
         drawLogoMark(ctx, width / 2, 86, 38)
       }
-      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 150, 610, 38, '900')
+      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 150, 610, 34, '800')
       drawCenteredText(ctx, raffleName, width / 2, 190, 610, 22, '600', '#fde68a')
 
       ctx.fillStyle = '#f59e0b'
@@ -191,14 +191,14 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       if (labelWidth > 0) {
         ctx.fillStyle = '#78350f'
         ctx.fillRect(gridX, gridY, labelWidth, headerHeight)
-        drawCenteredText(ctx, 'P', gridX + labelWidth / 2, gridY + headerHeight / 2, labelWidth - 8, 18, '900')
+        drawCenteredText(ctx, 'P', gridX + labelWidth / 2, gridY + headerHeight / 2, labelWidth - 8, 14, '700')
       }
 
       columnLabels.forEach((letter, index) => {
         ctx.fillStyle = headerColors[index]
         ctx.fillRect(gridX + labelWidth + index * cellSize, gridY, cellSize, headerHeight)
         ctx.fillStyle = '#ffffff'
-        drawCenteredText(ctx, letter, gridX + labelWidth + index * cellSize + cellSize / 2, gridY + headerHeight / 2, cellSize - 8, columnCount === 9 ? 18 : 38, '900')
+        drawCenteredText(ctx, letter, gridX + labelWidth + index * cellSize + cellSize / 2, gridY + headerHeight / 2, cellSize - 10, columnCount === 9 ? 12 : 28, '600')
       })
 
       rows.forEach((row, rowIndex) => {
@@ -209,7 +209,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
           ctx.strokeStyle = '#fde68a'
           ctx.lineWidth = 2
           ctx.strokeRect(gridX, labelY, labelWidth, cellSize)
-          drawCenteredText(ctx, `P${rowIndex + 1}`, gridX + labelWidth / 2, labelY + cellSize / 2, labelWidth - 8, 18, '900', '#111827')
+          drawCenteredText(ctx, `P${rowIndex + 1}`, gridX + labelWidth / 2, labelY + cellSize / 2, labelWidth - 8, 15, '700', '#111827')
         }
 
         row.forEach((cell, colIndex) => {
@@ -224,7 +224,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
           ctx.strokeRect(x, y, cellSize, cellSize)
 
           if (cell !== null) {
-            drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, cellSize - 16, cell === 'FREE' ? 20 : 34, '900')
+            drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, cellSize - 16, cell === 'FREE' ? 16 : 28, '700')
           }
         })
       })
@@ -243,17 +243,16 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
 
   const BingoCardVisual = ({ forDownload = false }: { forDownload?: boolean }) => (
     <div
-      className={`rounded-lg bg-gradient-to-br from-zinc-950/95 via-zinc-900/95 to-amber-950/90 ${
-        forDownload ? 'p-3 sm:p-4' : 'p-4'
+      className={`rounded-md bg-gradient-to-br from-zinc-950/95 via-zinc-900/95 to-amber-950/90 ${
+        forDownload ? 'p-3 sm:p-4' : 'p-3 sm:p-4'
       }`}
     >
       {/* Card Header */}
-      <div className="text-center mb-4">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <BearLogo size={forDownload ? 42 : 32} />
+      <div className="mb-3 text-center">
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <BearLogo size={forDownload ? 38 : 30} />
           <h2
-            className={`font-bold text-white ${forDownload ? 'text-xl sm:text-2xl' : 'text-lg'}`}
-            style={{ fontFamily: 'var(--font-fredoka)' }}
+            className={`font-semibold tracking-tight text-white ${forDownload ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'}`}
           >
             Lucky Bingo Bear
           </h2>
@@ -266,20 +265,19 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       </div>
 
       {/* Bingo Grid */}
-      <div className="bg-zinc-950 rounded-lg shadow-lg overflow-hidden border-4 border-amber-400">
+      <div className="overflow-hidden rounded-md border-[3px] border-amber-400 bg-zinc-950 shadow-lg">
         {/* Bingo Header */}
         <div
           className="grid"
           style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.5rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
         >
           {columnLabels.length === 9 && (
-            <div className="bg-amber-800 py-2 text-center text-[10px] font-black text-amber-100">P</div>
+            <div className="bg-amber-800 py-2 text-center text-[9px] font-medium leading-none text-amber-100">P</div>
           )}
           {columnLabels.map((letter, i) => (
             <div 
               key={letter}
-              className={`${HEADER_COLORS[i]} text-white font-bold ${forDownload ? 'py-3 text-xs sm:text-sm' : 'py-2 text-[10px] sm:text-xs'} text-center`}
-              style={{ fontFamily: 'var(--font-fredoka)' }}
+              className={`${HEADER_COLORS[i]} text-center font-medium leading-none tracking-tight text-white ${forDownload ? 'px-0.5 py-2 text-[9px] sm:text-[10px]' : 'px-0.5 py-2 text-[8px] sm:text-[9px]'}`}
             >
               {letter}
             </div>
@@ -294,7 +292,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.5rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
           >
             {columnLabels.length === 9 && (
-              <div className="flex items-center justify-center border-r border-amber-200 bg-amber-400 text-xs font-black text-zinc-950">
+              <div className="flex items-center justify-center border-r border-amber-200 bg-amber-400 text-[10px] font-semibold text-zinc-950">
                 P{rowIndex + 1}
               </div>
             )}
@@ -304,8 +302,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={`
-                  ${forDownload ? 'h-10 text-base sm:h-12 sm:text-lg' : 'h-10 text-base sm:h-12 sm:text-lg'} 
-                  flex items-center justify-center font-bold border-r last:border-r-0 border-amber-200
+                  ${forDownload ? 'h-9 text-sm sm:h-11 sm:text-base' : 'h-8 text-sm sm:h-10 sm:text-[15px]'} 
+                  flex items-center justify-center border-r border-amber-200 font-semibold last:border-r-0
                   ${cell === null
                     ? 'bg-black/50 text-transparent'
                     : cell === 'FREE' 
@@ -332,7 +330,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       {/* Card Footer */}
       <div className={`mt-3 text-center ${forDownload ? 'text-sm' : 'text-sm'} text-amber-100`}>
         <p className="font-medium">{card.full_name}</p>
-        <p className="text-amber-300">{formattedDate}</p>
+        <p className="font-medium text-amber-300">{formattedDate}</p>
       </div>
     </div>
   )
@@ -344,10 +342,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/15 mb-4">
           <CheckCircle className="w-8 h-8 text-emerald-300" />
         </div>
-        <h1 
-          className="text-3xl font-bold text-white mb-2"
-          style={{ fontFamily: 'var(--font-fredoka)' }}
-        >
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
           {isWinner ? 'Tenemos un ganador' : 'Ya estas participando'}
         </h1>
         <p className="text-zinc-300">
@@ -365,8 +360,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       )}
 
       {/* Bingo Card Preview */}
-      <Card className="bg-zinc-950/85 backdrop-blur-sm border-zinc-800 shadow-xl overflow-hidden">
-        <CardContent className="p-4">
+      <Card className="overflow-hidden border-zinc-800 bg-zinc-950/85 shadow-xl backdrop-blur-sm">
+        <CardContent className="p-3 sm:p-4">
           <BingoCardVisual />
 
           {/* Action Buttons */}
@@ -374,14 +369,14 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             <Button
               onClick={() => setShowModal(true)}
               variant="outline"
-              className="w-full border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+              className="h-11 w-full border-amber-400/40 bg-transparent text-sm font-semibold text-amber-200 hover:bg-amber-400/10"
             >
               <Eye className="w-4 h-4 mr-2" />
               Ver Carton Completo
             </Button>
             <Button
               onClick={downloadCard}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              className="h-11 w-full bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-semibold text-white hover:from-amber-600 hover:to-orange-600"
             >
               <Download className="w-4 h-4 mr-2" />
               Descargar
