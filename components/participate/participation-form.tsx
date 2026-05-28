@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { BearLogo } from '@/components/bear-logo'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
 import { PAYMENT_METHODS } from '@/lib/payment'
+import { formatMoneyAmount, getPrizeAmounts } from '@/lib/bingo'
 
 const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
 const MIN_RECEIPT_SIZE = 10 * 1024
@@ -65,6 +66,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
+  const firstPrize = prizeAmounts[0]
+  const cardAmount = formatMoneyAmount(raffle.amount, 'Ver datos de pago')
 
   useEffect(() => {
     return () => {
@@ -239,9 +243,19 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
         )}
       </div>
 
+      {firstPrize && (
+        <div className="rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-center text-zinc-950 shadow-2xl shadow-amber-950/20">
+          <p className="text-sm font-black uppercase tracking-wide">Primer premio</p>
+          <p className="mt-1 break-words text-5xl font-black md:text-6xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            {firstPrize}
+          </p>
+          <p className="mt-2 text-sm font-bold">El premio mayor se juega al final.</p>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3">
-        <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premio" value={raffle.prize || 'A confirmar'} />
-        <RaffleDetail icon={<WalletCards className="h-5 w-5" />} label="Monto" value={raffle.amount || 'Ver datos de pago'} />
+        <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premios" value={prizeAmounts.length === 3 ? '3 premios por fila' : 'A confirmar'} />
+        <RaffleDetail icon={<WalletCards className="h-5 w-5" />} label="Monto" value={cardAmount} />
         <RaffleDetail
           icon={<CalendarDays className="h-5 w-5" />}
           label="Fecha"
@@ -249,19 +263,24 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
         />
       </div>
 
-      {!!raffle.additional_prizes?.length && (
+      {prizeAmounts.length > 0 && (
         <div className="rounded-lg border border-amber-400/20 bg-zinc-950/75 p-4">
           <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase text-amber-200">
             <Gift className="h-4 w-4" />
-            Mas premios
+            Todos los premios
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {raffle.additional_prizes.map((item, index) => (
-              <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
-                {item}
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[1, 2, 3].map((prizeNumber) => (
+              <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
+                <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
+                {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
+                <span className="mt-1 block text-xs text-zinc-400">Fila {prizeNumber}</span>
               </div>
             ))}
           </div>
+          <p className="mt-3 text-xs font-semibold uppercase text-zinc-400">
+            Orden del sorteo: premio 3, premio 2 y premio 1 al final.
+          </p>
         </div>
       )}
 
@@ -545,7 +564,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-lg py-6 shadow-lg shadow-amber-500/30 transition-all hover:shadow-xl hover:shadow-amber-500/40"
+              className="h-auto w-full whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 py-5 text-center text-lg font-bold leading-tight text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-600 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -553,7 +572,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                   Generando tus cartones...
                 </span>
               ) : (
-                Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
+                firstPrize ? `Participar por ${firstPrize}` : Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
               )}
             </Button>
 

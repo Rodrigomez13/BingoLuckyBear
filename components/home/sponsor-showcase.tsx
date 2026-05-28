@@ -1,25 +1,26 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { BadgeDollarSign, CalendarDays, Gift, Megaphone, ShieldCheck, Sparkles, Trophy } from 'lucide-react'
+import { BadgeDollarSign, Megaphone, ShieldCheck, Sparkles } from 'lucide-react'
 import { PAYMENT_INFO } from '@/lib/payment'
+import { formatMoneyAmount } from '@/lib/bingo'
 
 const prizeHighlights = [
   {
-    title: 'Premio principal',
-    copy: 'El destaque de la semana aparece primero para que el visitante entienda que se juega y por que conviene entrar.',
-    icon: Trophy,
+    title: 'Premios descendentes',
+    copy: 'El premio mayor se destaca primero y los premios secundarios mantienen una jerarquia facil de entender.',
+    asset: '/brand/winner-crown.svg',
     tone: 'from-amber-300 to-orange-500',
   },
   {
-    title: 'Rondas especiales',
-    copy: 'Fechas tematicas, bingos relampago o premios sorpresa pueden comunicarse sin agregar pasos al formulario.',
-    icon: CalendarDays,
+    title: 'Sorteo inverso',
+    copy: 'La partida inicia por el premio 3, sigue con el premio 2 y reserva el premio principal para el cierre.',
+    asset: '/brand/gold-medal.svg',
     tone: 'from-emerald-300 to-teal-500',
   },
   {
-    title: 'Promos visibles',
-    copy: 'El espacio de combos o beneficios ayuda a vender mas cartones sin repetir el mismo mensaje de confianza.',
-    icon: Gift,
+    title: 'Una fila, un premio',
+    copy: 'Cada carton muestra filas identificadas para que el participante sepa que esta siguiendo en vivo.',
+    asset: '/brand/confetti-coins.svg',
     tone: 'from-sky-300 to-blue-500',
   },
 ]
@@ -27,12 +28,21 @@ const prizeHighlights = [
 const sponsorSlots = ['Marca invitada', 'Combo del sorteo', 'Premio sorpresa']
 
 export function SponsorShowcase() {
+  const paymentAmount = /\d/.test(PAYMENT_INFO.amount) ? formatMoneyAmount(PAYMENT_INFO.amount) : 'A confirmar'
+
   return (
-    <section className="border-y border-amber-400/10 bg-zinc-950/55 py-20">
+    <section className="border-y border-white/10 bg-zinc-950/62 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900/75 shadow-2xl shadow-black/20">
-            <div className="grid min-h-[390px] sm:grid-cols-[230px_minmax(0,1fr)]">
+        <div className="grid items-start gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="relative overflow-hidden rounded-lg border border-white/10 bg-zinc-900/78 shadow-xl shadow-black/20">
+            <Image
+              src="/brand/confetti-coins.svg"
+              alt=""
+              width={520}
+              height={320}
+              className="pointer-events-none absolute -right-28 -top-28 h-auto w-96 opacity-20"
+            />
+            <div className="grid sm:grid-cols-[220px_minmax(0,1fr)]">
               <div className="relative flex items-center justify-center border-b border-white/10 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.35),transparent_14rem),linear-gradient(140deg,rgba(239,68,68,0.22),rgba(16,185,129,0.16))] p-8 sm:border-b-0 sm:border-r">
                 <Image
                   src="/logo-contexto.svg"
@@ -43,45 +53,43 @@ export function SponsorShowcase() {
                 />
               </div>
 
-              <div className="flex flex-col justify-center p-6 sm:p-8">
+              <div className="flex flex-col justify-center p-5 sm:p-6">
                 <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-sm font-bold text-amber-200">
                   <Sparkles className="h-4 w-4" />
-                  Premios, precios y cartones
+                  Premio, carton y sorteo en una sola vista
                 </div>
                 <h2
-                  className="max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl"
+                  className="max-w-2xl text-2xl font-black leading-tight text-white sm:text-3xl"
                   style={{ fontFamily: 'var(--font-fredoka)' }}
                 >
-                  Una landing que muestra el juego antes de pedir el pago
+                  Una experiencia visual lista para convertir visitas en participantes
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
-                  El visitante ve el monto configurado, la mecanica del carton y los espacios de premio en el mismo
-                  tramo visual. Menos explicacion repetida, mas decision rapida.
+                  El visitante entiende que puede comprar, recibir su carton y mirar el sorteo sin saltar entre mensajes
+                  dispersos. La interfaz prioriza decision rapida, confianza y lectura mobile.
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={PAYMENT_INFO.amount} label="monto" />
-                  <Metric value="1" label="carton unico" />
-                  <Metric value="75" label="numeros" />
+                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={paymentAmount} label="monto" />
+                  <Metric value="1" label="carton por compra" />
+                  <Metric value="90" label="bolillas" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid self-start gap-4">
             {prizeHighlights.map((item) => {
-              const Icon = item.icon
-
               return (
                 <div
                   key={item.title}
-                  className="rounded-lg border border-white/10 bg-zinc-900/75 p-5 shadow-lg shadow-black/15"
+                  className="min-h-[132px] rounded-lg border border-white/10 bg-zinc-900/75 p-5 shadow-lg shadow-black/15"
                 >
-                  <div className="flex gap-4">
+                  <div className="flex items-start gap-4">
                     <div
                       className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${item.tone} text-zinc-950 shadow-lg`}
                     >
-                      <Icon className="h-6 w-6" />
+                      <Image src={item.asset} alt="" width={42} height={42} className="h-10 w-10 object-contain" />
                     </div>
                     <div>
                       <h3 className="text-lg font-black text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
@@ -96,11 +104,11 @@ export function SponsorShowcase() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 lg:grid-cols-3">
           <VisualPanel title="Carton digital">
             <MiniBingoCard />
           </VisualPanel>
-          <VisualPanel title="Premio destacado">
+          <VisualPanel title="Orden de premios">
             <PrizeVisual />
           </VisualPanel>
           <VisualPanel title="Bolillas cantadas">
@@ -119,13 +127,17 @@ export function SponsorShowcase() {
 }
 
 function Metric({ value, label, icon }: { value: string; label: string; icon?: ReactNode }) {
+  const isLongValue = value.length > 12
+
   return (
-    <div className="min-h-24 rounded-md border border-white/10 bg-black/25 p-4">
-      <div className="flex items-center gap-2 text-white">
-        {icon}
-        <p className="text-xl font-black leading-tight break-words">{value}</p>
+    <div className="flex min-h-24 flex-col justify-between rounded-md border border-white/10 bg-black/25 p-4">
+      <div className="flex min-w-0 items-start gap-2 text-white">
+        {icon && <span className="mt-1 shrink-0">{icon}</span>}
+        <p className={`${isLongValue ? 'text-base' : 'text-2xl'} min-w-0 break-words font-black leading-tight`}>
+          {value}
+        </p>
       </div>
-      <p className="mt-2 text-xs font-bold uppercase text-amber-200">{label}</p>
+      <p className="mt-3 text-xs font-bold uppercase leading-tight text-amber-200">{label}</p>
     </div>
   )
 }
@@ -142,29 +154,40 @@ function VisualPanel({ title, children }: { title: string; children: ReactNode }
 }
 
 function MiniBingoCard() {
-  const numbers = [7, 18, 33, 52, 69, 11, 24, 'FREE', 47, 71, 3, 29, 40, 58, 64]
+  const rows = [
+    [7, null, 23, 34, null, 56, null, 71, 88],
+    [null, 16, null, 39, 45, null, 64, 77, null],
+    [3, 19, 28, null, null, 58, 69, null, 90],
+  ]
+  const labels = ['1-9', '10', '20', '30', '40', '50', '60', '70', '80']
 
   return (
-    <div className="w-full max-w-[230px] overflow-hidden rounded-md border-4 border-amber-300 bg-zinc-950 shadow-2xl">
-      <div className="grid grid-cols-5 text-center text-sm font-black text-white">
-        {['B', 'I', 'N', 'G', 'O'].map((letter, index) => (
+    <div className="w-full max-w-[300px] overflow-hidden rounded-md border-4 border-amber-300 bg-zinc-950 shadow-2xl">
+      <div className="grid grid-cols-[2rem_repeat(9,minmax(0,1fr))] text-center text-[10px] font-black text-white">
+        <div className="bg-amber-800 text-amber-100">P</div>
+        {labels.map((letter, index) => (
           <div
             key={letter}
-            className={['bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500', 'bg-blue-500'][index]}
+            className={['bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500', 'bg-blue-500', 'bg-sky-500', 'bg-violet-500', 'bg-pink-500', 'bg-teal-500'][index]}
           >
             {letter}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-5">
-        {numbers.map((number, index) => (
+      <div className="grid grid-cols-[2rem_repeat(9,minmax(0,1fr))]">
+        {rows.flatMap((row, rowIndex) => [
+          <div key={`p-${rowIndex}`} className="flex aspect-square items-center justify-center border-r border-t border-amber-200 bg-amber-400 text-xs font-black text-zinc-950">
+            P{rowIndex + 1}
+          </div>,
+          ...row.map((number, index) => (
           <div
-            key={`${number}-${index}`}
+            key={`${number}-${rowIndex}-${index}`}
             className="flex aspect-square items-center justify-center border-r border-t border-amber-200 text-xs font-bold text-zinc-100 last:border-r-0"
           >
             {number}
           </div>
-        ))}
+          )),
+        ])}
       </div>
     </div>
   )
@@ -180,9 +203,9 @@ function PrizeVisual() {
         54
       </div>
       <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
-        <Trophy className="mx-auto mb-2 h-9 w-9" />
-        <p className="text-2xl font-black">PREMIO</p>
-        <p className="text-xs font-bold uppercase">principal</p>
+        <Image src="/brand/gold-medal.svg" alt="" width={54} height={54} className="mx-auto mb-2 h-12 w-12 object-contain" />
+        <p className="text-2xl font-black">P3 - P2 - P1</p>
+        <p className="text-xs font-bold uppercase">mayor al final</p>
       </div>
     </div>
   )
@@ -192,7 +215,7 @@ function DrawVisual() {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
       <div className="grid grid-cols-4 gap-2">
-        {[5, 14, 26, 39, 48, 53, 62, 75].map((number, index) => (
+        {[5, 14, 26, 39, 48, 53, 62, 90].map((number, index) => (
           <div
             key={number}
             className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-black text-white shadow-lg ${

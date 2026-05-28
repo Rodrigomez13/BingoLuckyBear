@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Check, ClipboardCopy, Landmark, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { formatMoneyAmount } from '@/lib/bingo'
 import { PAYMENT_INFO } from '@/lib/payment'
 
 interface PaymentInstructionsProps {
@@ -11,13 +12,14 @@ interface PaymentInstructionsProps {
 
 export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
   const [copied, setCopied] = useState<string | null>(null)
+  const paymentAmount = formatMoneyAmount(amount || PAYMENT_INFO.amount)
   const paymentRows = [
     { label: 'Titular', value: PAYMENT_INFO.holder },
     { label: 'Alias', value: PAYMENT_INFO.alias },
     { label: 'CBU/CVU', value: PAYMENT_INFO.cbu },
     { label: 'Banco/Billetera', value: PAYMENT_INFO.bank },
     { label: 'Concepto', value: PAYMENT_INFO.concept },
-    { label: 'Monto', value: amount || PAYMENT_INFO.amount },
+    { label: 'Monto', value: paymentAmount },
   ]
 
   const copyValue = async (value: string, label: string) => {

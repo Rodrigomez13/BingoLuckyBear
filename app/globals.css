@@ -121,12 +121,20 @@
   }
   body {
     @apply bg-background text-foreground;
+    width: 100vw;
     max-width: 100%;
     overflow-x: hidden;
   }
 
   html {
+    width: 100%;
     max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  main {
+    width: 100vw;
+    max-width: 100vw;
     overflow-x: hidden;
   }
 }
@@ -138,5 +146,67 @@
 
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .animate-banner-drift {
+    animation: banner-drift 10s ease-in-out infinite alternate;
+  }
+
+  .animate-banner-logo {
+    animation: banner-logo-float 4.8s ease-in-out infinite;
+  }
+
+  .animate-banner-logo-delayed {
+    animation: banner-logo-float 5.6s ease-in-out 0.8s infinite;
+  }
+
+  .animate-banner-corner {
+    animation: banner-corner-pulse 4s ease-in-out infinite;
+  }
+
+  .animate-banner-copy {
+    animation: banner-copy-rise 700ms ease-out both;
+  }
+}
+
+@keyframes banner-drift {
+  from {
+    transform: scale(1.02) translateX(-1.5%);
+  }
+  to {
+    transform: scale(1.06) translateX(1.5%);
+  }
+}
+
+@keyframes banner-logo-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.025);
+  }
+}
+
+@keyframes banner-corner-pulse {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: rotate(3deg) scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes banner-copy-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

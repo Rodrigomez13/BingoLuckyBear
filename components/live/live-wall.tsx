@@ -6,7 +6,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getBingoLetter, getCountdownRemainingSeconds } from '@/lib/bingo'
+import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -27,6 +27,8 @@ interface Raffle {
 interface ActiveRaffleResponse {
   raffle: Raffle | null
   participantCount?: number
+  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string } | null
+  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; winners: { id: string; full_name: string; card_number: string }[] }[]
 }
 
 function formatTime(seconds: number) {
@@ -38,6 +40,8 @@ function formatTime(seconds: number) {
 export function LiveWall() {
   const [raffle, setRaffle] = useState<Raffle | null>(null)
   const [participantCount, setParticipantCount] = useState(0)
+  const [currentPrizeTarget, setCurrentPrizeTarget] = useState<ActiveRaffleResponse['currentPrizeTarget']>(null)
+  const [prizeAwards, setPrizeAwards] = useState<NonNullable<ActiveRaffleResponse['prizeAwards']>>([])
   const [remaining, setRemaining] = useState(0)
 
   useEffect(() => {
@@ -46,6 +50,8 @@ export function LiveWall() {
       const data = (await response.json()) as ActiveRaffleResponse
       setRaffle(data.raffle ?? null)
       setParticipantCount(data.participantCount ?? 0)
+      setCurrentPrizeTarget(data.currentPrizeTarget ?? null)
+      setPrizeAwards(data.prizeAwards ?? [])
     }
 
     loadRaffle()
@@ -66,6 +72,9 @@ export function LiveWall() {
   }, [raffle?.countdown_seconds, raffle?.draw_started_at])
 
   const drawnNumbers = useMemo(() => raffle?.drawn_numbers ?? [], [raffle?.drawn_numbers])
+  const prizeAmounts = useMemo(() => getPrizeAmounts(raffle?.prize, raffle?.additional_prizes), [raffle?.prize, raffle?.additional_prizes])
+  const firstPrize = prizeAmounts[0]
+  const cardAmount = formatMoneyAmount(raffle?.amount)
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
   const hasStarted = raffle?.draw_status === 'running' || raffle?.draw_status === 'finished' || drawnNumbers.length > 0
 
@@ -116,11 +125,25 @@ export function LiveWall() {
             <h1 className="max-w-4xl text-5xl font-black leading-none text-white sm:text-7xl lg:text-8xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
               {raffle.name}
             </h1>
+            {firstPrize && (
+              <div className="mt-6 max-w-2xl rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-zinc-950 shadow-2xl shadow-amber-950/20">
+                <p className="text-sm font-black uppercase tracking-wide">Primer premio</p>
+                <p className="mt-1 break-words text-5xl font-black sm:text-6xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                  {firstPrize}
+                </p>
+              </div>
+            )}
             {raffle.description && <p className="mt-5 max-w-2xl text-xl leading-relaxed text-zinc-300">{raffle.description}</p>}
 
             <div className="mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
-              <Stat icon={<Gift className="h-6 w-6" />} label="Premio" value={raffle.prize || 'A confirmar'} compact />
-              <Stat icon={<WalletCards className="h-6 w-6" />} label="Monto" value={raffle.amount || 'A confirmar'} compact />
+              <Stat
+                icon={<Gift className="h-6 w-6" />}
+                label="Ahora en juego"
+                value={currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
+                detail={currentPrizeTarget ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'A confirmar'}` : '3 premios adjudicados'}
+                compact
+              />
+              <Stat icon={<WalletCards className="h-6 w-6" />} label="Monto" value={cardAmount} compact />
               <Stat
                 icon={<CalendarDays className="h-6 w-6" />}
                 label="Fecha"
@@ -128,19 +151,24 @@ export function LiveWall() {
                 compact
               />
               <Stat icon={<Clock className="h-6 w-6" />} label="Cuenta regresiva" value={formatTime(remaining)} />
-              <Stat label="Ultimo numero" value={lastNumber ? `${getBingoLetter(lastNumber)}-${lastNumber}` : '--'} />
+              <Stat label="Ultimo numero" value={formatDrawnNumber(lastNumber)} />
               <Stat label="Cartones" value={String(participantCount)} />
             </div>
 
-            {!!raffle.additional_prizes?.length && (
+            {prizeAmounts.length > 0 && (
               <div className="mt-5 max-w-4xl rounded-lg border border-amber-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-200">Premios extra</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {raffle.additional_prizes.map((item, index) => (
-                    <div key={`${item}-${index}`} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
-                      {item}
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-200">Todos los premios</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[1, 2, 3].map((prizeNumber) => {
+                    const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                    return (
+                    <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                      <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
+                      <span>{prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}</span>
+                      <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -170,7 +198,7 @@ export function LiveWall() {
             <div className="mt-5 rounded-md border border-white/10 bg-black/20 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-zinc-200">Bolillero</p>
-                <p className="text-sm text-amber-200">{drawnNumbers.length}/75</p>
+                <p className="text-sm text-amber-200">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
               </div>
               <div className="grid max-h-64 grid-cols-5 gap-2 overflow-hidden sm:grid-cols-6 lg:grid-cols-5">
                 {[...drawnNumbers].reverse().slice(0, 30).map((number) => (
@@ -182,10 +210,10 @@ export function LiveWall() {
               {drawnNumbers.length === 0 && <p className="py-8 text-center text-sm text-zinc-500">Todavia no salieron numeros.</p>}
             </div>
 
-            <Button asChild className="mt-5 w-full bg-amber-400 py-6 font-bold text-zinc-950 hover:bg-amber-300">
-              <Link href="/participar">
+            <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-5 text-center font-bold leading-tight text-zinc-950 hover:bg-amber-300">
+              <Link href="/participar" className="flex items-center justify-center">
                 <Ticket className="mr-2 h-5 w-5" />
-                Participar desde el celular
+                {firstPrize ? `Participar por ${firstPrize}` : 'Participar desde el celular'}
               </Link>
             </Button>
 
@@ -202,7 +230,7 @@ export function LiveWall() {
   )
 }
 
-function Stat({ icon, label, value, compact = false }: { icon?: ReactNode; label: string; value: string; compact?: boolean }) {
+function Stat({ icon, label, value, detail, compact = false }: { icon?: ReactNode; label: string; value: string; detail?: string; compact?: boolean }) {
   return (
     <div className="rounded-lg border border-white/10 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
@@ -210,6 +238,7 @@ function Stat({ icon, label, value, compact = false }: { icon?: ReactNode; label
         {label}
       </p>
       <p className={`mt-3 break-words font-black text-white ${compact ? 'text-xl' : 'text-4xl'}`}>{value}</p>
+      {detail && <p className="mt-1 text-sm font-semibold text-zinc-300">{detail}</p>}
     </div>
   )
 }

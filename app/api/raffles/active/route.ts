@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getCurrentPrizeTarget, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 
 export async function GET() {
   try {
@@ -17,12 +18,23 @@ export async function GET() {
       return NextResponse.json({ raffle: null })
     }
 
-    const { count } = await supabase
+    const [{ count }, { data: cards }] = await Promise.all([
+      supabase
       .from('bingo_cards')
       .select('id', { count: 'exact', head: true })
-      .eq('raffle_id', raffle.id)
+        .eq('raffle_id', raffle.id),
+      supabase
+        .from('bingo_cards')
+        .select('id, card_number, full_name, bingo_numbers')
+        .eq('raffle_id', raffle.id),
+    ])
 
-    return NextResponse.json({ raffle, participantCount: count ?? 0 })
+    const drawnNumbers = Array.isArray(raffle.drawn_numbers) ? raffle.drawn_numbers : []
+    const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
+    const prizeAwards = getPrizeAwards(cards ?? [], drawnNumbers, prizeAmounts)
+    const currentPrizeTarget = getCurrentPrizeTarget(cards ?? [], drawnNumbers, prizeAmounts)
+
+    return NextResponse.json({ raffle, participantCount: count ?? 0, prizeAwards, currentPrizeTarget })
   } catch (error) {
     console.error('Error fetching active raffle:', error)
     return NextResponse.json(

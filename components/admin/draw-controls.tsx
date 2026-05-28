@@ -1,18 +1,27 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Play, RefreshCw, RotateCcw, Trophy } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle, Pause, Play, RefreshCw, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getBingoLetter, getCountdownRemainingSeconds, getWinningLines } from '@/lib/bingo'
+import {
+  BINGO_TOTAL_BALLS,
+  formatDrawnNumber,
+  getCountdownRemainingSeconds,
+  getCurrentPrizeTarget,
+  getPrizeAmounts,
+  getPrizeAwards,
+} from '@/lib/bingo'
 
 interface Raffle {
   id: string
   name: string
   description: string | null
+  prize?: string | null
+  additional_prizes?: string[] | null
   is_active: boolean
   created_at: string
   draw_status?: 'idle' | 'running' | 'finished' | null
@@ -36,8 +45,12 @@ interface DrawControlsProps {
 
 export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsProps) {
   const [countdownMinutes, setCountdownMinutes] = useState('5')
+  const [autoIntervalSeconds, setAutoIntervalSeconds] = useState('6')
+  const [isAutoDrawEnabled, setIsAutoDrawEnabled] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoStatus, setAutoStatus] = useState<string | null>(null)
+  const autoRequestRef = useRef(false)
   const [remaining, setRemaining] = useState(() =>
     getCountdownRemainingSeconds(raffle.draw_started_at ?? null, raffle.countdown_seconds ?? null)
   )
@@ -52,18 +65,13 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
-  const winners = useMemo(
-    () =>
-      cards
-        .map((card) => ({
-          ...card,
-          lines: card.bingo_numbers ? getWinningLines(card.bingo_numbers, drawnNumbers) : [],
-        }))
-        .filter((card) => card.lines.length > 0),
-    [cards, drawnNumbers]
-  )
+  const prizeAmounts = useMemo(() => getPrizeAmounts(raffle.prize, raffle.additional_prizes), [raffle.prize, raffle.additional_prizes])
+  const prizeAwards = useMemo(() => getPrizeAwards(cards, drawnNumbers, prizeAmounts), [cards, drawnNumbers, prizeAmounts])
+  const currentPrizeTarget = useMemo(() => getCurrentPrizeTarget(cards, drawnNumbers, prizeAmounts), [cards, drawnNumbers, prizeAmounts])
+  const autoInterval = Math.max(3, Math.min(60, Math.round(Number(autoIntervalSeconds || 0) || 6)))
+  const isDrawComplete = drawnNumbers.length >= BINGO_TOTAL_BALLS || !currentPrizeTarget || raffle.draw_status === 'finished'
 
-  const runAction = async (action: 'start' | 'draw' | 'reset' | 'finish') => {
+  const runAction = useCallback(async (action: 'start' | 'draw' | 'reset' | 'finish') => {
     setIsSaving(true)
     setError(null)
 
@@ -83,12 +91,68 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
       }
 
       onRaffleUpdated(data.raffle)
+      return data.raffle as Raffle
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
+      return null
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [countdownMinutes, onRaffleUpdated, raffle.id])
+
+  useEffect(() => {
+    if (!isAutoDrawEnabled) {
+      return
+    }
+
+    if (isDrawComplete) {
+      setIsAutoDrawEnabled(false)
+      setAutoStatus('Automatico pausado: el sorteo ya no tiene mas premios pendientes.')
+      return
+    }
+
+    if (raffle.draw_status !== 'running') {
+      setAutoStatus('Automatico listo. Inicia el sorteo para comenzar a cantar numeros.')
+      return
+    }
+
+    if (remaining > 0) {
+      setAutoStatus(`Automatico listo. Esperando cuenta regresiva: ${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}.`)
+      return
+    }
+
+    setAutoStatus(`Automatico activo: canta un numero cada ${autoInterval} segundos.`)
+    const interval = window.setInterval(async () => {
+      if (autoRequestRef.current) {
+        return
+      }
+
+      autoRequestRef.current = true
+      const updatedRaffle = await runAction('draw')
+      autoRequestRef.current = false
+
+      const updatedDrawnNumbers = updatedRaffle?.drawn_numbers ?? drawnNumbers
+      const updatedAwards = getPrizeAwards(cards, updatedDrawnNumbers, prizeAmounts)
+      const updatedTarget = getCurrentPrizeTarget(cards, updatedDrawnNumbers, prizeAmounts)
+
+      if (updatedDrawnNumbers.length >= BINGO_TOTAL_BALLS || !updatedTarget || updatedAwards.length >= 3) {
+        setIsAutoDrawEnabled(false)
+        setAutoStatus('Automatico pausado: ya se adjudicaron los premios del sorteo.')
+      }
+    }, autoInterval * 1000)
+
+    return () => window.clearInterval(interval)
+  }, [
+    autoInterval,
+    cards,
+    drawnNumbers,
+    isAutoDrawEnabled,
+    isDrawComplete,
+    prizeAmounts,
+    raffle.draw_status,
+    remaining,
+    runAction,
+  ])
 
   return (
     <Card className="border-amber-400/25 bg-zinc-950/85 text-white shadow-xl shadow-black/20">
@@ -118,12 +182,43 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Ultimo numero</p>
             <p className="mt-1 text-3xl font-black">
-              {lastNumber ? `${getBingoLetter(lastNumber)}-${lastNumber}` : '--'}
+              {formatDrawnNumber(lastNumber)}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cantados</p>
-            <p className="mt-1 text-3xl font-black">{drawnNumbers.length}/75</p>
+            <p className="mt-1 text-3xl font-black">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_1.35fr]">
+          <div className="rounded-md border border-amber-400/30 bg-amber-400/10 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-200">Se esta jugando</p>
+            <p className="mt-2 text-3xl font-black text-white">
+              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
+            </p>
+            <p className="mt-1 text-sm text-zinc-300">
+              {currentPrizeTarget
+                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
+                : 'Ya se adjudicaron los tres premios.'}
+            </p>
+          </div>
+          <div className="rounded-md border border-white/10 bg-black/20 p-4">
+            <p className="mb-3 text-sm font-semibold text-zinc-200">Orden inverso del sorteo</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[3, 2, 1].map((prizeNumber) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+
+                return (
+                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
+                    <p className="font-bold text-white">Premio {prizeNumber}</p>
+                    <p className="text-amber-100">{amount}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -153,7 +248,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             </Button>
             <Button
               onClick={() => runAction('draw')}
-              disabled={isSaving || drawnNumbers.length >= 75}
+              disabled={isSaving || isAutoDrawEnabled || drawnNumbers.length >= BINGO_TOTAL_BALLS}
               className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300 xl:w-auto"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -167,6 +262,56 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
               Reiniciar
             </Button>
           </div>
+        </div>
+
+        <div className="grid gap-3 rounded-md border border-sky-300/25 bg-sky-400/10 p-4 lg:grid-cols-[minmax(0,1fr)_180px_auto] lg:items-end">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-sky-100">
+              <Zap className="h-4 w-4" />
+              Modo automatico
+            </p>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-300">
+              Activalo para cantar bolillas sin presionar numero por numero. Se detiene solo al completar premios o al finalizar.
+            </p>
+            {autoStatus && <p className="mt-2 text-xs font-semibold text-sky-100">{autoStatus}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="autoInterval" className="text-zinc-300">
+              Segundos por numero
+            </Label>
+            <Input
+              id="autoInterval"
+              type="number"
+              min="3"
+              max="60"
+              step="1"
+              value={autoIntervalSeconds}
+              onChange={(event) => setAutoIntervalSeconds(event.target.value)}
+              className="border-white/10 bg-white/10 text-white"
+            />
+          </div>
+          <Button
+            type="button"
+            onClick={() => setIsAutoDrawEnabled((current) => !current)}
+            disabled={isSaving || isDrawComplete}
+            className={
+              isAutoDrawEnabled
+                ? 'w-full bg-white font-bold text-zinc-950 hover:bg-zinc-200 lg:w-auto'
+                : 'w-full bg-sky-400 font-bold text-zinc-950 hover:bg-sky-300 lg:w-auto'
+            }
+          >
+            {isAutoDrawEnabled ? (
+              <>
+                <Pause className="mr-2 h-4 w-4" />
+                Pausar
+              </>
+            ) : (
+              <>
+                <Timer className="mr-2 h-4 w-4" />
+                Activar auto
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="rounded-md border border-white/10 bg-black/20 p-3">
@@ -196,19 +341,26 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </div>
         )}
 
-        {winners.length > 0 && (
+        {prizeAwards.length > 0 && (
           <div className="rounded-md border border-emerald-400/30 bg-emerald-500/10 p-4">
             <h3 className="mb-3 flex items-center gap-2 font-bold text-emerald-100">
               <Trophy className="h-5 w-5" />
-              Ganador detectado
+              Premios adjudicados
             </h3>
             <div className="space-y-2">
-              {winners.map((winner) => (
-                <div key={winner.id} className="rounded-md bg-black/20 p-3 text-sm">
-                  <p className="font-bold text-white">
-                    {winner.full_name} - {winner.card_number}
+              {prizeAwards.map((award) => (
+                <div key={award.prizeNumber} className="rounded-md bg-black/20 p-3 text-sm">
+                  <p className="font-bold text-white">Premio {award.prizeNumber} - {award.amount || 'monto a confirmar'}</p>
+                  <p className="text-emerald-100">
+                    Fila {award.rowIndex + 1}, adjudicado con el numero {award.drawnNumber}
                   </p>
-                  <p className="text-emerald-100">{winner.lines.join(', ')}</p>
+                  <div className="mt-2 space-y-1">
+                    {award.winners.map((winner) => (
+                      <p key={`${award.prizeNumber}-${winner.id}`} className="text-zinc-200">
+                        {winner.full_name} - {winner.card_number}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

@@ -19,9 +19,6 @@ export function Footer() {
           </div>
           
           <nav className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
-            <Link href="/participar" className="text-amber-200 hover:text-white transition-colors">
-              Participar
-            </Link>
             <Link href="#como-funciona" className="text-amber-200 hover:text-white transition-colors">
               Como Funciona
             </Link>

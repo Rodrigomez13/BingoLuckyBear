@@ -24,6 +24,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Stitch UI Workflow
+
+This project includes `.stitch/DESIGN.md` and `.stitch/PROMPT.md` so the visual system can be used as a handoff for Google Stitch.
+
+Recommended flow:
+
+1. Open Stitch and create a project for Lucky Bingo Bear.
+2. Upload or paste `.stitch/DESIGN.md` as the design system context.
+3. Use `.stitch/PROMPT.md` to generate or refine the home, participation, live draw, and winners screens.
+4. Export React/Tailwind output and merge it into the existing Next.js components instead of replacing raffle/payment logic.
+5. Keep active raffle data wired through `app/page.tsx` and `lib/bingo.ts`.
+
 ## Learn More
 
 To learn more, take a look at the following resources:

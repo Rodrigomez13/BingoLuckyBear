@@ -16,7 +16,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DrawControls } from './draw-controls'
-import { getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
+import {
+  getCurrentPrizeTarget,
+  getPrizeAmounts,
+  getPrizeAwards,
+  getBingoColumnLabels,
+  getBingoRows,
+  isMarked,
+  normalizePrizeAmounts,
+} from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -55,8 +63,6 @@ interface RaffleParticipantsProps {
   onRaffleUpdated: (raffle: Raffle) => void
 }
 
-const BINGO_HEADERS = ['B', 'I', 'N', 'G', 'O']
-
 function toDateTimeLocalValue(value: string | null) {
   if (!value) return ''
   const date = new Date(value)
@@ -75,6 +81,7 @@ function MiniBingoCard({
   prominent?: boolean
 }) {
   const rows = getBingoRows(numbers)
+  const columnLabels = getBingoColumnLabels(numbers)
 
   if (rows.length === 0) {
     return (
@@ -86,16 +93,35 @@ function MiniBingoCard({
 
   return (
     <div className={`rounded-md border border-amber-400/40 bg-zinc-950 p-2 ${prominent ? 'shadow-xl shadow-amber-950/20' : ''}`}>
-      <div className="grid grid-cols-5 overflow-hidden rounded-t-sm">
-        {BINGO_HEADERS.map((letter) => (
+      <div
+        className="grid overflow-hidden rounded-t-sm"
+        style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.25rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
+      >
+        {columnLabels.length === 9 && (
+          <div className={`bg-amber-800 py-1 text-center font-black text-amber-100 ${prominent ? 'text-sm' : 'text-[10px]'}`}>P</div>
+        )}
+        {columnLabels.map((letter) => (
           <div key={letter} className={`bg-amber-400 py-1 text-center font-black text-zinc-950 ${prominent ? 'text-base sm:text-lg' : 'text-xs'}`}>
             {letter}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-5">
+      <div className="grid" style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.25rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}>
         {rows.flatMap((row, rowIndex) =>
-          row.map((cell, colIndex) => {
+          [
+            ...(columnLabels.length === 9
+              ? [
+                  <div
+                    key={`prize-${rowIndex}`}
+                    className={`flex aspect-square items-center justify-center border border-zinc-800 bg-amber-400 font-black text-zinc-950 ${
+                      prominent ? 'text-sm' : 'text-[10px]'
+                    }`}
+                  >
+                    P{rowIndex + 1}
+                  </div>,
+                ]
+              : []),
+            ...row.map((cell, colIndex) => {
             const marked = isMarked(cell, drawnNumbers)
 
             return (
@@ -104,7 +130,9 @@ function MiniBingoCard({
                 className={`flex aspect-square items-center justify-center border border-zinc-800 font-bold ${
                   prominent ? 'text-base sm:text-lg' : 'text-xs'
                 } ${
-                  cell === 'FREE'
+                  cell === null
+                    ? 'bg-black/50 text-transparent'
+                    : cell === 'FREE'
                     ? 'bg-amber-500 text-white'
                     : marked
                       ? 'bg-emerald-500 text-white'
@@ -114,7 +142,8 @@ function MiniBingoCard({
                 {cell}
               </div>
             )
-          })
+          }),
+          ]
         )}
       </div>
     </div>
@@ -135,6 +164,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     bundle_offers: raffle.bundle_offers ?? [],
     draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
   })
+  const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '']
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true)
@@ -170,15 +200,18 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
   }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.bundle_offers, raffle.draw_date])
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
-  const winnerCards = useMemo(
-    () => cards.filter((card) => getWinningLines(card.bingo_numbers, drawnNumbers).length > 0),
-    [cards, drawnNumbers]
+  const prizeAmounts = useMemo(() => getPrizeAmounts(raffle.prize, raffle.additional_prizes), [raffle.prize, raffle.additional_prizes])
+  const prizeAwards = useMemo(() => getPrizeAwards(cards, drawnNumbers, prizeAmounts), [cards, drawnNumbers, prizeAmounts])
+  const currentPrizeTarget = useMemo(() => getCurrentPrizeTarget(cards, drawnNumbers, prizeAmounts), [cards, drawnNumbers, prizeAmounts])
+  const awardedCardIds = useMemo(
+    () => new Set(prizeAwards.flatMap((award) => award.winners.map((winner) => winner.id))),
+    [prizeAwards]
   )
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
 
     return cards.filter((card) => {
-      const matchesWinner = !winnerOnly || getWinningLines(card.bingo_numbers, drawnNumbers).length > 0
+      const matchesWinner = !winnerOnly || awardedCardIds.has(card.id)
       const matchesSearch =
         !normalizedSearch ||
         [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '']
@@ -186,7 +219,19 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
       return matchesWinner && matchesSearch
     })
-  }, [cards, drawnNumbers, searchTerm, winnerOnly])
+  }, [awardedCardIds, cards, searchTerm, winnerOnly])
+
+  const updateDetailPrize = (index: number, value: string) => {
+    setDetails((current) => {
+      if (index === 0) {
+        return { ...current, prize: value }
+      }
+
+      const additionalPrizes = [current.additional_prizes[0] ?? '', current.additional_prizes[1] ?? '']
+      additionalPrizes[index - 1] = value
+      return { ...current, additional_prizes: additionalPrizes }
+    })
+  }
 
   const copyToClipboard = async (path: string) => {
     await navigator.clipboard.writeText(`${window.location.origin}${path}`)
@@ -196,9 +241,16 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     setIsSavingDetails(true)
     try {
       const supabase = createClient()
+      const sortedPrizes = normalizePrizeAmounts(detailPrizeValues)
+
+      if (sortedPrizes.length !== 3) {
+        alert('Carga los 3 montos de premios antes de guardar.')
+        return
+      }
+
       const payload = {
-        prize: details.prize || null,
-        additional_prizes: details.additional_prizes.map((item) => item.trim()).filter(Boolean),
+        prize: sortedPrizes[0],
+        additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
         amount: details.amount || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
         draw_date: details.draw_date || null,
@@ -259,24 +311,11 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[1fr_180px_210px_auto] lg:items-end">
-            <div className="space-y-2">
-              <label htmlFor="raffle-prize" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
-                <Gift className="h-4 w-4 text-amber-200" />
-                Premio principal
-              </label>
-              <Input
-                id="raffle-prize"
-                value={details.prize}
-                onChange={(event) => setDetails((current) => ({ ...current, prize: event.target.value }))}
-                placeholder="Ej: $50.000 + premio sorpresa"
-                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-              />
-            </div>
+          <div className="grid gap-3 lg:grid-cols-[180px_210px_auto] lg:items-end">
             <div className="space-y-2">
               <label htmlFor="raffle-amount" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
                 <DollarSign className="h-4 w-4 text-amber-200" />
-                Monto
+                Monto del carton
               </label>
               <Input
                 id="raffle-amount"
@@ -310,60 +349,29 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
             </Button>
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold text-white">Premios adicionales</p>
-                <p className="text-sm text-zinc-400">Agrega todos los premios secundarios que quieras mostrar.</p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDetails((current) => ({ ...current, additional_prizes: [...current.additional_prizes, ''] }))}
-                className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar premio
-              </Button>
+          <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
+            <div>
+              <p className="font-semibold text-white">Premios por fila</p>
+              <p className="text-sm text-zinc-400">
+                El sistema ordena estos tres montos de mayor a menor. El sorteo se juega en orden inverso: premio 3, premio 2 y premio 1.
+              </p>
             </div>
-
-            {details.additional_prizes.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {details.additional_prizes.map((item, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              {detailPrizeValues.map((item, index) => (
+                <div key={index} className="space-y-2">
+                  <label htmlFor={`raffle-row-prize-${index}`} className="text-sm font-medium text-zinc-300">
+                    Monto de premio {index + 1}
+                  </label>
                     <Input
+                      id={`raffle-row-prize-${index}`}
                       value={item}
-                      onChange={(event) =>
-                        setDetails((current) => ({
-                          ...current,
-                          additional_prizes: current.additional_prizes.map((value, itemIndex) =>
-                            itemIndex === index ? event.target.value : value
-                          ),
-                        }))
-                      }
-                      placeholder={`Premio adicional ${index + 1}`}
+                      onChange={(event) => updateDetailPrize(index, event.target.value)}
+                      placeholder={index === 0 ? '$100.000' : index === 1 ? '$50.000' : '$25.000'}
                       className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() =>
-                        setDetails((current) => ({
-                          ...current,
-                          additional_prizes: current.additional_prizes.filter((_, itemIndex) => itemIndex !== index),
-                        }))
-                      }
-                      className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Eliminar premio</span>
-                    </Button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-zinc-500">Todavia no agregaste premios adicionales.</p>
-            )}
+              ))}
+            </div>
           </div>
 
           <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-3">
@@ -478,8 +486,39 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       <CardContent>
         <div className="mb-5 grid gap-3 md:grid-cols-3">
           <SummaryTile icon={<Users className="h-5 w-5" />} label="Participantes" value={String(cards.length)} />
-          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Ganadores detectados" value={String(winnerCards.length)} />
+          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/3`} />
           <SummaryTile icon={<Search className="h-5 w-5" />} label="Vista actual" value={String(filteredCards.length)} />
+        </div>
+
+        <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_1.35fr]">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-200">Premio en juego</p>
+            <p className="mt-2 text-2xl font-black text-white">
+              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Sorteo completo'}
+            </p>
+            <p className="mt-1 text-sm text-zinc-300">
+              {currentPrizeTarget
+                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
+                : 'Ya se adjudicaron los 3 premios.'}
+            </p>
+          </div>
+          <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Orden del sorteo</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {[3, 2, 1].map((prizeNumber) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+
+                return (
+                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <p className="font-bold text-white">Premio {prizeNumber}</p>
+                    <p className="text-sm text-amber-100">{amount}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="mb-5 flex flex-col gap-3 md:flex-row">
@@ -535,7 +574,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
               <span>Acciones</span>
             </div>
             {filteredCards.map((card) => {
-              const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
+              const cardAwards = prizeAwards.filter((award) => award.winners.some((winner) => winner.id === card.id))
 
               return (
                 <div
@@ -550,7 +589,11 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                     <p className="text-xs text-zinc-500 xl:hidden">Nombre</p>
                     <div className="flex min-w-0 items-center gap-2">
                       <p className="truncate font-medium text-white">{card.full_name}</p>
-                      {winningLines.length > 0 && <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Bingo</Badge>}
+                      {cardAwards.map((award) => (
+                        <Badge key={award.prizeNumber} className="bg-emerald-500 text-white hover:bg-emerald-500">
+                          Premio {award.prizeNumber}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                   <div>

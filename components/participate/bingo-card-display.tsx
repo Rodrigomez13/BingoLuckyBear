@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { CheckCircle, Download, Eye, X, Hash, Trophy } from 'lucide-react'
-import { getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
+import { getBingoColumnLabels, getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
 
 interface BingoCard {
   id: string
@@ -23,13 +23,16 @@ interface BingoCardDisplayProps {
   compact?: boolean
 }
 
-const BINGO_HEADERS = ['B', 'I', 'N', 'G', 'O']
 const HEADER_COLORS = [
   'bg-red-500',
   'bg-orange-500', 
   'bg-amber-500',
   'bg-green-500',
   'bg-blue-500',
+  'bg-sky-500',
+  'bg-violet-500',
+  'bg-pink-500',
+  'bg-emerald-500',
 ]
 
 export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false }: BingoCardDisplayProps) {
@@ -42,6 +45,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   })
 
   const rows = getBingoRows(card.bingo_numbers)
+  const columnLabels = getBingoColumnLabels(card.bingo_numbers)
   const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
   const isWinner = winningLines.length > 0
 
@@ -170,37 +174,58 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       ctx.fill()
       drawCenteredText(ctx, card.card_number, width / 2, 238, 245, 22, '900', '#111827')
 
-      const gridX = 80
+      const gridX = 45
       const gridY = 292
-      const cellSize = 112
-      const headerHeight = 58
-      const headerColors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6']
+      const columnCount = columnLabels.length
+      const rowCount = rows.length
+      const labelWidth = columnCount === 9 ? 42 : 0
+      const cellSize = columnCount === 9 ? 70 : 112
+      const headerHeight = 52
+      const headerColors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#0ea5e9', '#8b5cf6', '#ec4899', '#10b981']
 
       ctx.lineWidth = 6
       ctx.strokeStyle = '#fbbf24'
-      drawRoundedRect(ctx, gridX - 3, gridY - 3, cellSize * 5 + 6, headerHeight + cellSize * 5 + 6, 16)
+      drawRoundedRect(ctx, gridX - 3, gridY - 3, labelWidth + cellSize * columnCount + 6, headerHeight + cellSize * rowCount + 6, 16)
       ctx.stroke()
 
-      BINGO_HEADERS.forEach((letter, index) => {
+      if (labelWidth > 0) {
+        ctx.fillStyle = '#78350f'
+        ctx.fillRect(gridX, gridY, labelWidth, headerHeight)
+        drawCenteredText(ctx, 'P', gridX + labelWidth / 2, gridY + headerHeight / 2, labelWidth - 8, 18, '900')
+      }
+
+      columnLabels.forEach((letter, index) => {
         ctx.fillStyle = headerColors[index]
-        ctx.fillRect(gridX + index * cellSize, gridY, cellSize, headerHeight)
+        ctx.fillRect(gridX + labelWidth + index * cellSize, gridY, cellSize, headerHeight)
         ctx.fillStyle = '#ffffff'
-        drawCenteredText(ctx, letter, gridX + index * cellSize + cellSize / 2, gridY + headerHeight / 2, 80, 38, '900')
+        drawCenteredText(ctx, letter, gridX + labelWidth + index * cellSize + cellSize / 2, gridY + headerHeight / 2, cellSize - 8, columnCount === 9 ? 18 : 38, '900')
       })
 
       rows.forEach((row, rowIndex) => {
+        if (labelWidth > 0) {
+          const labelY = gridY + headerHeight + rowIndex * cellSize
+          ctx.fillStyle = '#f59e0b'
+          ctx.fillRect(gridX, labelY, labelWidth, cellSize)
+          ctx.strokeStyle = '#fde68a'
+          ctx.lineWidth = 2
+          ctx.strokeRect(gridX, labelY, labelWidth, cellSize)
+          drawCenteredText(ctx, `P${rowIndex + 1}`, gridX + labelWidth / 2, labelY + cellSize / 2, labelWidth - 8, 18, '900', '#111827')
+        }
+
         row.forEach((cell, colIndex) => {
-          const x = gridX + colIndex * cellSize
+          const x = gridX + labelWidth + colIndex * cellSize
           const y = gridY + headerHeight + rowIndex * cellSize
           const marked = isMarked(cell, drawnNumbers)
 
-          ctx.fillStyle = cell === 'FREE' ? '#f59e0b' : marked ? '#10b981' : '#111827'
+          ctx.fillStyle = cell === null ? '#09090b' : cell === 'FREE' ? '#f59e0b' : marked ? '#10b981' : '#111827'
           ctx.fillRect(x, y, cellSize, cellSize)
           ctx.strokeStyle = '#fde68a'
           ctx.lineWidth = 2
           ctx.strokeRect(x, y, cellSize, cellSize)
 
-          drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, 86, cell === 'FREE' ? 20 : 38, '900')
+          if (cell !== null) {
+            drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, cellSize - 16, cell === 'FREE' ? 20 : 34, '900')
+          }
         })
       })
 
@@ -242,12 +267,18 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
 
       {/* Bingo Grid */}
       <div className="bg-zinc-950 rounded-lg shadow-lg overflow-hidden border-4 border-amber-400">
-        {/* BINGO Header */}
-        <div className="grid grid-cols-5">
-          {BINGO_HEADERS.map((letter, i) => (
+        {/* Bingo Header */}
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.5rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
+        >
+          {columnLabels.length === 9 && (
+            <div className="bg-amber-800 py-2 text-center text-[10px] font-black text-amber-100">P</div>
+          )}
+          {columnLabels.map((letter, i) => (
             <div 
               key={letter}
-              className={`${HEADER_COLORS[i]} text-white font-bold ${forDownload ? 'text-3xl py-4' : 'text-xl py-2'} text-center`}
+              className={`${HEADER_COLORS[i]} text-white font-bold ${forDownload ? 'py-3 text-xs sm:text-sm' : 'py-2 text-[10px] sm:text-xs'} text-center`}
               style={{ fontFamily: 'var(--font-fredoka)' }}
             >
               {letter}
@@ -257,16 +288,27 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
 
         {/* Numbers Grid */}
         {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid grid-cols-5 border-t border-amber-200">
+          <div
+            key={rowIndex}
+            className="grid border-t border-amber-200"
+            style={{ gridTemplateColumns: `${columnLabels.length === 9 ? '2.5rem ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))` }}
+          >
+            {columnLabels.length === 9 && (
+              <div className="flex items-center justify-center border-r border-amber-200 bg-amber-400 text-xs font-black text-zinc-950">
+                P{rowIndex + 1}
+              </div>
+            )}
             {row.map((cell, colIndex) => {
               const marked = isMarked(cell, drawnNumbers)
               return (
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={`
-                  ${forDownload ? 'h-11 text-base sm:h-14 sm:text-lg' : 'h-12 text-lg'} 
+                  ${forDownload ? 'h-10 text-base sm:h-12 sm:text-lg' : 'h-10 text-base sm:h-12 sm:text-lg'} 
                   flex items-center justify-center font-bold border-r last:border-r-0 border-amber-200
-                  ${cell === 'FREE' 
+                  ${cell === null
+                    ? 'bg-black/50 text-transparent'
+                    : cell === 'FREE' 
                     ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white' 
                     : marked
                       ? 'bg-emerald-500 text-white shadow-inner'
@@ -274,7 +316,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
                   }
                 `}
               >
-                {cell === 'FREE' ? (
+                {cell === null ? null : cell === 'FREE' ? (
                   <div className="text-center">
                     <span className={forDownload ? 'text-sm' : 'text-xs'}>FREE</span>
                   </div>
@@ -310,7 +352,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         </h1>
         <p className="text-zinc-300">
           {isWinner
-            ? `Tu carton completo: ${winningLines.join(', ')}`
+            ? `Fila premiada: ${winningLines.join(', ')}`
             : 'Tu carton de bingo ha sido generado exitosamente'}
         </p>
       </div>}
@@ -318,7 +360,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       {isWinner && (
         <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-emerald-100">
           <Trophy className="mx-auto mb-2 h-7 w-7 text-emerald-300" />
-          Aviso automatico: este carton tiene bingo con los numeros cantados.
+          Aviso automatico: este carton tiene una fila premiada con los numeros cantados.
         </div>
       )}
 

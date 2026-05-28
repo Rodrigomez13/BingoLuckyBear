@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Plus, Radio, Ticket, Trash2, Trophy } from 'lucide-react'
+import { AlertTriangle, BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Plus, Radio, Ticket, Trash2, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { RaffleParticipants } from './raffle-participants'
 import type { User } from '@supabase/supabase-js'
+import { formatMoneyAmount, getPrizeAmounts, normalizePrizeAmounts } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -51,6 +52,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const [bundleOffers, setBundleOffers] = useState<string[]>([])
   const [drawDate, setDrawDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -59,7 +61,21 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const liveCount = raffles.filter((raffle) => raffle.draw_status === 'running').length
   const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
 
-  const cleanAdditionalPrizes = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
+  const cleanTextItems = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
+  const prizeInputValues = [prize, additionalPrizes[0] ?? '', additionalPrizes[1] ?? '']
+
+  const updatePrizeInput = (index: number, value: string) => {
+    if (index === 0) {
+      setPrize(value)
+      return
+    }
+
+    setAdditionalPrizes((current) => {
+      const next = [current[0] ?? '', current[1] ?? '']
+      next[index - 1] = value
+      return next
+    })
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -70,27 +86,35 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   const handleCreateRaffle = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setCreateError(null)
 
     try {
-      const { data, error } = await supabase
-        .from('raffles')
-        .insert({
+      const sortedPrizes = normalizePrizeAmounts(prizeInputValues)
+
+      if (sortedPrizes.length !== 3) {
+        setCreateError('Carga los 3 montos de premios antes de crear el sorteo.')
+        return
+      }
+
+      const response = await fetch('/api/raffles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name,
-          description: description || null,
-          prize: prize || null,
-          additional_prizes: cleanAdditionalPrizes(additionalPrizes),
-          amount: amount || null,
-          bundle_offers: cleanAdditionalPrizes(bundleOffers),
+          description,
+          prizes: sortedPrizes,
+          amount,
+          bundle_offers: cleanTextItems(bundleOffers),
           draw_date: drawDate || null,
-          admin_id: user.id,
-          is_active: false,
-        })
-        .select()
-        .single()
+        }),
+      })
+      const data = await response.json()
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo crear el sorteo')
+      }
 
-      setRaffles([data, ...raffles])
+      setRaffles([data.raffle, ...raffles])
       setName('')
       setDescription('')
       setPrize('')
@@ -98,9 +122,18 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       setAmount('')
       setBundleOffers([])
       setDrawDate('')
+      setCreateError(null)
       setShowForm(false)
     } catch (error) {
       console.error('Error creating raffle:', error)
+      const message = error instanceof Error ? error.message : 'No se pudo crear el sorteo.'
+      const isMissingColumn = /schema cache|column|additional_prizes|bundle_offers|draw_date|prize|amount/i.test(message)
+
+      setCreateError(
+        isMissingColumn
+          ? 'Supabase rechazo el guardado. Revisa que hayas aplicado supabase-raffle-details-migration.sql en tu proyecto y vuelve a intentar.'
+          : message
+      )
     } finally {
       setIsLoading(false)
     }
@@ -285,16 +318,6 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="prize" className="text-zinc-300">Premio principal</Label>
-                        <Input
-                          id="prize"
-                          value={prize}
-                          onChange={(e) => setPrize(e.target.value)}
-                          placeholder="Ej: $50.000 + combo sorpresa"
-                          className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="amount" className="text-zinc-300">Monto del carton</Label>
                         <Input
                           id="amount"
@@ -303,6 +326,31 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                           placeholder="Ej: $2.000"
                           className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                         />
+                      </div>
+                    </div>
+                    <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
+                      <div>
+                        <Label className="text-zinc-200">Premios por fila</Label>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Carga tres montos. Se ordenan de mayor a menor: premio 1, premio 2 y premio 3.
+                        </p>
+                      </div>
+                      <div className="grid gap-3">
+                        {prizeInputValues.map((value, index) => (
+                          <div key={index} className="space-y-2">
+                            <Label htmlFor={`prize-${index}`} className="text-zinc-300">
+                              Monto de premio {index + 1}
+                            </Label>
+                            <Input
+                              id={`prize-${index}`}
+                              value={value}
+                              onChange={(event) => updatePrizeInput(index, event.target.value)}
+                              placeholder={index === 0 ? 'Ej: $100.000' : index === 1 ? 'Ej: $50.000' : 'Ej: $25.000'}
+                              required
+                              className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -315,50 +363,6 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                         className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                       />
                     </div>
-                    <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <Label className="text-zinc-300">Mas premios</Label>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setAdditionalPrizes((current) => [...current, ''])}
-                          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Agregar
-                        </Button>
-                      </div>
-                      {additionalPrizes.length === 0 ? (
-                        <p className="text-sm text-zinc-500">Opcional: agrega premios secundarios, combos o menciones especiales.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {additionalPrizes.map((item, index) => (
-                            <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                              <Input
-                                value={item}
-                                onChange={(event) =>
-                                  setAdditionalPrizes((current) =>
-                                    current.map((value, itemIndex) => (itemIndex === index ? event.target.value : value))
-                                  )
-                                }
-                                placeholder={`Premio adicional ${index + 1}`}
-                                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setAdditionalPrizes((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                                className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Eliminar premio</span>
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     <DynamicTextList
                       title="Promos por cantidad"
                       emptyText="Opcional: agrega ofertas como 3 cartones por $5.000."
@@ -367,6 +371,12 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                       items={bundleOffers}
                       onChange={setBundleOffers}
                     />
+                    {createError && (
+                      <div className="flex items-start gap-2 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{createError}</span>
+                      </div>
+                    )}
                     <Button 
                       type="submit" 
                       disabled={isLoading}
@@ -419,16 +429,14 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             <p className="text-sm text-zinc-400 truncate">{raffle.description}</p>
                           )}
                           <div className="mt-3 grid gap-2 text-xs text-zinc-300">
-                            <RaffleMeta icon={<Gift className="h-3.5 w-3.5" />} value={raffle.prize || 'Premio sin cargar'} />
-                            <RaffleMeta
-                              icon={<Trophy className="h-3.5 w-3.5" />}
-                              value={
-                                raffle.additional_prizes?.length
-                                  ? `${raffle.additional_prizes.length} premio${raffle.additional_prizes.length !== 1 ? 's' : ''} extra`
-                                  : 'Sin premios extra'
-                              }
-                            />
-                            <RaffleMeta icon={<DollarSign className="h-3.5 w-3.5" />} value={raffle.amount || 'Monto sin cargar'} />
+                            {getPrizeAmounts(raffle.prize, raffle.additional_prizes).length > 0 ? (
+                              getPrizeAmounts(raffle.prize, raffle.additional_prizes).map((item, index) => (
+                                <RaffleMeta key={`${item}-${index}`} icon={index === 0 ? <Gift className="h-3.5 w-3.5" /> : <Trophy className="h-3.5 w-3.5" />} value={`Premio ${index + 1}: ${item}`} />
+                              ))
+                            ) : (
+                              <RaffleMeta icon={<Gift className="h-3.5 w-3.5" />} value="Premios sin cargar" />
+                            )}
+                            <RaffleMeta icon={<DollarSign className="h-3.5 w-3.5" />} value={formatMoneyAmount(raffle.amount, 'Monto sin cargar')} />
                             <RaffleMeta
                               icon={<Ticket className="h-3.5 w-3.5" />}
                               value={

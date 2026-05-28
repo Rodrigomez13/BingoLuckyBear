@@ -5,25 +5,25 @@ const steps = [
   {
     step: '01',
     title: 'Elegis el sorteo',
-    description: 'Revisas premio, monto y estado activo antes de avanzar.',
+    description: 'Ves el premio activo, el monto y la informacion clave antes de avanzar.',
     icon: TicketCheck,
   },
   {
     step: '02',
     title: 'Envias el pago',
-    description: 'Completas tus datos y adjuntas el comprobante desde el formulario.',
+    description: 'Completas tus datos y adjuntas el comprobante desde una pantalla simple.',
     icon: CreditCard,
   },
   {
     step: '03',
     title: 'Recibis tu carton',
-    description: 'La app genera un carton 5x5 con codigo LBB para identificar tu jugada.',
+    description: 'La app genera un carton digital con codigo LBB para identificar tu jugada.',
     icon: FileCheck2,
   },
   {
     step: '04',
     title: 'Seguis el vivo',
-    description: 'Miras las bolillas cantadas y despues consultas ganadores publicados.',
+    description: 'Miras las bolillas cantadas y despues consultas los ganadores publicados.',
     icon: Radio,
   },
 ]
@@ -34,7 +34,7 @@ export function HowItWorks() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-14 grid gap-4 lg:grid-cols-[0.8fr_1fr] lg:items-end">
           <div>
-            <p className="mb-3 text-sm font-black uppercase text-amber-300">Participar</p>
+            <p className="mb-3 text-sm font-black uppercase text-amber-300">Flujo</p>
             <h2
               className="text-4xl font-black leading-tight text-white md:text-5xl"
               style={{ fontFamily: 'var(--font-fredoka)' }}
@@ -43,7 +43,7 @@ export function HowItWorks() {
             </h2>
           </div>
           <p className="max-w-2xl text-lg leading-relaxed text-zinc-300 lg:justify-self-end">
-            El recorrido ahora separa decision, pago, carton y sorteo. Cada pantalla cumple una funcion clara.
+            El recorrido separa decision, pago, carton y sorteo para que cada participante sepa exactamente donde esta.
           </p>
         </div>
 

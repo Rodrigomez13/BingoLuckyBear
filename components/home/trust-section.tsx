@@ -5,17 +5,17 @@ import { Button } from '@/components/ui/button'
 const trustItems = [
   {
     title: 'Sorteo visible',
-    copy: 'La pantalla en vivo muestra cuenta regresiva, ultimo numero, bolillero y cantidad de cartones.',
+    copy: 'La pantalla en vivo muestra cuenta regresiva, ultimo numero, bolillero y cartones participantes.',
     icon: Radio,
   },
   {
     title: 'Resultados publicos',
-    copy: 'Los sorteos finalizados quedan disponibles con ganador, carton y numeros cantados.',
+    copy: 'Los sorteos finalizados quedan publicados con ganador, carton y numeros cantados.',
     icon: History,
   },
   {
     title: 'Registro exportable',
-    copy: 'El panel admin permite descargar participantes para respaldo y control operativo.',
+    copy: 'El panel admin mantiene participantes, comprobantes y cartones en una vista operativa.',
     icon: ClipboardCheck,
   },
 ]
@@ -32,10 +32,10 @@ export function TrustSection() {
                 Transparencia
               </div>
               <h2 className="text-3xl font-bold text-white sm:text-4xl" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Mas confianza antes, durante y despues del sorteo
+                Confianza antes, durante y despues del sorteo
               </h2>
               <p className="mt-3 text-zinc-300">
-                La experiencia no termina al pedir el carton: ahora hay caminos claros para mirar el sorteo y revisar resultados.
+                La experiencia no termina al pedir el carton: el jugador puede seguir el vivo y revisar resultados cuando lo necesite.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
                 <Button asChild className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">

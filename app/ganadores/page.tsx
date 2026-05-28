@@ -5,7 +5,7 @@ import { CalendarDays, Crown, Hash, Radio, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { getBingoLetter, getWinningLines } from '@/lib/bingo'
+import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +17,8 @@ interface Raffle {
   created_at: string
   draw_status?: 'idle' | 'running' | 'finished' | null
   drawn_numbers?: number[] | null
+  prize?: string | null
+  additional_prizes?: string[] | null
 }
 
 interface BingoCard {
@@ -31,7 +33,10 @@ interface BingoCard {
 interface WinnerRecord {
   raffle: Raffle
   card: BingoCard
-  lines: string[]
+  prizeNumber: number
+  rowIndex: number
+  amount: string
+  drawnNumber: number
 }
 
 async function getWinnerRecords() {
@@ -53,12 +58,24 @@ async function getWinnerRecords() {
     .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
     .in('raffle_id', raffleIds)
 
-  const winners = (cards ?? []).flatMap((card) => {
-    const raffle = raffles.find((item) => item.id === card.raffle_id) as Raffle | undefined
-    const drawnNumbers = raffle?.drawn_numbers ?? []
-    const lines = getWinningLines(card.bingo_numbers, drawnNumbers)
+  const winners = (raffles as Raffle[]).flatMap((raffle) => {
+    const raffleCards = (cards ?? []).filter((card) => card.raffle_id === raffle.id)
+    const awards = getPrizeAwards(raffleCards, raffle.drawn_numbers ?? [], getPrizeAmounts(raffle.prize, raffle.additional_prizes))
 
-    return raffle && lines.length > 0 ? [{ raffle, card, lines }] : []
+    return awards.flatMap((award) =>
+      award.winners.map((winner) => {
+        const card = raffleCards.find((item) => item.id === winner.id) as BingoCard
+
+        return {
+          raffle,
+          card,
+          prizeNumber: award.prizeNumber,
+          rowIndex: award.rowIndex,
+          amount: award.amount,
+          drawnNumber: award.drawnNumber,
+        }
+      })
+    )
   })
 
   return { raffles: raffles as Raffle[], winners }
@@ -106,7 +123,7 @@ export default async function WinnersPage() {
           <Card className="border-amber-400/25 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
             <CardContent className="grid grid-cols-2 gap-4 p-5">
               <Metric value={String(raffles.length)} label="sorteos cerrados" />
-              <Metric value={String(winners.length)} label="ganadores detectados" />
+              <Metric value={String(winners.length)} label="premios adjudicados" />
             </CardContent>
           </Card>
         </div>
@@ -118,7 +135,7 @@ export default async function WinnersPage() {
               Todavia no hay ganadores publicados
             </h2>
             <p className="mx-auto mt-2 max-w-xl text-zinc-400">
-              Cuando un sorteo se finalice y exista un carton con linea ganadora, aparecera automaticamente en esta pagina.
+              Cuando un sorteo se finalice y exista una fila premiada, aparecera automaticamente en esta pagina.
             </p>
           </div>
         ) : (
@@ -134,12 +151,13 @@ export default async function WinnersPage() {
                       <div>
                         <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
                           <Trophy className="mr-1 h-3.5 w-3.5" />
-                          Ganador
+                          Premio {winner.prizeNumber}
                         </Badge>
                         <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-fredoka)' }}>
                           {winner.card.full_name}
                         </h2>
                         <p className="mt-1 text-sm text-zinc-300">{winner.raffle.name}</p>
+                        <p className="mt-1 font-bold text-amber-200">{winner.amount || 'Monto a confirmar'}</p>
                       </div>
                       <Image src="/logo-solo.svg" alt="" width={84} height={84} className="h-16 w-16 object-contain opacity-90" />
                     </div>
@@ -147,13 +165,15 @@ export default async function WinnersPage() {
                   <CardContent className="space-y-5 p-5">
                     <div className="grid gap-3 sm:grid-cols-3">
                       <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.card.card_number} />
-                      <Info icon={<Radio className="h-4 w-4" />} label="Ultimo" value={lastNumber ? `${getBingoLetter(lastNumber)}-${lastNumber}` : '--'} />
+                      <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber || lastNumber)} />
                       <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={new Date(winner.raffle.created_at).toLocaleDateString('es-ES')} />
                     </div>
 
                     <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-4">
-                      <p className="text-sm font-semibold text-emerald-100">Lineas ganadoras</p>
-                      <p className="mt-1 text-sm text-zinc-200">{winner.lines.join(', ')}</p>
+                      <p className="text-sm font-semibold text-emerald-100">Fila premiada</p>
+                      <p className="mt-1 text-sm text-zinc-200">
+                        Premio {winner.prizeNumber} - fila {winner.rowIndex + 1}
+                      </p>
                     </div>
 
                     <div>

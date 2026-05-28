@@ -2,8 +2,8 @@ const balls = [
   { number: 7, className: 'left-[18%] top-[18%] bg-red-500' },
   { number: 21, className: 'left-[58%] top-[14%] bg-amber-400 text-zinc-950' },
   { number: 35, className: 'left-[36%] top-[42%] bg-emerald-500' },
-  { number: 48, className: 'left-[68%] top-[50%] bg-blue-500' },
-  { number: 63, className: 'left-[22%] top-[60%] bg-orange-500' },
+  { number: 68, className: 'left-[68%] top-[50%] bg-blue-500' },
+  { number: 88, className: 'left-[22%] top-[60%] bg-orange-500' },
 ]
 
 export function BingoMachineVisual() {
