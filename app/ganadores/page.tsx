@@ -1,10 +1,9 @@
 import Image from 'next/image'
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { CalendarDays, Crown, Hash, Radio, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SiteHeader } from '@/components/site-header'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 import { createServiceClient } from '@/lib/supabase/server'
 
@@ -86,26 +85,9 @@ export default async function WinnersPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
-      <header className="sticky top-0 z-50 border-b border-amber-400/20 bg-zinc-950/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={46} height={46} className="h-11 w-11 object-contain" />
-            <span className="text-lg font-semibold tracking-tight text-white">
-              Lucky Bingo Bear
-            </span>
-          </Link>
-          <nav className="flex items-center gap-3">
-            <Link href="/en-vivo" className="hidden text-sm font-medium text-amber-200 transition-colors hover:text-white sm:inline">
-              En vivo
-            </Link>
-            <Button asChild className="bg-amber-400 font-semibold text-zinc-950 hover:bg-amber-300">
-              <Link href="/participar">Participar</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
           <div>
             <Badge className="mb-5 bg-emerald-500 text-white hover:bg-emerald-500">

@@ -253,7 +253,7 @@ function TrustItem({ icon, label }: { icon: ReactNode; label: string }) {
 function BingoBall({ number, className }: { number: number; className: string }) {
   return (
     <div
-      className={`absolute hidden h-12 w-12 animate-bounce items-center justify-center rounded-full text-sm font-bold text-white shadow-xl xl:flex ${className}`}
+      className={`absolute hidden h-12 w-12 animate-bounce items-center justify-center rounded-full text-sm font-bold text-white opacity-50 shadow-xl xl:flex ${className}`}
       style={{ animationDuration: `${3 + (number % 4) * 0.35}s` }}
     >
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-950">{number}</span>
