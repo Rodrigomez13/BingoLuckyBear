@@ -1,7 +1,4 @@
-import Link from 'next/link'
-import { Radio, Ticket, Trophy } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { BearLogo } from '@/components/bear-logo'
+import { SiteHeader } from '@/components/site-header'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorks } from '@/components/home/how-it-works'
 import { Footer } from '@/components/home/footer'
@@ -37,51 +34,7 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#08090d,#15111a_42%,#0d1720_78%,#09090b)] text-zinc-100">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-zinc-950/78 shadow-lg shadow-black/20 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex min-w-0 items-center gap-3">
-              <BearLogo size={46} />
-              <div className="hidden sm:block">
-                <span className="text-lg font-semibold tracking-tight text-white">
-                  Lucky Bingo Bear
-                </span>
-                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200/75">Bingo digital en vivo</p>
-              </div>
-            </div>
-            <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-4">
-              {firstPrize && (
-                <span className="hidden items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200 lg:inline-flex">
-                  <Trophy className="h-4 w-4" />
-                  {firstPrize}
-                </span>
-              )}
-              <Link 
-                href="/en-vivo" 
-                className="hidden items-center gap-1 font-semibold text-amber-200 transition-colors hover:text-white sm:inline-flex"
-              >
-                <Radio className="h-4 w-4" />
-                En Vivo
-              </Link>
-              <Link 
-                href="/ganadores" 
-                className="hidden font-medium text-amber-200 transition-colors hover:text-white md:inline"
-              >
-                Ganadores
-              </Link>
-              <Button asChild variant="ghost" className="hidden text-zinc-400 hover:bg-white/5 hover:text-white lg:inline-flex">
-                <Link href="/auth/login">Admin</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-amber-400 to-orange-500 font-semibold text-zinc-950 shadow-lg shadow-amber-500/20 hover:from-amber-300 hover:to-orange-400">
-                <Link href="/participar">
-                  <Ticket className="mr-1.5 h-4 w-4" />
-                  Participar
-                </Link>
-              </Button>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <SiteHeader firstPrize={firstPrize} />
 
       {/* Main Content */}
       <div className="pt-16">

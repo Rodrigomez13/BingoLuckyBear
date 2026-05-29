@@ -30,7 +30,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="py-16">
+    <section id="como-funciona" className="scroll-mt-20 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 grid gap-4 lg:grid-cols-[0.8fr_1fr] lg:items-end">
           <div>

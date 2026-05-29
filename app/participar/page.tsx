@@ -5,8 +5,7 @@ import { ParticipationForm } from '@/components/participate/participation-form'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
 import { NoActiveRaffle } from '@/components/participate/no-active-raffle'
 import { BearLogo } from '@/components/bear-logo'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { SiteHeader } from '@/components/site-header'
 import { LiveDrawCard } from '@/components/live/live-draw-card'
 
 interface Raffle {
@@ -96,23 +95,9 @@ export default function ParticipatePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-amber-400/20 bg-zinc-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-3">
-              <BearLogo size={38} />
-              <span className="text-lg font-semibold tracking-tight text-white">
-                Lucky Bingo Bear
-              </span>
-            </Link>
-            <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
-              <Link href="/">Volver al Inicio</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-24 sm:px-6">
         {activeRaffle && (
           <div className="mx-auto max-w-5xl">
             <LiveDrawCard initialRaffle={activeRaffle} compact />
