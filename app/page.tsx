@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Radio, Trophy } from 'lucide-react'
+import { Radio, Ticket, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BearLogo } from '@/components/bear-logo'
 import { HeroSection } from '@/components/home/hero-section'
@@ -17,7 +17,7 @@ async function getActiveRafflePromo() {
     const supabase = await createServiceClient()
     const { data } = await supabase
       .from('raffles')
-      .select('name, prize, additional_prizes')
+      .select('name, prize, additional_prizes, amount, draw_date, draw_status, bundle_offers')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -69,8 +69,14 @@ export default async function HomePage() {
               >
                 Ganadores
               </Link>
-              <Button asChild variant="outline" className="hidden border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10 sm:inline-flex">
+              <Button asChild variant="ghost" className="hidden text-zinc-400 hover:bg-white/5 hover:text-white lg:inline-flex">
                 <Link href="/auth/login">Admin</Link>
+              </Button>
+              <Button asChild className="bg-gradient-to-r from-amber-400 to-orange-500 font-semibold text-zinc-950 shadow-lg shadow-amber-500/20 hover:from-amber-300 hover:to-orange-400">
+                <Link href="/participar">
+                  <Ticket className="mr-1.5 h-4 w-4" />
+                  Participar
+                </Link>
               </Button>
             </nav>
           </div>
@@ -79,7 +85,21 @@ export default async function HomePage() {
 
       {/* Main Content */}
       <div className="pt-16">
-        <HeroSection />
+        <HeroSection
+          raffle={
+            activeRaffle
+              ? {
+                  name: activeRaffle.name,
+                  prize: activeRaffle.prize ?? null,
+                  additional_prizes: activeRaffle.additional_prizes ?? null,
+                  amount: activeRaffle.amount ?? null,
+                  draw_date: activeRaffle.draw_date ?? null,
+                  draw_status: activeRaffle.draw_status ?? null,
+                  bundle_offers: activeRaffle.bundle_offers ?? null,
+                }
+              : null
+          }
+        />
         <HowItWorks />
         <TrustSection />
         <SponsorShowcase />
