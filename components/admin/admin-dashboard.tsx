@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Landmark, Plus, Radio, Save, Ticket, Trash2, Trophy } from 'lucide-react'
+import { AlertTriangle, BarChart3, Clock, ExternalLink, Landmark, Plus, Radio, Save, Ticket, Trash2, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -91,6 +91,21 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const finishedCount = raffles.filter((raffle) => raffle.draw_status === 'finished').length
   const liveCount = raffles.filter((raffle) => raffle.draw_status === 'running').length
   const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
+  const sortedRaffles = [...raffles].sort((a, b) => {
+    const statusWeight = (raffle: Raffle) => {
+      if (raffle.draw_status === 'running') return 0
+      if (raffle.is_active) return 1
+      if (raffle.draw_status === 'finished') return 3
+      return 2
+    }
+
+    const weightDiff = statusWeight(a) - statusWeight(b)
+    if (weightDiff !== 0) return weightDiff
+
+    const aDate = a.draw_date ? new Date(a.draw_date).getTime() : new Date(a.created_at).getTime()
+    const bDate = b.draw_date ? new Date(b.draw_date).getTime() : new Date(b.created_at).getTime()
+    return bDate - aDate
+  })
 
   const cleanTextItems = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
   const prizeInputValues = [prize, additionalPrizes[0] ?? '', additionalPrizes[1] ?? '', additionalPrizes[2] ?? '']
@@ -217,6 +232,21 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     }
 
     return { label: 'Pausado', className: 'bg-gray-400 text-zinc-950 hover:bg-gray-400' }
+  }
+
+  const getPaymentAccountLabel = (accountId?: string | null) => {
+    const account = paymentAccounts.find((item) => item.id === accountId)
+    return account?.name ?? 'Sin cuenta asignada'
+  }
+
+  const getRafflePrizeSummary = (raffle: Raffle) => {
+    const prizes = getPrizeSchedule(getPrizeAmounts(raffle.prize, raffle.additional_prizes)).filter((target) => target.amount)
+    const jackpot = prizes.find((target) => target.prizeNumber === 4)
+    return jackpot ? jackpot.amount : 'Premios sin cargar'
+  }
+
+  const formatDateTime = (date?: string | null) => {
+    return date ? new Date(date).toLocaleString('es-ES') : 'Sin fecha'
   }
 
   const deleteRaffle = async (raffleId: string) => {
@@ -406,32 +436,57 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)]">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <div className="min-w-0 overflow-hidden rounded-md border border-white/10 bg-black/20">
               {paymentAccounts.length === 0 ? (
                 <div className="rounded-md border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">
                   Guarda una cuenta para mostrarla automaticamente al comprador cuando cree su carton.
                 </div>
               ) : (
-                paymentAccounts.map((account) => (
-                  <div key={account.id} className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-                    <div className="flex items-start justify-between gap-3">
+                <div className="divide-y divide-white/10">
+                  <div className="hidden grid-cols-[1.1fr_1fr_1.15fr_0.9fr_0.75fr_96px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 lg:grid">
+                    <span>Cuenta</span>
+                    <span>Titular</span>
+                    <span>Alias / CBU</span>
+                    <span>Banco</span>
+                    <span>Estado</span>
+                    <span className="text-right">Acciones</span>
+                  </div>
+                  {paymentAccounts.map((account) => (
+                    <div key={account.id} className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.1fr_1fr_1.15fr_0.9fr_0.75fr_96px] lg:items-center">
                       <div className="min-w-0">
-                        <p className="break-words font-bold text-white">{account.name}</p>
-                        <p className="mt-1 text-sm text-zinc-300">{account.holder}</p>
-                        <p className="mt-2 break-all text-sm font-semibold text-amber-200">{account.alias || account.cbu}</p>
-                        {account.is_default && <Badge className="mt-2 bg-emerald-500 text-white hover:bg-emerald-500">Predeterminada</Badge>}
+                        <p className="truncate font-bold text-white">{account.name}</p>
+                        <p className="mt-1 text-xs text-zinc-500 lg:hidden">Cuenta</p>
                       </div>
-                      <div className="grid gap-2">
-                        <Button type="button" size="sm" variant="outline" onClick={() => editPaymentAccount(account)} className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+                      <div className="min-w-0">
+                        <p className="truncate text-zinc-300">{account.holder}</p>
+                        <p className="mt-1 text-xs text-zinc-500 lg:hidden">Titular</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="break-all font-semibold text-amber-200">{account.alias || account.cbu || 'Sin alias/CBU'}</p>
+                        <p className="mt-1 text-xs text-zinc-500 lg:hidden">Alias / CBU</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-zinc-300">{account.bank || 'Sin banco'}</p>
+                        <p className="mt-1 text-xs text-zinc-500 lg:hidden">Banco</p>
+                      </div>
+                      <div>
+                        {account.is_default ? (
+                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Predeterminada</Badge>
+                        ) : (
+                          <span className="text-zinc-500">Disponible</span>
+                        )}
+                      </div>
+                      <div className="flex justify-start gap-2 lg:justify-end">
+                        <Button type="button" size="sm" variant="outline" onClick={() => editPaymentAccount(account)} className="h-8 border-amber-400/40 bg-transparent px-3 text-amber-200 hover:bg-amber-400/10">
                           Editar
                         </Button>
-                        <Button type="button" size="sm" variant="outline" onClick={() => deletePaymentAccount(account.id)} className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10">
+                        <Button type="button" size="sm" variant="outline" onClick={() => deletePaymentAccount(account.id)} className="h-8 border-red-400/40 bg-transparent px-2 text-red-300 hover:bg-red-500/10">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
 
@@ -617,83 +672,89 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   </CardContent>
                 </Card>
               ) : (
-                raffles.map((raffle) => (
-                  <Card 
-                    key={raffle.id} 
-                    className={`cursor-pointer border-zinc-800 transition-all hover:border-amber-400/50 hover:shadow-md ${
-                      selectedRaffle?.id === raffle.id ? 'ring-2 ring-amber-400 bg-amber-400/10' : 'bg-zinc-950/80'
-                    }`}
-                    onClick={() => setSelectedRaffle(raffle)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-white truncate">
-                              {raffle.name}
-                            </h3>
-                            <Badge className={getRaffleBadge(raffle).className}>
-                              {getRaffleBadge(raffle).label}
-                            </Badge>
-                          </div>
-                          {raffle.description && (
-                            <p className="text-sm text-zinc-400 truncate">{raffle.description}</p>
-                          )}
-                          <div className="mt-3 grid gap-2 text-xs text-zinc-300">
-                            {getPrizeAmounts(raffle.prize, raffle.additional_prizes).length > 0 ? (
-                              getPrizeSchedule(getPrizeAmounts(raffle.prize, raffle.additional_prizes)).map((target) => (
-                                <RaffleMeta key={target.prizeNumber} icon={target.prizeNumber === 1 ? <Gift className="h-3.5 w-3.5" /> : <Trophy className="h-3.5 w-3.5" />} value={`${target.label}: ${target.amount || 'A confirmar'} (${target.conditionLabel})`} />
-                              ))
-                            ) : (
-                              <RaffleMeta icon={<Gift className="h-3.5 w-3.5" />} value="Premios sin cargar" />
-                            )}
-                            <RaffleMeta icon={<DollarSign className="h-3.5 w-3.5" />} value={formatMoneyAmount(raffle.amount, 'Monto sin cargar')} />
-                            <RaffleMeta
-                              icon={<Ticket className="h-3.5 w-3.5" />}
-                              value={
-                                raffle.bundle_offers?.length
-                                  ? `${raffle.bundle_offers.length} promo${raffle.bundle_offers.length !== 1 ? 's' : ''} por cantidad`
-                                  : 'Sin promos por cantidad'
-                              }
-                            />
-                            <RaffleMeta
-                              icon={<CalendarDays className="h-3.5 w-3.5" />}
-                              value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'Fecha sin cargar'}
-                            />
-                          </div>
-                          <p className="text-xs text-zinc-500 mt-1">
-                            Creado: {new Date(raffle.created_at).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="mt-1 text-xs font-medium text-amber-200">
-                            {raffle.bingo_cards?.[0]?.count ?? 0} carton{(raffle.bingo_cards?.[0]?.count ?? 0) !== 1 ? 'es' : ''}
-                          </p>
-                        </div>
-                        <div className="grid shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="sm"
-                            variant={raffle.is_active ? 'destructive' : 'default'}
-                            onClick={() => toggleRaffleStatus(raffle)}
-                            disabled={raffle.draw_status === 'finished'}
-                            className={!raffle.is_active 
-                              ? 'bg-green-500 hover:bg-green-600 text-xs' 
-                              : 'text-xs'
+                <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/80">
+                  <div className="hidden grid-cols-[0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <span>Estado</span>
+                    <span>Sorteo</span>
+                    <span>Fecha</span>
+                    <span>Carton</span>
+                    <span>Premio mayor</span>
+                    <span>Cartones</span>
+                    <span className="text-right">Acciones</span>
+                  </div>
+                  <div className="divide-y divide-white/10">
+                    {sortedRaffles.map((raffle) => {
+                      const badge = getRaffleBadge(raffle)
+                      const cardsCount = raffle.bingo_cards?.[0]?.count ?? 0
+
+                      return (
+                        <div
+                          key={raffle.id}
+                          onClick={() => setSelectedRaffle(raffle)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault()
+                              setSelectedRaffle(raffle)
                             }
-                          >
-                            {raffle.draw_status === 'finished' ? 'Cerrado' : raffle.is_active ? 'Pausar' : 'Habilitar'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => deleteRaffle(raffle.id)}
-                            className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10 text-xs"
-                          >
-                            Eliminar
-                          </Button>
+                          }}
+                          className={`grid w-full cursor-pointer gap-3 px-4 py-4 text-left text-sm transition hover:bg-amber-400/5 xl:grid-cols-[0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] xl:items-center ${
+                            selectedRaffle?.id === raffle.id ? 'bg-amber-400/10 ring-1 ring-inset ring-amber-400/50' : ''
+                          }`}
+                        >
+                          <div>
+                            <Badge className={badge.className}>{badge.label}</Badge>
+                            <p className="mt-1 text-xs text-zinc-500 xl:hidden">Estado</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-bold text-white">{raffle.name}</p>
+                            <p className="mt-1 truncate text-xs text-zinc-500">
+                              {raffle.description || getPaymentAccountLabel(raffle.payment_account_id)}
+                            </p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-zinc-300">{formatDateTime(raffle.draw_date)}</p>
+                            <p className="mt-1 text-xs text-zinc-500 xl:hidden">Fecha</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-zinc-300">{formatMoneyAmount(raffle.amount, 'Sin monto')}</p>
+                            <p className="mt-1 text-xs text-zinc-500 xl:hidden">Carton</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-amber-200">{getRafflePrizeSummary(raffle)}</p>
+                            <p className="mt-1 text-xs text-zinc-500 xl:hidden">Premio mayor</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-zinc-300">
+                              {cardsCount} carton{cardsCount !== 1 ? 'es' : ''}
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-500 xl:hidden">Vendidos</p>
+                          </div>
+                          <div className="flex justify-start gap-2 xl:justify-end" onClick={(event) => event.stopPropagation()}>
+                            <Button
+                              size="sm"
+                              variant={raffle.is_active ? 'destructive' : 'default'}
+                              onClick={() => toggleRaffleStatus(raffle)}
+                              disabled={raffle.draw_status === 'finished'}
+                              className={!raffle.is_active ? 'h-8 bg-green-500 px-3 text-xs hover:bg-green-600' : 'h-8 px-3 text-xs'}
+                            >
+                              {raffle.draw_status === 'finished' ? 'Cerrado' : raffle.is_active ? 'Pausar' : 'Habilitar'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteRaffle(raffle.id)}
+                              className="h-8 border-red-400/40 bg-transparent px-3 text-xs text-red-300 hover:bg-red-500/10"
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      )
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -757,15 +818,6 @@ function AdminMetric({
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function RaffleMeta({ icon, value }: { icon: ReactNode; value: string }) {
-  return (
-    <p className="flex min-w-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1">
-      <span className="shrink-0 text-amber-200">{icon}</span>
-      <span className="truncate">{value}</span>
-    </p>
   )
 }
 

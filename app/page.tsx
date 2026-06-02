@@ -13,10 +13,10 @@ import { syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 
 export const dynamic = 'force-dynamic'
 
-async function getActiveRafflePromo() {
+async function getHomeRaffleContext() {
   try {
     const supabase = await createServiceClient()
-    const { data } = await supabase
+    const { data: activeData } = await supabase
       .from('raffles')
       .select('*')
       .eq('is_active', true)
@@ -24,25 +24,37 @@ async function getActiveRafflePromo() {
       .limit(1)
       .maybeSingle()
 
-    if (!data) {
-      return null
+    const { data: nextData } = await supabase
+      .from('raffles')
+      .select('*')
+      .or('draw_status.is.null,draw_status.neq.finished')
+      .not('draw_date', 'is', null)
+      .gte('draw_date', new Date().toISOString())
+      .order('draw_date', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (!activeData) {
+      return { activeRaffle: null, nextRaffle: nextData ?? null }
     }
 
-    const raffle = await syncRaffleLifecycle(supabase, data)
+    const raffle = await syncRaffleLifecycle(supabase, activeData)
 
     if (!raffle.is_active && raffle.draw_status === 'finished') {
-      return null
+      return { activeRaffle: null, nextRaffle: nextData ?? null }
     }
 
-    return raffle
+    return { activeRaffle: raffle, nextRaffle: nextData ?? null }
   } catch (error) {
     console.error('Error fetching active raffle promo:', error)
-    return null
+    return { activeRaffle: null, nextRaffle: null }
   }
 }
 
 export default async function HomePage() {
-  const activeRaffle = await getActiveRafflePromo()
+  const { activeRaffle, nextRaffle } = await getHomeRaffleContext()
+  const hasActiveRaffle = Boolean(activeRaffle)
+  const nextDrawDate = activeRaffle?.draw_date ?? nextRaffle?.draw_date ?? null
   const prizeAmounts = getPrizeAmounts(activeRaffle?.prize, activeRaffle?.additional_prizes)
   const prizeSchedule = getPrizeSchedule(prizeAmounts)
   const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)?.amount
@@ -93,12 +105,19 @@ export default async function HomePage() {
 
       {/* Main Content */}
       <div className="relative z-10 pt-[60px]">
-        <HeroSection raffleName={activeRaffle?.name} firstPrize={jackpotPrize} />
+        <HeroSection
+          raffleName={activeRaffle?.name}
+          firstPrize={jackpotPrize}
+          hasActiveRaffle={hasActiveRaffle}
+          nextDrawDate={nextDrawDate}
+        />
         <HowItWorks />
         <SponsorShowcase
           activeAmount={activeRaffle?.amount ?? null}
-          drawDate={activeRaffle?.draw_date ?? null}
+          drawDate={nextDrawDate}
           prizeSchedule={prizeSchedule}
+          hasActiveRaffle={hasActiveRaffle}
+          nextRaffleName={nextRaffle?.name ?? null}
         />
         <TrustSection />
         <Footer />

@@ -30,12 +30,26 @@ interface SponsorShowcaseProps {
   activeAmount?: string | null
   drawDate?: string | null
   prizeSchedule?: BingoPrizeTarget[]
+  hasActiveRaffle?: boolean
+  nextRaffleName?: string | null
 }
 
-export function SponsorShowcase({ activeAmount, drawDate, prizeSchedule = [] }: SponsorShowcaseProps) {
+export function SponsorShowcase({
+  activeAmount,
+  drawDate,
+  prizeSchedule = [],
+  hasActiveRaffle = true,
+  nextRaffleName,
+}: SponsorShowcaseProps) {
   const paymentAmount = formatMoneyAmount(activeAmount, 'A confirmar')
   const visiblePrizes = prizeSchedule.filter((target) => target.amount)
   const nextDraw = drawDate ? new Date(drawDate).toLocaleDateString('es-ES') : 'A confirmar'
+  const title = hasActiveRaffle
+    ? 'Compras una vez y tu carton sigue participando'
+    : 'No hay sorteo activo en este momento'
+  const copy = hasActiveRaffle
+    ? 'No tenes que estar marcando bolillas. El sorteo actualiza tu carton, publica el resultado y te avisa si salis ganador.'
+    : `Aguarda la fecha del proximo sorteo${nextRaffleName ? `: ${nextRaffleName}` : ''}. Cuando este habilitado, la compra de cartones vuelve a estar disponible.`
 
   return (
     <section className="lbb-scroll-reveal border-y border-[#04f77c]/20 bg-black/25 py-10 sm:py-12">
@@ -66,18 +80,27 @@ export function SponsorShowcase({ activeAmount, drawDate, prizeSchedule = [] }: 
                   Beneficios
                 </div>
                 <h2 className="max-w-2xl break-words text-2xl font-bold leading-tight tracking-normal text-white">
-                  Compras una vez y tu carton sigue participando
+                  {title}
                 </h2>
                 <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-slate-400">
-                  No tenes que estar marcando bolillas. El sorteo actualiza tu carton, publica el resultado y te avisa si salis ganador.
+                  {copy}
                 </p>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                  <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
-                    <Link href="/participar">
-                      <Ticket className="mr-2 h-4 w-4" />
-                      Comprar carton
-                    </Link>
-                  </Button>
+                  {hasActiveRaffle ? (
+                    <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
+                      <Link href="/participar">
+                        <Ticket className="mr-2 h-4 w-4" />
+                        Comprar carton
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
+                      <Link href="/ganadores">
+                        <Ticket className="mr-2 h-4 w-4" />
+                        Ver referencias
+                      </Link>
+                    </Button>
+                  )}
                   <Button asChild variant="outline" className="h-9 rounded border-white/20 bg-transparent px-4 text-sm font-bold text-white hover:border-[#04f77c] hover:text-[#04f77c]">
                     <Link href="/en-vivo">
                       <Radio className="mr-2 h-4 w-4" />
@@ -89,8 +112,8 @@ export function SponsorShowcase({ activeAmount, drawDate, prizeSchedule = [] }: 
 
               <div className="border-t border-white/10 p-5 sm:col-span-2 sm:p-6">
                 <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
-                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={paymentAmount} label="carton" />
-                  <Metric value="Auto" label="marcado" />
+                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={hasActiveRaffle ? paymentAmount : 'Sin venta'} label={hasActiveRaffle ? 'carton' : 'estado'} />
+                  <Metric value={hasActiveRaffle ? 'Auto' : 'Espera'} label={hasActiveRaffle ? 'marcado' : 'compra'} />
                   <Metric value={nextDraw} label="sorteo" />
                 </div>
               </div>
@@ -125,7 +148,7 @@ export function SponsorShowcase({ activeAmount, drawDate, prizeSchedule = [] }: 
             <MiniBingoCard />
           </VisualPanel>
           <VisualPanel title="Premios">
-            <PrizeVisual prizes={visiblePrizes} />
+            <PrizeVisual prizes={visiblePrizes} hasActiveRaffle={hasActiveRaffle} />
           </VisualPanel>
           <VisualPanel title="Bolillas cantadas">
             <DrawVisual />
@@ -203,7 +226,7 @@ function MiniBingoCard() {
   )
 }
 
-function PrizeVisual({ prizes }: { prizes: BingoPrizeTarget[] }) {
+function PrizeVisual({ prizes, hasActiveRaffle }: { prizes: BingoPrizeTarget[]; hasActiveRaffle: boolean }) {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
       <div className="absolute left-8 top-8 h-14 w-14 rounded-full bg-emerald-400 text-center text-lg font-bold leading-[3.5rem] text-zinc-950 shadow-xl">
@@ -214,7 +237,7 @@ function PrizeVisual({ prizes }: { prizes: BingoPrizeTarget[] }) {
       </div>
       <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
         <Image src="/brand/gold-medal.svg" alt="" width={54} height={54} className="mx-auto mb-2 h-12 w-12 object-contain" />
-        {prizes.length > 0 ? (
+        {hasActiveRaffle && prizes.length > 0 ? (
           <div className="space-y-1">
             {prizes.slice(0, 4).map((prize) => (
               <p key={prize.prizeNumber} className="text-sm font-bold">
@@ -223,9 +246,9 @@ function PrizeVisual({ prizes }: { prizes: BingoPrizeTarget[] }) {
             ))}
           </div>
         ) : (
-          <p className="text-xl font-bold">Premios a confirmar</p>
+          <p className="text-xl font-bold">{hasActiveRaffle ? 'Premios a confirmar' : 'Sin sorteo activo'}</p>
         )}
-        <p className="mt-2 text-xs font-semibold uppercase tracking-wide">sin orden fijo</p>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-wide">{hasActiveRaffle ? 'sin orden fijo' : 'proximo a publicar'}</p>
       </div>
     </div>
   )

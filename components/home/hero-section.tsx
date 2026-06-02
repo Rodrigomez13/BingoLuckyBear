@@ -11,7 +11,23 @@ const floatingBalls = [
   { number: 88, className: 'right-[13%] bottom-20 bg-sky-500' },
 ]
 
-export function HeroSection({ raffleName, firstPrize }: { raffleName?: string | null; firstPrize?: string }) {
+interface HeroSectionProps {
+  raffleName?: string | null
+  firstPrize?: string
+  hasActiveRaffle?: boolean
+  nextDrawDate?: string | null
+}
+
+export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, nextDrawDate }: HeroSectionProps) {
+  const nextDraw = nextDrawDate ? new Date(nextDrawDate).toLocaleDateString('es-ES') : 'A confirmar'
+  const badgeLabel = hasActiveRaffle ? raffleName || 'Sorteo activo' : 'No hay sorteos activos'
+  const headline = hasActiveRaffle
+    ? 'Compra tu carton y espera el aviso si ganas.'
+    : 'En este momento no hay sorteos activos.'
+  const copy = hasActiveRaffle
+    ? 'Tu carton participa automaticamente. No necesitas marcar bolillas: si tu jugada sale premiada, te avisamos por WhatsApp y coordinamos el pago con los datos que cargaste.'
+    : `Aguarda la fecha del proximo sorteo. Cuando se habilite, vas a poder comprar tu carton y seguir el resultado publicado al finalizar.${nextDrawDate ? ` Proxima fecha: ${nextDraw}.` : ''}`
+
   return (
     <section className="relative isolate w-full overflow-hidden">
       <div className="absolute inset-0 -z-10 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:46px_46px]" />
@@ -46,27 +62,39 @@ export function HeroSection({ raffleName, firstPrize }: { raffleName?: string | 
             <h1 className="sr-only">Lucky Bingo Bear</h1>
             <p className="mb-4 inline-flex h-8 w-fit items-center gap-2 self-center rounded border border-[#04f77c]/45 bg-[#04f77c] px-3 text-xs font-bold uppercase tracking-wide text-zinc-950 min-[560px]:self-start">
               <Trophy className="h-4 w-4" />
-              {raffleName || 'Sorteo activo'}
+              {badgeLabel}
             </p>
             <h2 className="mx-auto max-w-[42rem] text-balance font-mono text-3xl font-bold leading-[1.02] tracking-normal text-white min-[560px]:mx-0 sm:text-4xl lg:text-5xl">
-              Compra tu carton y espera el aviso si ganas.
+              {headline}
             </h2>
             <p className="mx-auto mt-4 max-w-[38rem] text-balance text-sm leading-6 text-slate-300 min-[560px]:mx-0 sm:text-base">
-              Tu carton participa automaticamente. No necesitas marcar bolillas: si tu jugada sale premiada,
-              te avisamos por WhatsApp y coordinamos el pago con los datos que cargaste.
+              {copy}
             </p>
 
             <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row min-[560px]:items-start">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 w-full rounded bg-[#04f77c] px-6 text-base font-bold text-zinc-950 hover:bg-[#30e17b] sm:w-auto"
-              >
-                <Link href="/participar">
-                  Participar ahora
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              {hasActiveRaffle ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 w-full rounded bg-[#04f77c] px-6 text-base font-bold text-zinc-950 hover:bg-[#30e17b] sm:w-auto"
+                >
+                  <Link href="/participar">
+                    Participar ahora
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 w-full rounded bg-[#04f77c] px-6 text-base font-bold text-zinc-950 hover:bg-[#30e17b] sm:w-auto"
+                >
+                  <Link href="/ganadores">
+                    Ver ultimo sorteo
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 variant="outline"
@@ -75,7 +103,7 @@ export function HeroSection({ raffleName, firstPrize }: { raffleName?: string | 
               >
                 <Link href="/en-vivo">
                   <Radio className="mr-2 h-4 w-4" />
-                  Ver sorteo
+                  {hasActiveRaffle ? 'Ver sorteo' : 'Ver resultados'}
                 </Link>
               </Button>
             </div>
@@ -105,9 +133,9 @@ export function HeroSection({ raffleName, firstPrize }: { raffleName?: string | 
               className="absolute right-5 top-7 hidden h-20 w-28 object-contain opacity-90 drop-shadow-2xl md:block lg:h-24 lg:w-36"
             />
             <div className="relative ml-auto grid w-full max-w-[24rem] gap-2 min-[560px]:grid-cols-1 lg:gap-3">
-              <HeroStat label="Premio mayor" value={firstPrize || 'A confirmar'} />
-              <HeroStat label="Carton" value="Participa solo" />
-              <HeroStat label="Resultado" value="Aviso por WhatsApp" />
+              <HeroStat label={hasActiveRaffle ? 'Premio mayor' : 'Estado'} value={hasActiveRaffle ? firstPrize || 'A confirmar' : 'Sin sorteo activo'} />
+              <HeroStat label={hasActiveRaffle ? 'Carton' : 'Proximo sorteo'} value={hasActiveRaffle ? 'Participa solo' : nextDraw} />
+              <HeroStat label="Resultado" value={hasActiveRaffle ? 'Aviso por WhatsApp' : 'Publicado al cerrar'} />
             </div>
           </div>
         </div>
