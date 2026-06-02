@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { CalendarDays, FileText, Gift, Image as ImageIcon, ShieldCheck, WalletCards } from 'lucide-react'
+import { CalendarDays, FileText, Gift, Image as ImageIcon, ShieldCheck, WalletCards, AlertTriangle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -676,8 +676,14 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
+              <div className="bg-red-950/40 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg flex items-start gap-3">
+                <div className="mt-0.5">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Error en la solicitud</p>
+                  <p className="text-xs mt-1">{error}</p>
+                </div>
               </div>
             )}
 
@@ -688,13 +694,13 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
               className="h-auto w-full whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 py-5 text-center text-lg font-bold leading-tight text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-600 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40"
             >
               {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generando tus cartones...
-                </span>
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Generando tus cartones...</span>
+                </>
               ) : (
                 jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
-              )}
+              )}}
             </Button>
 
             <p className="text-xs text-center text-zinc-500">

@@ -108,18 +108,18 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               )}
             </div>
 
-            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl md:text-3xl">
               {raffle.name}
             </h2>
             {jackpotPrize?.amount && (
               <div className="mt-4 rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-4 text-zinc-950 shadow-lg shadow-amber-950/20">
                 <p className="text-xs font-semibold uppercase tracking-wide">Premio mayor</p>
-                <p className="mt-1 break-words text-3xl font-bold tracking-tight sm:text-4xl">
+                <p className="mt-1 break-words text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
                   {jackpotPrize.amount}
                 </p>
               </div>
             )}
-            {raffle.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300">{raffle.description}</p>}
+            {raffle.description && <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-300 sm:text-sm">{raffle.description}</p>}
 
             <div className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-3">
               <LiveInfo
@@ -139,14 +139,14 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             {prizeAmounts.length > 0 && (
               <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Todos los premios</p>
-                <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+                <div className="grid auto-rows-fr gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                   {prizeSchedule.map((target) => {
                     const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
                     return (
-                    <span key={target.prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
-                      <span className="block text-xs uppercase">{target.label}</span>
+                    <span key={target.prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-2 py-2 text-xs font-semibold text-amber-100 sm:px-3 sm:text-sm">
+                      <span className="block text-[10px] uppercase">{target.label}</span>
                       {target.amount || 'A confirmar'}
-                      <span className="block text-xs text-zinc-400">{award ? `Con el ${award.drawnNumber}` : target.conditionLabel}</span>
+                      <span className="block text-[10px] text-zinc-400">{award ? `Con el ${award.drawnNumber}` : target.conditionLabel}</span>
                     </span>
                     )
                   })}
@@ -167,23 +167,23 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               </div>
             )}
 
-            <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-3">
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+            <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4">
                 <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-amber-300">
                   <Clock className="h-4 w-4" />
                   Cuenta regresiva
                 </p>
-                <p className="mt-2 font-mono text-3xl font-bold text-white">{formatTime(remaining)}</p>
+                <p className="mt-2 font-mono text-2xl font-bold text-white sm:text-3xl">{formatTime(remaining)}</p>
               </div>
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Ultimo numero</p>
-                <p className="mt-2 text-3xl font-bold text-white">
+                <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">
                   {formatDrawnNumber(lastNumber)}
                 </p>
               </div>
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Numeros cantados</p>
-                <p className="mt-2 text-3xl font-bold text-white">{drawnNumbers.length}<span className="text-base text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
+                <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{drawnNumbers.length}<span className="text-base text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
               </div>
             </div>
           </div>

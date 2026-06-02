@@ -42,13 +42,13 @@ export function HeroBannerSequence() {
         />
       </div>
 
-      <div className="absolute inset-0 z-20 flex items-center justify-center px-20 text-center sm:px-44 md:px-56">
+      <div className="absolute inset-0 z-20 flex items-center justify-center px-4 text-center sm:px-6 md:px-8">
         <div className="animate-banner-copy flex min-w-0 max-w-[34rem] flex-col items-center justify-center">
-          <p className="font-mono text-balance text-2xl font-bold leading-none tracking-normal text-amber-300 drop-shadow-[0_3px_8px_rgba(0,0,0,0.75)] sm:text-4xl md:text-5xl">
+          <p className="font-mono text-balance text-xl font-bold leading-none tracking-normal text-amber-300 drop-shadow-[0_3px_8px_rgba(0,0,0,0.75)] sm:text-3xl md:text-4xl lg:text-5xl">
             ¿Queres ganar $350000?
           </p>
-          <p className="mx-auto mt-2 max-w-[34rem] text-balance text-xs font-medium text-slate-100/85 drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] sm:text-lg">
-            y solo comprando un cartón de $3000!
+          <p className="mx-auto mt-2 max-w-[34rem] text-balance text-[11px] font-medium text-slate-100/85 drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] sm:text-base md:text-lg">
+            ¡y solo comprando un cartón de $3000!
           </p>
           <Link
             href="/participar"

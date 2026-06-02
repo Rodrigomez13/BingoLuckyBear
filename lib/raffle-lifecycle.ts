@@ -1,7 +1,7 @@
 import { BINGO_TOTAL_BALLS, drawNextNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 import { sendWinnerWhatsApp } from '@/lib/whatsapp'
 
-const PURCHASE_CLOSE_MS = 60 * 60 * 1000
+const PURCHASE_CLOSE_MS = 30 * 60 * 1000 // 30 minutos antes del inicio del sorteo
 const DEFAULT_AUTO_DRAW_INTERVAL_SECONDS = 6
 
 interface QueryResult<T = unknown> {

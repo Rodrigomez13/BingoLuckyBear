@@ -233,7 +233,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={`
-                  ${forDownload ? 'h-9 text-sm sm:h-11 sm:text-base' : 'h-8 text-sm sm:h-10 sm:text-[15px]'} 
+                  ${forDownload ? 'h-11 text-base sm:h-12 sm:text-lg' : 'h-10 text-xs sm:h-12 sm:text-sm md:text-base'} 
                   flex items-center justify-center border-r border-amber-200 font-semibold last:border-r-0
                   ${cell === null
                     ? 'bg-black/50 text-transparent'
