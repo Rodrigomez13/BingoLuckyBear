@@ -11,6 +11,7 @@ import { LiveDrawCard } from '@/components/live/live-draw-card'
 import { Card, CardContent } from '@/components/ui/card'
 import { Clock, MessageCircle, Radio, Trophy } from 'lucide-react'
 import { CONTACT_LINKS } from '@/lib/contact'
+import { SiteHeader } from '@/components/site-header'
 
 interface Raffle {
   id: string
@@ -118,27 +119,7 @@ export default function ParticipatePage() {
   return (
     <div className="lbb-page-shell relative min-h-screen text-zinc-100">
       <div className="lbb-ambient" />
-      {/* Header */}
-      <header className="sticky top-3 z-50 px-3 sm:top-5">
-        <div className="mx-auto max-w-6xl rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex min-w-0 items-center gap-3">
-              <BearLogo size={38} />
-              <div className="min-w-0">
-                <span className="block truncate text-base font-bold tracking-tight text-white">
-                  Lucky Bingo Bear
-                </span>
-                <span className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300 sm:block">
-                  Participar
-                </span>
-              </div>
-            </Link>
-            <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-              <Link href="/">Volver al Inicio</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader activePath="participar" kicker="Participar" compact />
 
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         {activeRaffle && (

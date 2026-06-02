@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { BearLogo } from '@/components/bear-logo'
+import { SiteHeader } from '@/components/site-header'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -44,20 +45,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] p-4 text-zinc-100">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute left-8 top-20 h-24 w-24 rounded-full border-8 border-amber-400/25" />
-        <div className="absolute bottom-24 right-12 flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20">
+    <div className="lbb-page-shell relative flex min-h-screen items-center justify-center p-4 pt-24 text-zinc-100">
+      <div className="lbb-ambient" />
+      <SiteHeader kicker="Acceso privado" compact />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="lbb-float absolute left-8 top-28 h-24 w-24 rounded-full border-8 border-amber-400/25" />
+        <div className="lbb-float absolute bottom-24 right-12 flex h-16 w-16 items-center justify-center rounded-full bg-amber-300 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20">
           21
         </div>
       </div>
       
-      <Card className="w-full max-w-md relative z-10 border-zinc-800 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/30 backdrop-blur-sm">
+      <Card className="lbb-premium-panel lbb-fade-up relative z-10 w-full max-w-md rounded-[1.5rem] border-white/10 text-zinc-100">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <BearLogo size={80} />
+            <BearLogo size={92} className="drop-shadow-2xl" />
           </div>
-          <CardTitle className="text-2xl font-bold text-white">
+          <CardTitle className="font-mono text-3xl font-bold text-white">
             Panel Administrador
           </CardTitle>
           <CardDescription className="text-zinc-400">
@@ -75,7 +78,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                className="rounded-xl border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             <div className="space-y-2">
@@ -86,7 +89,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                className="rounded-xl border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             {error && (
@@ -94,7 +97,7 @@ export default function LoginPage() {
             )}
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg"
+              className="h-11 w-full rounded-full bg-amber-300 font-bold text-zinc-950 shadow-lg shadow-amber-500/20 hover:bg-amber-200"
               disabled={isLoading}
             >
               {isLoading ? 'Ingresando...' : 'Ingresar'}

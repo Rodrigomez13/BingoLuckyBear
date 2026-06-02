@@ -363,22 +363,22 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     <div className="lbb-page-shell relative min-h-screen text-zinc-100">
       <div className="lbb-ambient" />
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[#04f77c]/20 bg-[#101010]/92 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 2xl:px-10">
-          <div className="flex items-center justify-between h-16">
+      <header className="sticky top-3 z-50 px-3 sm:top-5">
+        <div className="mx-auto max-w-[1800px] rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-6 lg:px-8 2xl:px-10">
+          <div className="flex h-16 items-center justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <BearLogo size={40} />
               <div className="min-w-0">
-                <span className="block truncate text-lg font-semibold tracking-tight text-white">
+                <span className="block truncate font-mono text-base font-bold tracking-tight text-white">
                   Panel Admin
                 </span>
-                <p className="max-w-[160px] truncate text-xs text-zinc-400 sm:max-w-none">{user.email}</p>
+                <p className="max-w-[160px] truncate text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300 sm:max-w-none">{user.email}</p>
               </div>
             </div>
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="shrink-0 border-[#04f77c]/40 bg-transparent text-[#04f77c] hover:bg-[#04f77c]/10"
+              className="shrink-0 rounded-full border-white/15 bg-transparent text-amber-200 hover:border-amber-300 hover:bg-amber-300/10"
             >
               <span className="hidden sm:inline">Cerrar Sesion</span>
               <span className="sm:hidden">Salir</span>
@@ -388,8 +388,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
       </header>
 
       <main className="relative z-10 mx-auto grid max-w-[1800px] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:px-8 2xl:px-10">
-        <aside className="h-fit rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 shadow-xl shadow-black/20 lg:sticky lg:top-24">
-          <p className="px-3 pb-3 text-xs font-bold uppercase tracking-wide text-zinc-500">Panel</p>
+        <aside className="lbb-premium-panel h-fit rounded-[1.35rem] p-3 lg:sticky lg:top-24">
+          <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Panel</p>
           <nav className="grid gap-2">
             <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
             <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
@@ -460,7 +460,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         )}
 
         {activeSection === 'payments' && (
-        <Card className="mb-8 border-zinc-800 bg-zinc-950/80 text-zinc-100">
+        <Card className="lbb-premium-panel mb-8 rounded-[1.35rem] border-white/10 text-zinc-100">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2 text-white">
@@ -472,7 +472,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   setPaymentForm(emptyPaymentForm)
                   setIsPaymentModalOpen(true)
                 }}
-                className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300"
+                className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Nueva cuenta
@@ -558,7 +558,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
               </h2>
               <Button 
                 onClick={() => setShowForm(true)}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200"
               >
                 Nuevo Sorteo
               </Button>
@@ -678,7 +678,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-2rem)] w-[min(96vw,1120px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(96vw,1120px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">Crear Nuevo Sorteo</DialogTitle>
             </DialogHeader>
@@ -797,7 +797,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-2rem)] w-[min(96vw,640px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(96vw,640px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</DialogTitle>
             </DialogHeader>
@@ -828,7 +828,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={!!selectedRaffle} onOpenChange={(open) => !open && setSelectedRaffle(null)}>
-          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1900px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 p-4 text-zinc-100 sm:p-6">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1900px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 p-4 text-zinc-100 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-white">{selectedRaffle?.name ?? 'Sorteo'}</DialogTitle>
             </DialogHeader>
@@ -863,7 +863,7 @@ function AdminMetric({
   detail: string
 }) {
   return (
-    <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-lg shadow-black/15">
+    <Card className="rounded-[1.2rem] border-white/10 bg-white/[0.045] text-zinc-100 shadow-xl shadow-black/15">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -897,7 +897,7 @@ function AdminNavButton({
       onClick={onClick}
       className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition ${
         active
-          ? 'bg-amber-400 text-zinc-950 shadow-lg shadow-amber-950/25'
+          ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/25'
           : 'text-zinc-300 hover:bg-white/[0.06] hover:text-white'
       }`}
     >

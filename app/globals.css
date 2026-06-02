@@ -202,6 +202,23 @@
     animation: banner-copy-rise 700ms ease-out both;
   }
 
+  .lbb-fade-up {
+    animation: lbb-fade-up 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lbb-float {
+    animation: lbb-float 5.6s ease-in-out infinite;
+  }
+
+  .lbb-gold-glow {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.18), 0 24px 80px rgba(245, 158, 11, 0.13);
+  }
+
+  .lbb-marquee {
+    animation: lbb-marquee 28s linear infinite;
+    padding-left: max(1rem, calc((100vw - 72rem) / 2));
+  }
+
   .lbb-page-shell {
     background:
       radial-gradient(70% 52% at 82% 12%, rgba(4, 247, 124, 0.2), rgba(0, 0, 0, 0) 62%),
@@ -209,6 +226,16 @@
       linear-gradient(120deg, rgba(48, 225, 123, 0.05), rgba(0, 0, 0, 0) 35%, rgba(37, 99, 235, 0.08)),
       rgb(11, 11, 16);
     background-attachment: fixed;
+  }
+
+  .lbb-premium-panel {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background:
+      radial-gradient(28rem 18rem at 82% 10%, rgba(4, 247, 124, 0.11), transparent 70%),
+      radial-gradient(24rem 18rem at 8% 90%, rgba(245, 158, 11, 0.12), transparent 72%),
+      rgba(8, 8, 10, 0.74);
+    box-shadow: 0 26px 90px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(18px);
   }
 
   .lbb-surface {
@@ -273,6 +300,36 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes lbb-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes lbb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes lbb-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 

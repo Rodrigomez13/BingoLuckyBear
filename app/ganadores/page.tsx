@@ -1,13 +1,12 @@
 import Image from 'next/image'
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { CalendarDays, Crown, Hash, Quote, Radio, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards, getPrizeLabel } from '@/lib/bingo'
 import { formatArgentinaDate } from '@/lib/date'
 import { createServiceClient } from '@/lib/supabase/server'
+import { SiteHeader } from '@/components/site-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,29 +103,7 @@ export default async function WinnersPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
-      <header className="sticky top-3 z-50 px-3 sm:top-5">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
-          <Link href="/" className="flex min-w-0 items-center gap-3">
-            <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={46} height={46} className="h-11 w-11 object-contain" />
-            <div className="min-w-0">
-              <span className="block truncate text-base font-bold tracking-tight text-white">
-                Lucky Bingo Bear
-              </span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300 sm:block">
-                Resultados oficiales
-              </span>
-            </div>
-          </Link>
-          <nav className="flex items-center gap-3">
-            <Link href="/en-vivo" className="hidden text-sm font-medium text-amber-200 transition-colors hover:text-white sm:inline">
-              En vivo
-            </Link>
-            <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-              <Link href="/participar">Participar</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader activePath="ganadores" kicker="Resultados oficiales" compact />
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">

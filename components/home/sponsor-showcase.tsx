@@ -25,6 +25,12 @@ const prizeHighlights = [
     asset: '/brand/confetti-coins.svg',
     tone: 'from-sky-300 to-blue-500',
   },
+  {
+    title: 'Transparencia total',
+    copy: 'El sorteo se puede seguir en vivo y los resultados quedan publicados para revisar.',
+    asset: '/brand/winner-crown.svg',
+    tone: 'from-lime-300 to-emerald-500',
+  },
 ]
 
 interface SponsorShowcaseProps {
@@ -53,10 +59,10 @@ export function SponsorShowcase({
     : `Aguarda la fecha del proximo sorteo${nextRaffleName ? `: ${nextRaffleName}` : ''}. Cuando este habilitado, la compra de cartones vuelve a estar disponible.`
 
   return (
-    <section className="lbb-scroll-reveal border-y border-[#04f77c]/20 bg-black/25 py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
-          <div className="lbb-compact-card relative h-full overflow-hidden rounded-xl lg:min-h-[24rem]">
+    <section className="lbb-scroll-reveal py-14 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
+          <div className="lbb-premium-panel relative h-full overflow-hidden rounded-[1.5rem] lg:min-h-[24rem]">
             <Image
               src="/brand/confetti-coins.svg"
               alt=""
@@ -76,33 +82,33 @@ export function SponsorShowcase({
               </div>
 
               <div className="flex min-w-0 flex-col justify-center p-4 sm:p-5">
-                <div className="mb-3 inline-flex h-8 w-fit items-center gap-2 rounded border border-[#04f77c]/35 bg-[#04f77c]/10 px-3 text-xs font-bold uppercase tracking-wide text-[#04f77c]">
+                <div className="mb-3 inline-flex h-9 w-fit items-center gap-2 rounded-full border border-[#04f77c]/25 bg-[#04f77c]/10 px-4 text-xs font-bold uppercase tracking-[0.18em] text-[#04f77c]">
                   <Sparkles className="h-4 w-4" />
                   Beneficios
                 </div>
-                <h2 className="max-w-2xl break-words text-2xl font-bold leading-tight tracking-normal text-white">
+                <h2 className="max-w-2xl break-words text-3xl font-bold leading-tight tracking-normal text-white sm:text-4xl">
                   {title}
                 </h2>
-                <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-slate-400">
+                <p className="mt-3 max-w-2xl break-words text-base leading-7 text-slate-400">
                   {copy}
                 </p>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                   {hasActiveRaffle ? (
-                    <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
+                    <Button asChild className="h-10 rounded-full bg-amber-300 px-5 text-sm font-bold text-zinc-950 hover:bg-amber-200">
                       <Link href="/participar">
                         <Ticket className="mr-2 h-4 w-4" />
                         Comprar carton
                       </Link>
                     </Button>
                   ) : (
-                    <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
+                    <Button asChild className="h-10 rounded-full bg-amber-300 px-5 text-sm font-bold text-zinc-950 hover:bg-amber-200">
                       <Link href="/ganadores">
                         <Ticket className="mr-2 h-4 w-4" />
                         Ver referencias
                       </Link>
                     </Button>
                   )}
-                  <Button asChild variant="outline" className="h-9 rounded border-white/20 bg-transparent px-4 text-sm font-bold text-white hover:border-[#04f77c] hover:text-[#04f77c]">
+                  <Button asChild variant="outline" className="h-10 rounded-full border-white/20 bg-transparent px-5 text-sm font-bold text-white hover:border-amber-300 hover:text-amber-200">
                     <Link href="/en-vivo">
                       <Radio className="mr-2 h-4 w-4" />
                       Ver vivo
@@ -121,10 +127,10 @@ export function SponsorShowcase({
             </div>
           </div>
 
-          <div className="grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-1">
+          <div className="grid auto-rows-fr gap-4 min-[520px]:grid-cols-2">
             {prizeHighlights.map((item) => {
               return (
-                <div key={item.title} className="lbb-compact-card h-full p-4 transition-all duration-300 hover:border-[#04f77c]/60">
+                <div key={item.title} className="h-full rounded-[1.2rem] border border-white/10 bg-white/[0.045] p-4 shadow-xl shadow-black/15 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300/45">
                   <div className="flex items-start gap-4">
                     <div
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gradient-to-br ${item.tone} text-zinc-950`}
@@ -144,7 +150,7 @@ export function SponsorShowcase({
           </div>
         </div>
 
-        <div className="mt-4 grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3">
+        <div className="mt-5 grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3">
           <VisualPanel title="Carton digital">
             <MiniBingoCard />
           </VisualPanel>

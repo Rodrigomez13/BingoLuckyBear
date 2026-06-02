@@ -1,11 +1,10 @@
-import Link from 'next/link'
-import { Radio, Trophy } from 'lucide-react'
-import { BearLogo } from '@/components/bear-logo'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorks } from '@/components/home/how-it-works'
 import { Footer } from '@/components/home/footer'
 import { SponsorShowcase } from '@/components/home/sponsor-showcase'
 import { TrustSection } from '@/components/home/trust-section'
+import { BrandMarquee } from '@/components/home/brand-marquee'
+import { SiteHeader } from '@/components/site-header'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
@@ -61,49 +60,7 @@ export default async function HomePage() {
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-slate-50">
       <div className="lbb-ambient" />
-      {/* Header */}
-      <header className="fixed left-0 right-0 top-4 z-50 px-3 sm:top-5">
-        <div className="mx-auto w-full max-w-6xl rounded-2xl border border-white/10 bg-black/72 px-3 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
-          <div className="flex h-[64px] items-center justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <BearLogo size={42} />
-              <div className="hidden sm:block">
-                <span className="font-mono text-base font-bold tracking-normal text-white">
-                  Lucky Bingo Bear
-                </span>
-                <p className="-mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">Bingo digital en vivo</p>
-              </div>
-            </div>
-            <nav className="flex shrink-0 items-center gap-2 text-sm sm:gap-4">
-              {jackpotPrize && (
-                <span className="hidden h-9 items-center gap-2 rounded-full border border-amber-300/45 bg-amber-300 px-3 text-xs font-bold uppercase tracking-wide text-zinc-950 lg:inline-flex">
-                  <Trophy className="h-4 w-4" />
-                  {jackpotPrize}
-                </span>
-              )}
-              <Link 
-                href="/en-vivo" 
-                className="hidden items-center gap-1 text-slate-300 transition-colors duration-200 hover:text-amber-200 sm:inline-flex"
-              >
-                <Radio className="h-4 w-4" />
-                En Vivo
-              </Link>
-              <Link 
-                href="/ganadores" 
-                className="hidden text-slate-300 transition-colors duration-200 hover:text-amber-200 md:inline"
-              >
-                Ganadores
-              </Link>
-              <Link
-                href="/participar"
-                className="inline-flex h-10 items-center rounded-full bg-amber-300 px-4 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-200"
-              >
-                Participar
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <SiteHeader jackpotPrize={jackpotPrize} activePath="home" />
 
       {/* Main Content */}
       <div className="relative z-10 pt-[84px]">
@@ -113,6 +70,7 @@ export default async function HomePage() {
           hasActiveRaffle={hasActiveRaffle}
           nextDrawDate={nextDrawDate}
         />
+        <BrandMarquee />
         <HowItWorks />
         <SponsorShowcase
           activeAmount={activeRaffle?.amount ?? null}
