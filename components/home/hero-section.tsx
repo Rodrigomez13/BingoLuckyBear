@@ -19,7 +19,7 @@ interface HeroSectionProps {
   nextDrawDate?: string | null
 }
 
-export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, nextDrawDate }: HeroSectionProps) {
+export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }: HeroSectionProps) {
   const nextDraw = formatArgentinaDate(nextDrawDate)
   const badgeLabel = hasActiveRaffle ? raffleName || 'Bingo digital en vivo' : 'Bingo digital en vivo'
   const headline = 'Tu suerte empieza aquí.'
@@ -108,33 +108,19 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
             </div>
           </div>
 
-          <div className="relative z-10 flex min-h-[24rem] flex-col justify-end sm:min-h-[30rem] lg:min-h-[34rem]">
+          <div className="relative z-10 flex min-h-[24rem] items-center justify-center sm:min-h-[30rem] lg:min-h-[34rem]">
             <Image
               src="/brand/banner-logo-main.png"
               alt="Lucky Bingo Bear"
               width={900}
               height={900}
               priority
-              className="absolute left-1/2 top-2 h-[21rem] w-[21rem] -translate-x-1/2 object-contain drop-shadow-2xl sm:h-[30rem] sm:w-[30rem] lg:left-[48%] lg:top-0 lg:h-[34rem] lg:w-[34rem]"
+              className="h-[22rem] w-[22rem] object-contain drop-shadow-2xl sm:h-[31rem] sm:w-[31rem] lg:h-[36rem] lg:w-[36rem]"
             />
-            <div className="relative mx-auto grid w-full max-w-[28rem] gap-2 min-[560px]:grid-cols-3 lg:ml-auto lg:grid-cols-1 lg:gap-3">
-              <HeroStat label={hasActiveRaffle ? 'Premio mayor' : 'Estado'} value={hasActiveRaffle ? firstPrize || 'A confirmar' : 'Sin sorteo activo'} />
-              <HeroStat label={hasActiveRaffle ? 'Carton' : 'Proximo sorteo'} value={hasActiveRaffle ? 'Participa solo' : nextDraw} />
-              <HeroStat label="Resultado" value={hasActiveRaffle ? 'Aviso por WhatsApp' : 'Publicado al cerrar'} />
-            </div>
           </div>
         </div>
       </div>
     </section>
-  )
-}
-
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-h-20 rounded-2xl border border-white/10 bg-black/62 p-3 shadow-xl shadow-black/20 backdrop-blur">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-300">{label}</p>
-      <p className="mt-1 break-words font-mono text-lg font-bold leading-6 text-white">{value}</p>
-    </div>
   )
 }
 
