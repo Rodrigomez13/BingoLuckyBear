@@ -32,6 +32,14 @@ interface Raffle {
   amount?: string | null
   bundle_offers?: string[] | null
   draw_date?: string | null
+  payment_account?: {
+    holder?: string | null
+    alias?: string | null
+    cbu?: string | null
+    bank?: string | null
+    concept?: string | null
+    note?: string | null
+  } | null
 }
 
 interface BingoCard {
@@ -58,6 +66,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
     email: '',
     payment_method: '',
     payment_reference: '',
+    payout_account_kind: '',
+    payout_account: '',
+    payout_holder_name: '',
     quantity: '1',
   })
   const [file, setFile] = useState<File | null>(null)
@@ -157,6 +168,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
       }
       if (!formData.payment_method || !formData.payment_reference) {
         throw new Error('Indica el metodo de pago y el numero de operacion')
+      }
+      if (!formData.payout_account_kind || !formData.payout_account || !formData.payout_holder_name) {
+        throw new Error('Indica los datos de la cuenta donde queres recibir el premio')
       }
       const quantity = Number(formData.quantity)
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
@@ -299,7 +313,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
         </div>
       )}
 
-      <PaymentInstructions amount={raffle.amount} />
+      <PaymentInstructions amount={raffle.amount} account={raffle.payment_account} />
 
       {/* Form */}
       <Card className="border-zinc-800 bg-zinc-950/85 text-zinc-100 backdrop-blur-sm shadow-xl">
@@ -436,6 +450,68 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                     placeholder="Ej: 1234567890"
                     required
                     minLength={4}
+                    className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-sky-300/25 bg-sky-400/10 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <WalletCards className="mt-0.5 h-5 w-5 shrink-0 text-sky-200" />
+                <div>
+                  <h3 className="font-bold text-white">Cuenta para cobrar premios</h3>
+                  <p className="text-sm text-zinc-300">
+                    Si tu carton gana, usamos estos datos para avisarte por WhatsApp y coordinar el pago.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="payout_account_kind" className="text-zinc-300 font-medium">
+                    Tipo de cuenta *
+                  </Label>
+                  <select
+                    id="payout_account_kind"
+                    name="payout_account_kind"
+                    value={formData.payout_account_kind}
+                    onChange={(event) => setFormData({ ...formData, payout_account_kind: event.target.value })}
+                    required
+                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                  >
+                    <option value="">Selecciona</option>
+                    <option value="Alias">Alias</option>
+                    <option value="CBU">CBU</option>
+                    <option value="CVU">CVU</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payout_account" className="text-zinc-300 font-medium">
+                    Alias / CBU / CVU *
+                  </Label>
+                  <Input
+                    id="payout_account"
+                    name="payout_account"
+                    value={formData.payout_account}
+                    onChange={handleInputChange}
+                    placeholder="Ej: lucky.bear.mp"
+                    required
+                    minLength={5}
+                    className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payout_holder_name" className="text-zinc-300 font-medium">
+                    Titular de la cuenta *
+                  </Label>
+                  <Input
+                    id="payout_holder_name"
+                    name="payout_holder_name"
+                    value={formData.payout_holder_name}
+                    onChange={handleInputChange}
+                    placeholder="Nombre del titular"
+                    required
+                    minLength={3}
                     className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                   />
                 </div>

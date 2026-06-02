@@ -1,40 +1,40 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { BadgeDollarSign, Megaphone, ShieldCheck, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { BadgeDollarSign, Radio, Sparkles, Ticket } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { PAYMENT_INFO } from '@/lib/payment'
 import { formatMoneyAmount } from '@/lib/bingo'
 
 const prizeHighlights = [
   {
-    title: 'Premios descendentes',
-    copy: 'El premio mayor se destaca primero y los premios secundarios mantienen una jerarquia facil de entender.',
+    title: 'Premios visibles',
+    copy: 'Antes de comprar ves los montos disponibles y el orden en que se adjudican.',
     asset: '/brand/winner-crown.svg',
     tone: 'from-amber-300 to-orange-500',
   },
   {
-    title: 'Sorteo inverso',
-    copy: 'La partida inicia por el premio 3, sigue con el premio 2 y reserva el premio principal para el cierre.',
+    title: 'Carton digital',
+    copy: 'Cada carton queda identificado y participa automaticamente cuando comienza el sorteo.',
     asset: '/brand/gold-medal.svg',
     tone: 'from-emerald-300 to-teal-500',
   },
   {
-    title: 'Una fila, un premio',
-    copy: 'Cada carton muestra filas identificadas para que el participante sepa que esta siguiendo en vivo.',
+    title: 'Aviso y pago',
+    copy: 'Si tu carton gana, te llega el aviso por WhatsApp y se coordina el pago con tus datos.',
     asset: '/brand/confetti-coins.svg',
     tone: 'from-sky-300 to-blue-500',
   },
 ]
 
-const sponsorSlots = ['Marca invitada', 'Combo del sorteo', 'Premio sorpresa']
-
 export function SponsorShowcase() {
   const paymentAmount = /\d/.test(PAYMENT_INFO.amount) ? formatMoneyAmount(PAYMENT_INFO.amount) : 'A confirmar'
 
   return (
-    <section className="border-y border-white/10 bg-zinc-950/62 py-16">
+    <section className="lbb-scroll-reveal border-y border-[#04f77c]/20 bg-black/25 py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-stretch gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="relative h-full overflow-hidden rounded-lg border border-white/10 bg-zinc-900/78 shadow-xl shadow-black/20">
+        <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
+          <div className="lbb-compact-card relative h-full overflow-hidden rounded-xl lg:min-h-[24rem]">
             <Image
               src="/brand/confetti-coins.svg"
               alt=""
@@ -42,59 +42,69 @@ export function SponsorShowcase() {
               height={320}
               className="pointer-events-none absolute -right-28 -top-28 h-auto w-96 opacity-20"
             />
-            <div className="grid h-full sm:grid-cols-[160px_minmax(0,1fr)]">
-              <div className="relative flex min-h-44 items-start justify-center border-b border-white/10 bg-[radial-gradient(circle_at_50%_22%,rgba(251,191,36,0.32),transparent_10rem),linear-gradient(150deg,rgba(239,68,68,0.2),rgba(16,185,129,0.16))] px-5 pb-5 pt-8 sm:min-h-0 sm:border-b-0 sm:border-r">
+            <div className="grid h-full min-[520px]:grid-cols-[140px_minmax(0,1fr)] sm:grid-cols-[160px_minmax(0,1fr)]">
+              <div className="relative flex min-h-32 items-start justify-center border-b border-[#04f77c]/20 bg-[radial-gradient(circle_at_50%_22%,rgba(4,247,124,0.22),transparent_10rem),linear-gradient(150deg,rgba(249,115,22,0.12),rgba(4,247,124,0.1))] px-5 pb-5 pt-6 min-[520px]:min-h-0 min-[520px]:border-b-0 min-[520px]:border-r">
                 <Image
                   src="/logo-contexto.svg"
                   alt="Lucky Bingo Bear"
                   width={260}
                   height={260}
-                  className="h-auto w-[min(48vw,150px)] drop-shadow-2xl"
+                  className="h-auto w-[min(42vw,128px)] drop-shadow-2xl lg:w-[min(48vw,150px)]"
                 />
               </div>
 
-              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-6">
-                <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-amber-200">
+              <div className="flex min-w-0 flex-col justify-center p-4 sm:p-5">
+                <div className="mb-3 inline-flex h-8 w-fit items-center gap-2 rounded border border-[#04f77c]/35 bg-[#04f77c]/10 px-3 text-xs font-bold uppercase tracking-wide text-[#04f77c]">
                   <Sparkles className="h-4 w-4" />
-                  Premio, carton y sorteo en una sola vista
+                  Beneficios
                 </div>
-                <h2 className="max-w-2xl break-words text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">
-                  Una experiencia visual lista para convertir visitas en participantes
+                <h2 className="max-w-2xl break-words text-2xl font-bold leading-tight tracking-normal text-white">
+                  Compras una vez y tu carton sigue participando
                 </h2>
-                <p className="mt-4 max-w-2xl break-words text-sm leading-relaxed text-zinc-300 sm:text-base">
-                  El visitante entiende que puede comprar, recibir su carton y mirar el sorteo sin saltar entre mensajes
-                  dispersos. La interfaz prioriza decision rapida, confianza y lectura mobile.
+                <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-slate-400">
+                  No tenes que estar marcando bolillas. El sorteo actualiza tu carton, publica el resultado y te avisa si salis ganador.
                 </p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <Button asChild className="h-9 rounded bg-[#04f77c] px-4 text-sm font-bold text-zinc-950 hover:bg-[#30e17b]">
+                    <Link href="/participar">
+                      <Ticket className="mr-2 h-4 w-4" />
+                      Comprar carton
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-9 rounded border-white/20 bg-transparent px-4 text-sm font-bold text-white hover:border-[#04f77c] hover:text-[#04f77c]">
+                    <Link href="/en-vivo">
+                      <Radio className="mr-2 h-4 w-4" />
+                      Ver vivo
+                    </Link>
+                  </Button>
+                </div>
               </div>
 
               <div className="border-t border-white/10 p-5 sm:col-span-2 sm:p-6">
                 <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
                   <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={paymentAmount} label="monto" />
-                  <Metric value="1" label="carton por compra" />
+                  <Metric value="Auto" label="marcado" />
                   <Metric value="90" label="bolillas" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid auto-rows-fr gap-4">
+          <div className="grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-1">
             {prizeHighlights.map((item) => {
               return (
-                <div
-                  key={item.title}
-                  className="h-full rounded-lg border border-white/10 bg-zinc-900/75 p-5 shadow-lg shadow-black/15"
-                >
+                <div key={item.title} className="lbb-compact-card h-full p-4 transition-all duration-300 hover:border-[#04f77c]/60">
                   <div className="flex items-start gap-4">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${item.tone} text-zinc-950 shadow-lg`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gradient-to-br ${item.tone} text-zinc-950`}
                     >
                       <Image src={item.asset} alt="" width={40} height={40} className="h-9 w-9 object-contain" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="break-words text-base font-semibold tracking-tight text-white">
+                      <h3 className="break-words text-base font-bold leading-6 tracking-normal text-white">
                         {item.title}
                       </h3>
-                      <p className="mt-1 break-words text-sm leading-relaxed text-zinc-400">{item.copy}</p>
+                      <p className="mt-1 break-words text-sm leading-6 text-slate-400">{item.copy}</p>
                     </div>
                   </div>
                 </div>
@@ -103,7 +113,7 @@ export function SponsorShowcase() {
           </div>
         </div>
 
-        <div className="mt-8 grid auto-rows-fr gap-5 lg:grid-cols-3">
+        <div className="mt-4 grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3">
           <VisualPanel title="Carton digital">
             <MiniBingoCard />
           </VisualPanel>
@@ -114,12 +124,6 @@ export function SponsorShowcase() {
             <DrawVisual />
           </VisualPanel>
         </div>
-
-        <div className="mt-10 grid auto-rows-fr gap-4 md:grid-cols-3">
-          {sponsorSlots.map((slot) => (
-            <AdSlot key={slot} title={slot} />
-          ))}
-        </div>
       </div>
     </section>
   )
@@ -129,24 +133,24 @@ function Metric({ value, label, icon }: { value: string; label: string; icon?: R
   const isLongValue = value.length > 10
 
   return (
-    <div className="flex h-full min-h-24 flex-col justify-between rounded-md border border-white/10 bg-black/25 p-4">
+    <div className="flex h-full min-h-20 flex-col justify-between rounded border border-[#04f77c]/20 bg-black/35 p-3">
       <div className="flex min-w-0 items-center gap-2 text-white">
         {icon && <span className="shrink-0 text-zinc-200">{icon}</span>}
-        <p className={`${isLongValue ? 'text-base' : 'text-2xl'} min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-semibold leading-tight`}>
+        <p className={`${isLongValue ? 'text-sm' : 'text-xl'} min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-bold leading-tight`}>
           {value}
         </p>
       </div>
-      <p className="mt-3 text-[11px] font-semibold uppercase leading-tight tracking-wide text-amber-200">{label}</p>
+      <p className="mt-3 text-[11px] font-bold uppercase leading-tight tracking-wide text-[#04f77c]">{label}</p>
     </div>
   )
 }
 
 function VisualPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-900/70">
-      <div className="flex min-h-44 flex-1 items-center justify-center bg-black/25 p-5">{children}</div>
-      <div className="border-t border-white/10 px-5 py-4">
-        <p className="font-semibold text-white">{title}</p>
+    <div className="lbb-compact-card flex h-full min-h-[15rem] flex-col overflow-hidden transition-all duration-300 hover:border-[#04f77c]/60">
+      <div className="flex min-h-44 flex-1 items-center justify-center bg-black/20 p-4">{children}</div>
+      <div className="border-t border-[#04f77c]/20 px-4 py-3">
+        <p className="font-mono text-sm font-bold tracking-normal text-white">{title}</p>
       </div>
     </div>
   )
@@ -233,32 +237,6 @@ function DrawVisual() {
       </div>
       <div className="absolute bottom-4 right-4 rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-200">
         En vivo
-      </div>
-    </div>
-  )
-}
-
-function AdSlot({ title }: { title: string }) {
-  return (
-    <div className="relative h-full min-h-36 overflow-hidden rounded-lg border border-dashed border-amber-300/35 bg-zinc-900/55 p-5">
-      <div className="absolute -right-6 -top-6 opacity-10">
-        <Image src="/logo-solo.svg" alt="" width={130} height={130} className="h-auto w-[130px]" />
-      </div>
-      <div className="relative flex h-full flex-col justify-between gap-5">
-        <div className="flex items-center gap-2 text-amber-200">
-          <Megaphone className="h-4 w-4" />
-          <p className="text-xs font-semibold uppercase tracking-wide">Espacio visual</p>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold tracking-tight text-white">
-            {title}
-          </h3>
-          <p className="mt-1 text-sm text-zinc-400">Ideal para destacar sponsors, premios reales o beneficios activos.</p>
-        </div>
-        <div className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-200">
-          <ShieldCheck className="h-4 w-4" />
-          Listo para actualizar
-        </div>
       </div>
     </div>
   )

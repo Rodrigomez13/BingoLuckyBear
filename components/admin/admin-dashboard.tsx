@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Plus, Radio, Ticket, Trash2, Trophy } from 'lucide-react'
+import { AlertTriangle, BarChart3, CalendarDays, Clock, DollarSign, ExternalLink, Gift, Landmark, Plus, Radio, Save, Ticket, Trash2, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,27 +33,58 @@ interface Raffle {
   countdown_seconds?: number | null
   draw_started_at?: string | null
   drawn_numbers?: number[] | null
+  payment_account_id?: string | null
   bingo_cards?: { count: number }[]
+}
+
+interface PaymentAccount {
+  id: string
+  name: string
+  holder: string
+  alias?: string | null
+  cbu?: string | null
+  bank?: string | null
+  concept?: string | null
+  note?: string | null
+  is_default: boolean
 }
 
 interface AdminDashboardProps {
   user: User
   initialRaffles: Raffle[]
+  initialPaymentAccounts: PaymentAccount[]
 }
 
-export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
+const emptyPaymentForm = {
+  id: '',
+  name: '',
+  holder: '',
+  alias: '',
+  cbu: '',
+  bank: '',
+  concept: '',
+  note: '',
+  is_default: false,
+}
+
+export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }: AdminDashboardProps) {
   const [raffles, setRaffles] = useState<Raffle[]>(initialRaffles)
+  const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(initialPaymentAccounts)
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [prize, setPrize] = useState('')
   const [additionalPrizes, setAdditionalPrizes] = useState<string[]>([])
   const [amount, setAmount] = useState('')
+  const [paymentAccountId, setPaymentAccountId] = useState(initialPaymentAccounts.find((account) => account.is_default)?.id ?? initialPaymentAccounts[0]?.id ?? '')
   const [bundleOffers, setBundleOffers] = useState<string[]>([])
   const [drawDate, setDrawDate] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
+  const [paymentForm, setPaymentForm] = useState(emptyPaymentForm)
+  const [isSavingPayment, setIsSavingPayment] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
   const activeRaffle = raffles.find((raffle) => raffle.is_active)
@@ -104,6 +135,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           description,
           prizes: sortedPrizes,
           amount,
+          payment_account_id: paymentAccountId || null,
           bundle_offers: cleanTextItems(bundleOffers),
           draw_date: drawDate || null,
         }),
@@ -120,6 +152,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       setPrize('')
       setAdditionalPrizes([])
       setAmount('')
+      setPaymentAccountId(paymentAccounts.find((account) => account.is_default)?.id ?? paymentAccounts[0]?.id ?? '')
       setBundleOffers([])
       setDrawDate('')
       setCreateError(null)
@@ -140,6 +173,10 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
   }
 
   const toggleRaffleStatus = async (raffle: Raffle) => {
+    if (raffle.draw_status === 'finished') {
+      return
+    }
+
     try {
       // If activating, deactivate all other raffles first
       if (!raffle.is_active) {
@@ -165,6 +202,22 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
     }
   }
 
+  const getRaffleBadge = (raffle: Raffle) => {
+    if (raffle.draw_status === 'finished') {
+      return { label: 'Cerrado', className: 'bg-zinc-600 text-white hover:bg-zinc-600' }
+    }
+
+    if (raffle.draw_status === 'running') {
+      return { label: 'En vivo', className: 'bg-red-500 text-white hover:bg-red-500' }
+    }
+
+    if (raffle.is_active) {
+      return { label: 'Disponible', className: 'bg-green-500 text-white hover:bg-green-500' }
+    }
+
+    return { label: 'Pausado', className: 'bg-gray-400 text-zinc-950 hover:bg-gray-400' }
+  }
+
   const deleteRaffle = async (raffleId: string) => {
     if (!confirm('Estas seguro de eliminar este sorteo? Se eliminaran todos los cartones asociados.')) {
       return
@@ -184,6 +237,77 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
       }
     } catch (error) {
       console.error('Error deleting raffle:', error)
+    }
+  }
+
+  const savePaymentAccount = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setIsSavingPayment(true)
+    setPaymentError(null)
+
+    try {
+      const isEditing = Boolean(paymentForm.id)
+      const response = await fetch(isEditing ? `/api/payment-accounts/${paymentForm.id}` : '/api/payment-accounts', {
+        method: isEditing ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentForm),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo guardar la cuenta')
+      }
+
+      setPaymentAccounts((current) => {
+        const next = data.account.is_default ? current.map((account) => ({ ...account, is_default: false })) : current
+        return isEditing
+          ? next.map((account) => (account.id === data.account.id ? data.account : account))
+          : [data.account, ...next]
+      })
+      setPaymentForm(emptyPaymentForm)
+      if (!paymentAccountId || data.account.is_default) {
+        setPaymentAccountId(data.account.id)
+      }
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'No se pudo guardar la cuenta')
+    } finally {
+      setIsSavingPayment(false)
+    }
+  }
+
+  const editPaymentAccount = (account: PaymentAccount) => {
+    setPaymentForm({
+      id: account.id,
+      name: account.name,
+      holder: account.holder,
+      alias: account.alias ?? '',
+      cbu: account.cbu ?? '',
+      bank: account.bank ?? '',
+      concept: account.concept ?? '',
+      note: account.note ?? '',
+      is_default: account.is_default,
+    })
+  }
+
+  const deletePaymentAccount = async (accountId: string) => {
+    if (!confirm('Eliminar esta cuenta de cobro? Los sorteos que la usaban quedaran sin cuenta asignada.')) {
+      return
+    }
+
+    const response = await fetch(`/api/payment-accounts/${accountId}`, { method: 'DELETE' })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      setPaymentError(data?.error ?? 'No se pudo eliminar la cuenta')
+      return
+    }
+
+    setPaymentAccounts((current) => current.filter((account) => account.id !== accountId))
+    if (paymentAccountId === accountId) {
+      setPaymentAccountId('')
+    }
+    if (paymentForm.id === accountId) {
+      setPaymentForm(emptyPaymentForm)
     }
   }
 
@@ -272,6 +396,77 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
           </div>
         </div>
 
+        <Card className="mb-8 border-zinc-800 bg-zinc-950/80 text-zinc-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Landmark className="h-5 w-5 text-amber-300" />
+              Cuentas para recibir pagos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)]">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              {paymentAccounts.length === 0 ? (
+                <div className="rounded-md border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">
+                  Guarda una cuenta para mostrarla automaticamente al comprador cuando cree su carton.
+                </div>
+              ) : (
+                paymentAccounts.map((account) => (
+                  <div key={account.id} className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-words font-bold text-white">{account.name}</p>
+                        <p className="mt-1 text-sm text-zinc-300">{account.holder}</p>
+                        <p className="mt-2 break-all text-sm font-semibold text-amber-200">{account.alias || account.cbu}</p>
+                        {account.is_default && <Badge className="mt-2 bg-emerald-500 text-white hover:bg-emerald-500">Predeterminada</Badge>}
+                      </div>
+                      <div className="grid gap-2">
+                        <Button type="button" size="sm" variant="outline" onClick={() => editPaymentAccount(account)} className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+                          Editar
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" onClick={() => deletePaymentAccount(account.id)} className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form onSubmit={savePaymentAccount} className="space-y-3 rounded-md border border-white/10 bg-black/20 p-4">
+              <p className="font-bold text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</p>
+              <Input value={paymentForm.name} onChange={(event) => setPaymentForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nombre interno, ej: Mercado Pago" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.holder} onChange={(event) => setPaymentForm((current) => ({ ...current, holder: event.target.value }))} placeholder="Titular de la cuenta" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.alias} onChange={(event) => setPaymentForm((current) => ({ ...current, alias: event.target.value }))} placeholder="Alias" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.cbu} onChange={(event) => setPaymentForm((current) => ({ ...current, cbu: event.target.value }))} placeholder="CBU/CVU" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.bank} onChange={(event) => setPaymentForm((current) => ({ ...current, bank: event.target.value }))} placeholder="Banco o billetera" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.concept} onChange={(event) => setPaymentForm((current) => ({ ...current, concept: event.target.value }))} placeholder="Concepto sugerido" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Textarea value={paymentForm.note} onChange={(event) => setPaymentForm((current) => ({ ...current, note: event.target.value }))} placeholder="Nota para el comprobante" className="border-zinc-700 bg-zinc-900 text-white" />
+              <label className="flex items-center gap-2 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={paymentForm.is_default}
+                  onChange={(event) => setPaymentForm((current) => ({ ...current, is_default: event.target.checked }))}
+                  className="h-4 w-4 accent-amber-400"
+                />
+                Usar como cuenta predeterminada
+              </label>
+              {paymentError && <p className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">{paymentError}</p>}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button type="submit" disabled={isSavingPayment} className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingPayment ? 'Guardando' : 'Guardar'}
+                </Button>
+                {paymentForm.id && (
+                  <Button type="button" variant="outline" onClick={() => setPaymentForm(emptyPaymentForm)} className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10">
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
           {/* Left Column - Raffles List */}
           <div className="min-w-0 space-y-6">
@@ -326,6 +521,22 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                           placeholder="Ej: $2.000"
                           className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="paymentAccount" className="text-zinc-300">Cuenta de cobro</Label>
+                        <select
+                          id="paymentAccount"
+                          value={paymentAccountId}
+                          onChange={(event) => setPaymentAccountId(event.target.value)}
+                          className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                        >
+                          <option value="">Usar datos por defecto</option>
+                          {paymentAccounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name}{account.is_default ? ' - predeterminada' : ''}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
@@ -415,14 +626,8 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             <h3 className="font-semibold text-white truncate">
                               {raffle.name}
                             </h3>
-                            <Badge 
-                              variant={raffle.is_active ? 'default' : 'secondary'}
-                              className={raffle.is_active 
-                                ? 'bg-green-500 hover:bg-green-600' 
-                                : 'bg-gray-400'
-                              }
-                            >
-                              {raffle.is_active ? 'Activo' : 'Inactivo'}
+                            <Badge className={getRaffleBadge(raffle).className}>
+                              {getRaffleBadge(raffle).label}
                             </Badge>
                           </div>
                           {raffle.description && (
@@ -462,12 +667,13 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
                             size="sm"
                             variant={raffle.is_active ? 'destructive' : 'default'}
                             onClick={() => toggleRaffleStatus(raffle)}
+                            disabled={raffle.draw_status === 'finished'}
                             className={!raffle.is_active 
                               ? 'bg-green-500 hover:bg-green-600 text-xs' 
                               : 'text-xs'
                             }
                           >
-                            {raffle.is_active ? 'Desactivar' : 'Activar'}
+                            {raffle.draw_status === 'finished' ? 'Cerrado' : raffle.is_active ? 'Pausar' : 'Habilitar'}
                           </Button>
                           <Button
                             size="sm"
@@ -491,6 +697,7 @@ export function AdminDashboard({ user, initialRaffles }: AdminDashboardProps) {
             {selectedRaffle ? (
               <RaffleParticipants
                 raffle={selectedRaffle}
+                paymentAccounts={paymentAccounts}
                 onRaffleUpdated={(updatedRaffle) => {
                   setSelectedRaffle(updatedRaffle as Raffle)
                   setRaffles((current) =>

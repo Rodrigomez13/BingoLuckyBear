@@ -9,6 +9,7 @@ import { SponsorShowcase } from '@/components/home/sponsor-showcase'
 import { TrustSection } from '@/components/home/trust-section'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getPrizeAmounts } from '@/lib/bingo'
+import { syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,13 +18,23 @@ async function getActiveRafflePromo() {
     const supabase = await createServiceClient()
     const { data } = await supabase
       .from('raffles')
-      .select('name, prize, additional_prizes')
+      .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    return data
+    if (!data) {
+      return null
+    }
+
+    const raffle = await syncRaffleLifecycle(supabase, data)
+
+    if (!raffle.is_active && raffle.draw_status === 'finished') {
+      return null
+    }
+
+    return raffle
   } catch (error) {
     console.error('Error fetching active raffle promo:', error)
     return null
@@ -35,41 +46,42 @@ export default async function HomePage() {
   const firstPrize = getPrizeAmounts(activeRaffle?.prize, activeRaffle?.additional_prizes)[0]
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#08090d,#15111a_42%,#0d1720_78%,#09090b)] text-zinc-100">
+    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-slate-50">
+      <div className="lbb-ambient" />
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-zinc-950/78 shadow-lg shadow-black/20 backdrop-blur-xl">
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-[#101010]/92 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex h-[60px] items-center justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <BearLogo size={46} />
               <div className="hidden sm:block">
-                <span className="text-lg font-semibold tracking-tight text-white">
+                <span className="font-mono text-lg font-bold tracking-normal text-white">
                   Lucky Bingo Bear
                 </span>
-                <p className="-mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200/75">Bingo digital en vivo</p>
+                <p className="-mt-0.5 text-[10px] font-medium uppercase tracking-wide text-[#04f77c]">Bingo digital en vivo</p>
               </div>
             </div>
             <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-4">
               {firstPrize && (
-                <span className="hidden items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200 lg:inline-flex">
+                <span className="hidden h-8 items-center gap-2 rounded border border-[#04f77c]/45 bg-[#04f77c] px-3 text-xs font-bold uppercase tracking-wide text-zinc-950 lg:inline-flex">
                   <Trophy className="h-4 w-4" />
                   {firstPrize}
                 </span>
               )}
               <Link 
                 href="/en-vivo" 
-                className="hidden items-center gap-1 font-semibold text-amber-200 transition-colors hover:text-white sm:inline-flex"
+                className="hidden items-center gap-1 text-slate-200 transition-colors duration-200 hover:text-[#04f77c] sm:inline-flex"
               >
                 <Radio className="h-4 w-4" />
                 En Vivo
               </Link>
               <Link 
                 href="/ganadores" 
-                className="hidden font-medium text-amber-200 transition-colors hover:text-white md:inline"
+                className="hidden text-slate-200 transition-colors duration-200 hover:text-[#04f77c] md:inline"
               >
                 Ganadores
               </Link>
-              <Button asChild variant="outline" className="hidden border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10 sm:inline-flex">
+              <Button asChild variant="outline" className="hidden h-8 rounded border-[#04f77c]/35 bg-transparent px-3 text-sm font-bold text-[#04f77c] hover:bg-[#04f77c] hover:text-zinc-950 sm:inline-flex">
                 <Link href="/auth/login">Admin</Link>
               </Button>
             </nav>
@@ -78,11 +90,11 @@ export default async function HomePage() {
       </header>
 
       {/* Main Content */}
-      <div className="pt-16">
-        <HeroSection />
+      <div className="relative z-10 pt-[60px]">
+        <HeroSection raffleName={activeRaffle?.name} firstPrize={firstPrize} />
         <HowItWorks />
-        <TrustSection />
         <SponsorShowcase />
+        <TrustSection />
         <Footer />
       </div>
     </main>

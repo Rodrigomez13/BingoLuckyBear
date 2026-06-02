@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     const description = String(body.description ?? '').trim()
     const amount = String(body.amount ?? '').trim()
     const drawDate = String(body.draw_date ?? '').trim()
+    const paymentAccountId = String(body.payment_account_id ?? '').trim()
     const sortedPrizes = normalizePrizeAmounts(cleanTextItems(body.prizes))
 
     if (!name) {
@@ -33,6 +34,20 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createServiceClient()
+
+    if (paymentAccountId) {
+      const { data: account, error: accountError } = await supabase
+        .from('payment_accounts')
+        .select('id')
+        .eq('id', paymentAccountId)
+        .eq('admin_id', user.id)
+        .single()
+
+      if (accountError || !account) {
+        return NextResponse.json({ error: 'Selecciona una cuenta de cobro valida' }, { status: 400 })
+      }
+    }
+
     const { data, error } = await supabase
       .from('raffles')
       .insert({
@@ -43,6 +58,7 @@ export async function POST(request: Request) {
         amount: amount || null,
         bundle_offers: cleanTextItems(body.bundle_offers),
         draw_date: drawDate || null,
+        payment_account_id: paymentAccountId || null,
         admin_id: user.id,
         is_active: false,
       })

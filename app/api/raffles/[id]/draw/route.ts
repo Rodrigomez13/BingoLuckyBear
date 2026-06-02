@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { drawNextNumber } from '@/lib/bingo'
+import { closeRaffle, notifyDrawWinners } from '@/lib/raffle-lifecycle'
 
 type DrawAction = 'start' | 'draw' | 'reset' | 'finish'
 
@@ -79,10 +80,20 @@ export async function POST(
         .single()
 
       if (error) throw error
-      return NextResponse.json({ raffle: data, number: nextNumber })
+      const updatedRaffle = await notifyDrawWinners(supabase, data, drawnNumbers, data.drawn_numbers ?? [])
+      return NextResponse.json({ raffle: updatedRaffle, number: nextNumber })
     }
 
     if (action === 'reset') {
+      const { error: notificationDeleteError } = await supabase
+        .from('winner_notifications')
+        .delete()
+        .eq('raffle_id', id)
+
+      if (notificationDeleteError && notificationDeleteError.code !== '42P01') {
+        console.error('Winner notification cleanup error:', notificationDeleteError)
+      }
+
       const { data, error } = await supabase
         .from('raffles')
         .update({
@@ -100,14 +111,7 @@ export async function POST(
     }
 
     if (action === 'finish') {
-      const { data, error } = await supabase
-        .from('raffles')
-        .update({ draw_status: 'finished' })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      const data = await closeRaffle(supabase, id)
       return NextResponse.json({ raffle: data })
     }
 

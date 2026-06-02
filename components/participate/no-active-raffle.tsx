@@ -14,8 +14,8 @@ export function NoActiveRaffle() {
           No Hay Sorteo Activo
         </h1>
         <p className="text-zinc-300 mb-8 max-w-md mx-auto leading-relaxed">
-          En este momento no hay ningun sorteo disponible para participar. 
-          Siguenos en redes sociales para enterarte cuando haya un nuevo sorteo.
+          En este momento no hay un sorteo disponible para comprar cartones.
+          Cuando se habilite el proximo, vas a poder participar desde aca y recibir el aviso por WhatsApp si ganas.
         </p>
         <Button asChild className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
           <Link href="/">Volver al Inicio</Link>

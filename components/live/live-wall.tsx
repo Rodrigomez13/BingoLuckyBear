@@ -86,7 +86,7 @@ export function LiveWall() {
           <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white">
             No hay sorteo activo
           </h1>
-          <p className="mt-3 text-zinc-300">Cuando actives un sorteo desde el panel, esta pantalla se actualizara para proyectarlo.</p>
+          <p className="mt-3 text-zinc-300">Cuando haya un sorteo disponible, esta pantalla mostrara la cuenta regresiva, las bolillas y los premios en juego.</p>
           <Button asChild className="mt-6 bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
             <Link href="/">Volver al inicio</Link>
           </Button>
@@ -220,7 +220,7 @@ export function LiveWall() {
             {raffle.draw_status === 'finished' && (
               <div className="mt-4 rounded-md border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-emerald-100">
                 <Crown className="mx-auto mb-2 h-6 w-6" />
-                Sorteo finalizado
+                Sorteo cerrado
               </div>
             )}
           </aside>

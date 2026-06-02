@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { generateBingoNumbers } from '@/lib/bingo'
+import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 import { nanoid } from 'nanoid'
 
 function isValidEmail(value: string) {
@@ -35,6 +36,9 @@ export async function POST(request: Request) {
       payment_receipt_url,
       payment_method,
       payment_reference,
+      payout_account_kind,
+      payout_account,
+      payout_holder_name,
       quantity: requestedQuantity,
       session_token 
     } = body
@@ -51,6 +55,13 @@ export async function POST(request: Request) {
     if (!payment_method || !payment_reference) {
       return NextResponse.json(
         { error: 'Indica el metodo de pago y el numero de operacion del comprobante' },
+        { status: 400 }
+      )
+    }
+
+    if (!payout_account_kind || !payout_account || !payout_holder_name) {
+      return NextResponse.json(
+        { error: 'Indica la cuenta donde queres recibir el pago del premio' },
         { status: 400 }
       )
     }
@@ -85,13 +96,27 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!['Alias', 'CBU', 'CVU'].includes(String(payout_account_kind))) {
+      return NextResponse.json({ error: 'Selecciona un tipo de cuenta valido' }, { status: 400 })
+    }
+
+    if (
+      !hasReasonableLength(payout_account, 5, 80) ||
+      !hasReasonableLength(payout_holder_name, 3, 120)
+    ) {
+      return NextResponse.json(
+        { error: 'Revisa alias/CBU/CVU y titular de la cuenta de cobro' },
+        { status: 400 }
+      )
+    }
+
     // Use service client to bypass RLS for inserting
     const supabase = await createServiceClient()
 
     // Check if raffle is active
     const { data: raffle, error: raffleError } = await supabase
       .from('raffles')
-      .select('id, is_active')
+      .select('id, name, is_active, draw_date, draw_status, draw_started_at, drawn_numbers, prize, additional_prizes')
       .eq('id', raffle_id)
       .eq('is_active', true)
       .single()
@@ -100,6 +125,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'El sorteo no esta disponible' },
         { status: 400 }
+      )
+    }
+
+    const syncedRaffle = await syncRaffleLifecycle(supabase, raffle)
+    const purchaseAvailability = getPurchaseAvailability(syncedRaffle)
+
+    if (!syncedRaffle.is_active || !purchaseAvailability.canPurchase) {
+      const messages = {
+        cutoff: 'La venta de cartones cierra una hora antes del sorteo',
+        running: 'El sorteo ya esta en curso y no permite nuevas compras',
+        closed: 'El sorteo ya esta cerrado',
+        missing_date: 'El sorteo todavia no tiene fecha confirmada',
+      } as const
+
+      return NextResponse.json(
+        { error: messages[purchaseAvailability.reason ?? 'closed'] },
+        { status: 409 }
       )
     }
 
@@ -126,6 +168,9 @@ export async function POST(request: Request) {
         payment_receipt_url,
         payment_method,
         payment_reference: payment_reference.trim(),
+        payout_account_kind,
+        payout_account: payout_account.trim(),
+        payout_holder_name: payout_holder_name.trim(),
         session_token,
         bingo_numbers,
       }
@@ -146,6 +191,30 @@ export async function POST(request: Request) {
         phone: card.phone,
         email: card.email,
         payment_receipt_url: card.payment_receipt_url,
+        session_token: card.session_token,
+        bingo_numbers: card.bingo_numbers,
+      }))
+      const fallback = await supabase
+        .from('bingo_cards')
+        .insert(fallbackPayload)
+        .select()
+
+      cards = fallback.data
+      insertError = fallback.error
+    }
+
+    if (insertError && /payout_(account|holder)/i.test(insertError.message)) {
+      const fallbackPayload = cardsToInsert.map((card) => ({
+        card_number: card.card_number,
+        raffle_id: card.raffle_id,
+        full_name: card.full_name,
+        dni: card.dni,
+        address: card.address,
+        phone: card.phone,
+        email: card.email,
+        payment_receipt_url: card.payment_receipt_url,
+        payment_method: card.payment_method,
+        payment_reference: card.payment_reference,
         session_token: card.session_token,
         bingo_numbers: card.bingo_numbers,
       }))

@@ -1,4 +1,16 @@
-export const PAYMENT_INFO = {
+export interface PaymentAccountInfo {
+  holder: string
+  alias: string
+  cbu: string
+  bank: string
+  concept: string
+  amount: string
+  note: string
+}
+
+export type PaymentAccountInput = Partial<Record<keyof PaymentAccountInfo, string | null>>
+
+export const PAYMENT_INFO: PaymentAccountInfo = {
   holder: process.env.NEXT_PUBLIC_PAYMENT_HOLDER || 'Lucky Bingo Bear',
   alias: process.env.NEXT_PUBLIC_PAYMENT_ALIAS || 'CONFIGURAR.ALIAS',
   cbu: process.env.NEXT_PUBLIC_PAYMENT_CBU || '0000000000000000000000',
@@ -8,6 +20,17 @@ export const PAYMENT_INFO = {
   note:
     process.env.NEXT_PUBLIC_PAYMENT_NOTE ||
     'El comprobante debe mostrar fecha, importe, cuenta de destino y numero de operacion.',
+}
+
+export function normalizePaymentAccountInfo(account?: PaymentAccountInput | null) {
+  return {
+    holder: account?.holder?.trim() || PAYMENT_INFO.holder,
+    alias: account?.alias?.trim() || PAYMENT_INFO.alias,
+    cbu: account?.cbu?.trim() || PAYMENT_INFO.cbu,
+    bank: account?.bank?.trim() || PAYMENT_INFO.bank,
+    concept: account?.concept?.trim() || PAYMENT_INFO.concept,
+    note: account?.note?.trim() || PAYMENT_INFO.note,
+  }
 }
 
 export const PAYMENT_METHODS = [
