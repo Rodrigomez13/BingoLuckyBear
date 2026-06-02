@@ -53,37 +53,102 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   const isWinner = winningLines.length > 0
 
   const downloadCard = async () => {
+    let downloadBtn: HTMLButtonElement | null = null
     try {
-      const target = modalCardRef.current ?? cardPreviewRef.current
-      if (!target) return
+      // Buscar el botón de descarga y deshabilitarlo
+      downloadBtn = document.querySelector('button:has(svg:nth-of-type(1))') as HTMLButtonElement
+      if (downloadBtn) {
+        downloadBtn.disabled = true
+      }
 
+      const target = modalCardRef.current ?? cardPreviewRef.current
+      if (!target) {
+        throw new Error('No se encontró el carton para descargar')
+      }
+
+      // Importar html2canvas
       const { default: html2canvas } = await import('html2canvas')
-      await document.fonts?.ready
+      
+      // Esperar un poco para que todo esté renderizado
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Esperar a que las imágenes se carguen
       await Promise.all(
-        Array.from(target.querySelectorAll('img')).map((image) => {
-          if (image.complete) return Promise.resolve()
+        Array.from(target.querySelectorAll('img')).map((image: HTMLImageElement) => {
           return new Promise<void>((resolve) => {
-            image.onload = () => resolve()
-            image.onerror = () => resolve()
+            if (image.complete) {
+              resolve()
+            } else {
+              const timeout = setTimeout(() => {
+                image.removeEventListener('load', onLoad)
+                image.removeEventListener('error', onError)
+                resolve()
+              }, 3000)
+              
+              const onLoad = () => {
+                clearTimeout(timeout)
+                image.removeEventListener('load', onLoad)
+                image.removeEventListener('error', onError)
+                resolve()
+              }
+              const onError = () => {
+                clearTimeout(timeout)
+                image.removeEventListener('load', onLoad)
+                image.removeEventListener('error', onError)
+                resolve()
+              }
+              image.addEventListener('load', onLoad)
+              image.addEventListener('error', onError)
+            }
           })
         })
       )
 
+      // Generar canvas con opciones optimizadas
       const canvas = await html2canvas(target, {
         backgroundColor: '#09090b',
-        scale: Math.max(2, Math.min(3, window.devicePixelRatio || 2)),
+        scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         windowWidth: target.scrollWidth,
         windowHeight: target.scrollHeight,
+        imageTimeout: 10000,
+        foreignObjectRendering: false,
       })
 
-      const link = document.createElement('a')
-      link.download = `bingo-card-${card.card_number}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      // Convertir canvas a PNG blob
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            throw new Error('No se pudo generar la imagen del carton')
+          }
+          
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `carton-${card.card_number}.png`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          // Limpiar
+          setTimeout(() => {
+            URL.revokeObjectURL(url)
+          }, 100)
+        },
+        'image/png',
+        0.95
+      )
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido'
       console.error('Error downloading card:', error)
+      alert(`No se pudo descargar el carton: ${message}. Intenta nuevamente.`)
+    } finally {
+      // Re-habilitar botón
+      if (downloadBtn) {
+        downloadBtn.disabled = false
+      }
     }
   }
 
