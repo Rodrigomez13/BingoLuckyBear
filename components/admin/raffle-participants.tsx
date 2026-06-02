@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CalendarDays, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users } from 'lucide-react'
+import { Bot, CalendarDays, CheckCircle2, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users, XCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -60,6 +60,16 @@ interface BingoCard {
   payout_account_kind?: string | null
   payout_account?: string | null
   payout_holder_name?: string | null
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
+  receipt_amount?: number | null
+  receipt_operation_number?: string | null
+  receipt_destination_account?: string | null
+  receipt_date?: string | null
+  receipt_raw_text?: string | null
+  receipt_parse_status?: 'not_parsed' | 'parsed' | 'failed' | 'not_configured' | null
+  receipt_parse_error?: string | null
+  receipt_validation_notes?: string | null
+  receipt_parsed_at?: string | null
   winner_photo_url?: string | null
   winner_testimonial?: string | null
   created_at: string
@@ -170,7 +180,20 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   const [winnerTestimonial, setWinnerTestimonial] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [winnerOnly, setWinnerOnly] = useState(false)
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [participantsPage, setParticipantsPage] = useState(1)
+  const [receiptForm, setReceiptForm] = useState({
+    payment_status: 'pending' as 'pending' | 'approved' | 'rejected',
+    receipt_amount: '',
+    receipt_operation_number: '',
+    receipt_destination_account: '',
+    receipt_date: '',
+    receipt_validation_notes: '',
+  })
+  const [isSavingReceipt, setIsSavingReceipt] = useState(false)
+  const [isParsingReceipt, setIsParsingReceipt] = useState(false)
   const [details, setDetails] = useState({
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
@@ -229,21 +252,32 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
 
     return cards.filter((card) => {
       const matchesWinner = !winnerOnly || awardedCardIds.has(card.id)
+      const matchesPaymentStatus = paymentStatusFilter === 'all' || (card.payment_status ?? 'pending') === paymentStatusFilter
+      const cardTime = new Date(card.created_at).getTime()
+      const fromTime = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null
+      const toTime = dateTo ? new Date(`${dateTo}T23:59:59`).getTime() : null
+      const matchesDateFrom = fromTime === null || cardTime >= fromTime
+      const matchesDateTo = toTime === null || cardTime <= toTime
       const matchesSearch =
         !normalizedSearch ||
-        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '', card.payout_account ?? '', card.payout_holder_name ?? '']
+        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '', card.receipt_operation_number ?? '', card.receipt_destination_account ?? '', card.payout_account ?? '', card.payout_holder_name ?? '']
           .some((value) => value.toLowerCase().includes(normalizedSearch))
 
-      return matchesWinner && matchesSearch
+      return matchesWinner && matchesPaymentStatus && matchesDateFrom && matchesDateTo && matchesSearch
     })
-  }, [awardedCardIds, cards, searchTerm, winnerOnly])
+  }, [awardedCardIds, cards, dateFrom, dateTo, paymentStatusFilter, searchTerm, winnerOnly])
+  const paymentStatusCounts = useMemo(() => ({
+    pending: cards.filter((card) => (card.payment_status ?? 'pending') === 'pending').length,
+    approved: cards.filter((card) => card.payment_status === 'approved').length,
+    rejected: cards.filter((card) => card.payment_status === 'rejected').length,
+  }), [cards])
   const participantsPerPage = 8
   const participantsPageCount = Math.max(1, Math.ceil(filteredCards.length / participantsPerPage))
   const visibleCards = filteredCards.slice((participantsPage - 1) * participantsPerPage, participantsPage * participantsPerPage)
 
   useEffect(() => {
     setParticipantsPage(1)
-  }, [searchTerm, winnerOnly, raffle.id])
+  }, [dateFrom, dateTo, paymentStatusFilter, searchTerm, winnerOnly, raffle.id])
 
   useEffect(() => {
     if (participantsPage > participantsPageCount) {
@@ -254,6 +288,14 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   useEffect(() => {
     setWinnerPhotoFile(null)
     setWinnerTestimonial(selectedCard?.winner_testimonial ?? '')
+    setReceiptForm({
+      payment_status: selectedCard?.payment_status ?? 'pending',
+      receipt_amount: selectedCard?.receipt_amount?.toString() ?? '',
+      receipt_operation_number: selectedCard?.receipt_operation_number ?? '',
+      receipt_destination_account: selectedCard?.receipt_destination_account ?? '',
+      receipt_date: selectedCard?.receipt_date ? selectedCard.receipt_date.slice(0, 16) : '',
+      receipt_validation_notes: selectedCard?.receipt_validation_notes ?? '',
+    })
   }, [selectedCard])
 
   const statusLabel =
@@ -327,7 +369,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   const exportToCSV = () => {
     if (filteredCards.length === 0) return
 
-    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Metodo Pago', 'Operacion', 'Tipo Cuenta Premio', 'Cuenta Premio', 'Titular Cuenta Premio', 'Fecha Registro']
+    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Estado Pago', 'Metodo Pago', 'Operacion Informada', 'Monto Detectado', 'Operacion Detectada', 'Destino Detectado', 'Parseo', 'Notas Validacion', 'Tipo Cuenta Premio', 'Cuenta Premio', 'Titular Cuenta Premio', 'Fecha Registro']
     const rows = filteredCards.map(card => [
       card.card_number,
       card.full_name,
@@ -335,8 +377,14 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       card.address,
       card.phone,
       card.email,
+      getPaymentStatusLabel(card.payment_status),
       card.payment_method ?? '',
       card.payment_reference ?? '',
+      card.receipt_amount ?? '',
+      card.receipt_operation_number ?? '',
+      card.receipt_destination_account ?? '',
+      getReceiptParseStatusLabel(card.receipt_parse_status),
+      card.receipt_validation_notes ?? card.receipt_parse_error ?? '',
       card.payout_account_kind ?? '',
       card.payout_account ?? '',
       card.payout_holder_name ?? '',
@@ -353,6 +401,68 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     link.href = URL.createObjectURL(blob)
     link.download = `${raffle.name.replace(/\s+/g, '_')}_participantes.csv`
     link.click()
+  }
+
+  const updateCardInState = (updatedCard: BingoCard) => {
+    setCards((current) => current.map((card) => (card.id === updatedCard.id ? updatedCard : card)))
+    setSelectedCard(updatedCard)
+  }
+
+  const saveReceiptReview = async (status?: 'pending' | 'approved' | 'rejected') => {
+    if (!selectedCard) return
+
+    setIsSavingReceipt(true)
+
+    try {
+      const response = await fetch(`/api/cards/${selectedCard.id}/receipt`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...receiptForm,
+          payment_status: status ?? receiptForm.payment_status,
+          receipt_amount: receiptForm.receipt_amount.trim() || null,
+          receipt_date: receiptForm.receipt_date ? new Date(receiptForm.receipt_date).toISOString() : null,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo guardar la revision')
+      }
+
+      updateCardInState(data.card as BingoCard)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo guardar la revision del comprobante.')
+    } finally {
+      setIsSavingReceipt(false)
+    }
+  }
+
+  const parseReceipt = async () => {
+    if (!selectedCard) return
+
+    setIsParsingReceipt(true)
+
+    try {
+      const response = await fetch(`/api/cards/${selectedCard.id}/receipt`, { method: 'POST' })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo parsear el comprobante')
+      }
+
+      updateCardInState(data.card as BingoCard)
+      if (data.configured === false) {
+        alert('El parseo automatico quedo preparado, pero falta configurar OPENAI_API_KEY.')
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo parsear el comprobante.')
+      if ((error as { card?: BingoCard }).card) {
+        updateCardInState((error as { card: BingoCard }).card)
+      }
+    } finally {
+      setIsParsingReceipt(false)
+    }
   }
 
   const saveWinnerShowcase = async () => {
@@ -610,10 +720,13 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-5 grid gap-3 md:grid-cols-3">
+        <div className="mb-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <SummaryTile icon={<Users className="h-5 w-5" />} label="Participantes" value={String(cards.length)} />
           <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/4`} />
           <SummaryTile icon={<Search className="h-5 w-5" />} label="Vista actual" value={String(filteredCards.length)} />
+          <SummaryTile icon={<RefreshCw className="h-5 w-5" />} label="Pendientes" value={String(paymentStatusCounts.pending)} />
+          <SummaryTile icon={<CheckCircle2 className="h-5 w-5" />} label="Aprobados" value={String(paymentStatusCounts.approved)} />
+          <SummaryTile icon={<XCircle className="h-5 w-5" />} label="Rechazados" value={String(paymentStatusCounts.rejected)} />
         </div>
 
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_1.35fr]">
@@ -646,16 +759,38 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col gap-3 md:flex-row">
+        <div className="mb-5 flex flex-col gap-3 xl:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar por carton, nombre, DNI, telefono, email u operacion"
+              placeholder="Buscar por carton, nombre, DNI, telefono, email, operacion o destino"
               className="border-zinc-700 bg-zinc-900 pl-9 text-white focus:border-amber-400"
             />
           </div>
+          <select
+            value={paymentStatusFilter}
+            onChange={(event) => setPaymentStatusFilter(event.target.value as typeof paymentStatusFilter)}
+            className="h-10 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+          >
+            <option value="all">Todos los pagos</option>
+            <option value="pending">Pendientes</option>
+            <option value="approved">Aprobados</option>
+            <option value="rejected">Rechazados</option>
+          </select>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(event) => setDateFrom(event.target.value)}
+            className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 xl:w-40"
+          />
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(event) => setDateTo(event.target.value)}
+            className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 xl:w-40"
+          />
           <Button
             type="button"
             variant={winnerOnly ? 'default' : 'outline'}
@@ -690,11 +825,12 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="hidden grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] gap-3 border-b border-zinc-800 px-3 pb-2 text-sm font-semibold text-amber-200 xl:grid">
+            <div className="hidden grid-cols-[1.05fr_1.25fr_0.7fr_0.9fr_0.75fr_0.8fr_140px] gap-3 border-b border-zinc-800 px-3 pb-2 text-sm font-semibold text-amber-200 xl:grid">
               <span>Carton</span>
               <span>Nombre</span>
               <span>DNI</span>
               <span>Telefono</span>
+              <span>Pago</span>
               <span>Fecha</span>
               <span>Acciones</span>
             </div>
@@ -704,7 +840,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
               return (
                 <div
                   key={card.id}
-                  className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] xl:items-center"
+                  className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.9fr_0.75fr_0.8fr_140px] xl:items-center"
                 >
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Carton</p>
@@ -728,6 +864,11 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Telefono</p>
                     <p className="break-all">{card.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">Pago</p>
+                    <PaymentStatusBadge status={card.payment_status} />
+                    <p className="mt-1 text-xs text-zinc-500">{getReceiptParseStatusLabel(card.receipt_parse_status)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Fecha</p>
@@ -824,6 +965,106 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   </div>
                 </div>
 
+                <div className="rounded-md border border-sky-300/25 bg-sky-400/10 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="flex items-center gap-2 font-semibold text-white">
+                        Validacion del comprobante
+                        <PaymentStatusBadge status={selectedCard.payment_status} />
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Parseo: {getReceiptParseStatusLabel(selectedCard.receipt_parse_status)}
+                        {selectedCard.receipt_parsed_at ? ` - ${formatArgentinaDateTime(selectedCard.receipt_parsed_at)}` : ''}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={parseReceipt}
+                      disabled={isParsingReceipt}
+                      variant="outline"
+                      className="border-sky-300/40 bg-transparent text-sky-100 hover:bg-sky-400/10"
+                    >
+                      <Bot className="mr-2 h-4 w-4" />
+                      {isParsingReceipt ? 'Parseando' : 'Parsear comprobante'}
+                    </Button>
+                  </div>
+                  {selectedCard.receipt_parse_error && (
+                    <p className="mt-3 rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">
+                      {selectedCard.receipt_parse_error}
+                    </p>
+                  )}
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Estado</span>
+                      <select
+                        value={receiptForm.payment_status}
+                        onChange={(event) => setReceiptForm((current) => ({ ...current, payment_status: event.target.value as typeof receiptForm.payment_status }))}
+                        className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                      >
+                        <option value="pending">Pendiente</option>
+                        <option value="approved">Aprobado</option>
+                        <option value="rejected">Rechazado</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Monto detectado</span>
+                      <Input
+                        value={receiptForm.receipt_amount}
+                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_amount: event.target.value }))}
+                        placeholder="Ej: 2000"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Operacion detectada</span>
+                      <Input
+                        value={receiptForm.receipt_operation_number}
+                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_operation_number: event.target.value }))}
+                        placeholder={selectedCard.payment_reference ?? 'Numero de operacion'}
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Destino detectado</span>
+                      <Input
+                        value={receiptForm.receipt_destination_account}
+                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_destination_account: event.target.value }))}
+                        placeholder="Alias / CBU / CVU destino"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm sm:col-span-2">
+                      <span className="text-zinc-300">Notas</span>
+                      <Input
+                        value={receiptForm.receipt_validation_notes}
+                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_validation_notes: event.target.value }))}
+                        placeholder="Motivo de rechazo, observaciones o validacion manual"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                  </div>
+                  {selectedCard.receipt_raw_text && (
+                    <details className="mt-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm">
+                      <summary className="cursor-pointer font-semibold text-zinc-200">Texto detectado</summary>
+                      <p className="mt-2 whitespace-pre-wrap text-zinc-400">{selectedCard.receipt_raw_text}</p>
+                    </details>
+                  )}
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <Button type="button" onClick={() => saveReceiptReview('approved')} disabled={isSavingReceipt} className="bg-emerald-500 font-bold text-white hover:bg-emerald-600">
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Aprobar
+                    </Button>
+                    <Button type="button" onClick={() => saveReceiptReview('rejected')} disabled={isSavingReceipt} variant="outline" className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Rechazar
+                    </Button>
+                    <Button type="button" onClick={() => saveReceiptReview()} disabled={isSavingReceipt} variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+                      <Save className="mr-2 h-4 w-4" />
+                      Guardar
+                    </Button>
+                  </div>
+                </div>
+
                 {awardedCardIds.has(selectedCard.id) && (
                   <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-3">
                     <p className="font-semibold text-white">Referencia publica del ganador</p>
@@ -914,6 +1155,31 @@ function SummaryTile({ icon, label, value }: { icon: ReactNode; label: string; v
       <p className="mt-2 text-2xl font-bold text-white">{value}</p>
     </div>
   )
+}
+
+function getPaymentStatusLabel(status?: BingoCard['payment_status']) {
+  if (status === 'approved') return 'Aprobado'
+  if (status === 'rejected') return 'Rechazado'
+  return 'Pendiente'
+}
+
+function getReceiptParseStatusLabel(status?: BingoCard['receipt_parse_status']) {
+  if (status === 'parsed') return 'Parseado'
+  if (status === 'failed') return 'Parseo fallido'
+  if (status === 'not_configured') return 'IA sin configurar'
+  return 'Sin parsear'
+}
+
+function PaymentStatusBadge({ status }: { status?: BingoCard['payment_status'] }) {
+  if (status === 'approved') {
+    return <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Aprobado</Badge>
+  }
+
+  if (status === 'rejected') {
+    return <Badge className="bg-red-500 text-white hover:bg-red-500">Rechazado</Badge>
+  }
+
+  return <Badge className="bg-amber-400 text-zinc-950 hover:bg-amber-400">Pendiente</Badge>
 }
 
 function PaginationControls({

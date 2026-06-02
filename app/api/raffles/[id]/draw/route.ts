@@ -62,6 +62,17 @@ export async function POST(
     }
 
     if (action === 'draw') {
+      const countdownSeconds = Math.max(0, Number(raffle.countdown_seconds ?? 0))
+      const startedAt = raffle.draw_started_at ? new Date(raffle.draw_started_at).getTime() : Date.now()
+      const countdownEndsAt = startedAt + countdownSeconds * 1000
+
+      if (countdownSeconds > 0 && Date.now() < countdownEndsAt) {
+        return NextResponse.json(
+          { error: 'La cuenta regresiva todavia esta activa' },
+          { status: 409 }
+        )
+      }
+
       const drawnNumbers = Array.isArray(raffle.drawn_numbers) ? raffle.drawn_numbers : []
       const nextNumber = drawNextNumber(drawnNumbers)
 

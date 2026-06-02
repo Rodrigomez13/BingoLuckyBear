@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, Clock, ExternalLink, Landmark, Plus, Radio, Save, Ticket, Trash2, Trophy } from 'lucide-react'
+import { AlertTriangle, BarChart3, ExternalLink, Landmark, Plus, Save, Search, Ticket, Trash2, Trophy, Users, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { RaffleParticipants } from './raffle-participants'
 import type { User } from '@supabase/supabase-js'
-import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule, normalizePrizeAmounts } from '@/lib/bingo'
+import { formatMoneyAmount, getPrizeAmounts, getPrizeAwards, getPrizeSchedule, normalizePrizeAmounts } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
 import {
   Dialog,
@@ -56,10 +56,41 @@ interface PaymentAccount {
   is_default: boolean
 }
 
+interface AdminBingoCard {
+  id: string
+  raffle_id: string
+  card_number: string
+  full_name: string
+  dni: string
+  address: string
+  phone: string
+  email: string
+  payment_receipt_url: string
+  payment_method?: string | null
+  payment_reference?: string | null
+  payout_account_kind?: string | null
+  payout_account?: string | null
+  payout_holder_name?: string | null
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
+  receipt_amount?: number | null
+  receipt_operation_number?: string | null
+  receipt_destination_account?: string | null
+  receipt_date?: string | null
+  receipt_raw_text?: string | null
+  receipt_parse_status?: 'not_parsed' | 'parsed' | 'failed' | 'not_configured' | null
+  receipt_parse_error?: string | null
+  receipt_validation_notes?: string | null
+  receipt_parsed_at?: string | null
+  created_at: string
+  bingo_numbers: number[][] | null
+  raffle?: Raffle | null
+}
+
 interface AdminDashboardProps {
   user: User
   initialRaffles: Raffle[]
   initialPaymentAccounts: PaymentAccount[]
+  initialCards: AdminBingoCard[]
 }
 
 const emptyPaymentForm = {
@@ -74,10 +105,11 @@ const emptyPaymentForm = {
   is_default: false,
 }
 
-export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }: AdminDashboardProps) {
+export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, initialCards }: AdminDashboardProps) {
   const [raffles, setRaffles] = useState<Raffle[]>(initialRaffles)
   const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(initialPaymentAccounts)
-  const [activeSection, setActiveSection] = useState<'overview' | 'raffles' | 'payments'>('overview')
+  const [cards] = useState<AdminBingoCard[]>(initialCards)
+  const [activeSection, setActiveSection] = useState<'overview' | 'clients' | 'sales' | 'raffles' | 'payments'>('overview')
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -96,12 +128,140 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [rafflesPage, setRafflesPage] = useState(1)
   const [paymentsPage, setPaymentsPage] = useState(1)
+  const [clientsPage, setClientsPage] = useState(1)
+  const [salesPage, setSalesPage] = useState(1)
+  const [clientSearch, setClientSearch] = useState('')
+  const [selectedClientDni, setSelectedClientDni] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
-  const activeRaffle = raffles.find((raffle) => raffle.is_active)
   const finishedCount = raffles.filter((raffle) => raffle.draw_status === 'finished').length
-  const liveCount = raffles.filter((raffle) => raffle.draw_status === 'running').length
-  const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
+  const totalCards = cards.length || raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
+  const raffleById = useMemo(() => new Map(raffles.map((raffle) => [raffle.id, raffle])), [raffles])
+  const defaultPaymentAccountId = paymentAccounts.find((account) => account.is_default)?.id ?? null
+  const awardLabelsByCardId = useMemo(() => {
+    const awardsMap = new Map<string, string[]>()
+
+    for (const raffle of raffles) {
+      const raffleCards = cards.filter((card) => card.raffle_id === raffle.id)
+      if (!raffleCards.length) continue
+
+      const awards = getPrizeAwards(
+        raffleCards,
+        Array.isArray(raffle.drawn_numbers) ? raffle.drawn_numbers : [],
+        getPrizeAmounts(raffle.prize, raffle.additional_prizes)
+      )
+
+      for (const award of awards) {
+        for (const winner of award.winners) {
+          const current = awardsMap.get(winner.id) ?? []
+          current.push(`${award.label}${award.amount ? ` (${award.amount})` : ''}`)
+          awardsMap.set(winner.id, current)
+        }
+      }
+    }
+
+    return awardsMap
+  }, [cards, raffles])
+  const clientSummaries = useMemo(() => {
+    const byDni = new Map<string, {
+      dni: string
+      fullName: string
+      phone: string
+      email: string
+      address: string
+      cards: AdminBingoCard[]
+      raffleNames: Set<string>
+      awards: string[]
+      estimatedAmount: number
+      firstPurchase: string
+      lastPurchase: string
+    }>()
+
+    for (const card of cards) {
+      const normalizedDni = normalizeDni(card.dni)
+      const key = normalizedDni || `sin-dni:${card.dni || card.full_name || card.id}`
+      const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+      const current = byDni.get(key) ?? {
+        dni: card.dni || 'Sin DNI',
+        fullName: card.full_name,
+        phone: card.phone,
+        email: card.email,
+        address: card.address,
+        cards: [],
+        raffleNames: new Set<string>(),
+        awards: [],
+        estimatedAmount: 0,
+        firstPurchase: card.created_at,
+        lastPurchase: card.created_at,
+      }
+
+      current.cards.push(card)
+      if (raffle?.name) current.raffleNames.add(raffle.name)
+      current.estimatedAmount += card.receipt_amount ?? parseMoneyAmount(raffle?.amount)
+      current.firstPurchase = minIsoDate(current.firstPurchase, card.created_at)
+      current.lastPurchase = maxIsoDate(current.lastPurchase, card.created_at)
+      current.awards.push(...(awardLabelsByCardId.get(card.id) ?? []))
+      byDni.set(key, current)
+    }
+
+    return [...byDni.entries()]
+      .map(([key, summary]) => ({ key, ...summary }))
+      .sort((a, b) => new Date(b.lastPurchase).getTime() - new Date(a.lastPurchase).getTime())
+  }, [awardLabelsByCardId, cards, raffleById])
+  const filteredClientSummaries = useMemo(() => {
+    const normalized = clientSearch.trim().toLowerCase()
+    if (!normalized) return clientSummaries
+
+    return clientSummaries.filter((client) =>
+      [client.dni, client.fullName, client.phone, client.email, client.address, ...Array.from(client.raffleNames)]
+        .some((value) => value.toLowerCase().includes(normalized))
+    )
+  }, [clientSearch, clientSummaries])
+  const walletSalesSummaries = useMemo(() => {
+    const byAccount = new Map<string, {
+      accountId: string | null
+      name: string
+      holder: string
+      alias: string
+      cardsCount: number
+      estimatedAmount: number
+      raffles: Set<string>
+      methods: Set<string>
+      lastSale: string | null
+    }>()
+
+    for (const card of cards) {
+      const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+      const accountId = raffle?.payment_account_id || defaultPaymentAccountId
+      const account = paymentAccounts.find((item) => item.id === accountId)
+      const key = accountId || 'unassigned'
+      const current = byAccount.get(key) ?? {
+        accountId,
+        name: account?.name ?? 'Sin cuenta asignada',
+        holder: account?.holder ?? 'Cuenta por defecto/env',
+        alias: account?.alias || account?.cbu || 'Sin alias/CBU',
+        cardsCount: 0,
+        estimatedAmount: 0,
+        raffles: new Set<string>(),
+        methods: new Set<string>(),
+        lastSale: null,
+      }
+
+      current.cardsCount += 1
+      current.estimatedAmount += card.receipt_amount ?? parseMoneyAmount(raffle?.amount)
+      if (raffle?.name) current.raffles.add(raffle.name)
+      if (card.payment_method) current.methods.add(card.payment_method)
+      current.lastSale = current.lastSale ? maxIsoDate(current.lastSale, card.created_at) : card.created_at
+      byAccount.set(key, current)
+    }
+
+    return [...byAccount.values()].sort((a, b) => b.cardsCount - a.cardsCount)
+  }, [cards, defaultPaymentAccountId, paymentAccounts, raffleById])
+  const totalEstimatedIncome = cards.reduce((total, card) => {
+    const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+    return total + (card.receipt_amount ?? parseMoneyAmount(raffle?.amount))
+  }, 0)
+  const selectedClient = selectedClientDni ? clientSummaries.find((client) => client.key === selectedClientDni) ?? null : null
   const sortedRaffles = [...raffles].sort((a, b) => {
     const statusWeight = (raffle: Raffle) => {
       if (raffle.draw_status === 'running') return 0
@@ -123,10 +283,16 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const prizeTargets = getPrizeSchedule(prizeInputValues)
   const rafflesPerPage = 9
   const paymentsPerPage = 8
+  const clientsPerPage = 10
+  const salesPerPage = 8
   const rafflesPageCount = Math.max(1, Math.ceil(sortedRaffles.length / rafflesPerPage))
   const paymentsPageCount = Math.max(1, Math.ceil(paymentAccounts.length / paymentsPerPage))
+  const clientsPageCount = Math.max(1, Math.ceil(filteredClientSummaries.length / clientsPerPage))
+  const salesPageCount = Math.max(1, Math.ceil(walletSalesSummaries.length / salesPerPage))
   const visibleRaffles = sortedRaffles.slice((rafflesPage - 1) * rafflesPerPage, rafflesPage * rafflesPerPage)
   const visiblePaymentAccounts = paymentAccounts.slice((paymentsPage - 1) * paymentsPerPage, paymentsPage * paymentsPerPage)
+  const visibleClients = filteredClientSummaries.slice((clientsPage - 1) * clientsPerPage, clientsPage * clientsPerPage)
+  const visibleWalletSales = walletSalesSummaries.slice((salesPage - 1) * salesPerPage, salesPage * salesPerPage)
 
   const updatePrizeInput = (index: number, value: string) => {
     if (index === 0) {
@@ -337,6 +503,56 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     setIsPaymentModalOpen(true)
   }
 
+  const downloadCsv = (filename: string, headers: string[], rows: (string | number | null | undefined)[][]) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')),
+    ].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
+  const exportClientsCsv = () => {
+    downloadCsv(
+      'clientes_lucky_bingo_bear.csv',
+      ['DNI', 'Nombre', 'Telefono', 'Email', 'Direccion', 'Cartones', 'Sorteos', 'Monto', 'Premios', 'Primera compra', 'Ultima compra'],
+      filteredClientSummaries.map((client) => [
+        client.dni,
+        client.fullName,
+        client.phone,
+        client.email,
+        client.address,
+        client.cards.length,
+        Array.from(client.raffleNames).join(' | '),
+        client.estimatedAmount,
+        client.awards.join(' | '),
+        formatDateTime(client.firstPurchase),
+        formatDateTime(client.lastPurchase),
+      ])
+    )
+  }
+
+  const exportSalesCsv = () => {
+    downloadCsv(
+      'ventas_por_billetera_lucky_bingo_bear.csv',
+      ['Billetera', 'Titular', 'Alias/CBU', 'Cartones', 'Monto', 'Sorteos', 'Metodos', 'Ultima venta'],
+      walletSalesSummaries.map((sale) => [
+        sale.name,
+        sale.holder,
+        sale.alias,
+        sale.cardsCount,
+        sale.estimatedAmount,
+        Array.from(sale.raffles).join(' | '),
+        Array.from(sale.methods).join(' | '),
+        formatDateTime(sale.lastSale),
+      ])
+    )
+  }
+
   const deletePaymentAccount = async (accountId: string) => {
     if (!confirm('Eliminar esta cuenta de cobro? Los sorteos que la usaban quedaran sin cuenta asignada.')) {
       return
@@ -392,6 +608,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
           <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Panel</p>
           <nav className="grid gap-2">
             <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
+            <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Clientes" />
+            <AdminNavButton active={activeSection === 'sales'} onClick={() => setActiveSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
             <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
             <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
           </nav>
@@ -408,16 +626,16 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             detail="Todos los sorteos"
           />
           <AdminMetric
-            icon={<Radio className="h-5 w-5" />}
-            label="Sorteo activo"
-            value={activeRaffle ? '1' : '0'}
-            detail={activeRaffle?.name ?? 'Ninguno activo'}
+            icon={<Users className="h-5 w-5" />}
+            label="Clientes"
+            value={String(clientSummaries.length)}
+            detail="Agrupados por DNI"
           />
           <AdminMetric
-            icon={<Clock className="h-5 w-5" />}
-            label="En vivo"
-            value={String(liveCount)}
-            detail="Sorteos corriendo"
+            icon={<WalletCards className="h-5 w-5" />}
+            label="Ingresos estimados"
+            value={formatARS(totalEstimatedIncome)}
+            detail="Segun monto por carton"
           />
           <AdminMetric
             icon={<Trophy className="h-5 w-5" />}
@@ -457,6 +675,211 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
           </div>
         </div>
         </>
+        )}
+
+        {activeSection === 'clients' && (
+        <Card className="lbb-premium-panel mb-8 rounded-[1.35rem] border-white/10 text-zinc-100">
+          <CardHeader>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Users className="h-5 w-5 text-amber-300" />
+                  Clientes
+                </CardTitle>
+                <p className="mt-1 text-sm text-zinc-400">DNI como referencia para agrupar cartones, compras y premios.</p>
+              </div>
+              <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:max-w-2xl">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  <Input
+                    value={clientSearch}
+                    onChange={(event) => {
+                      setClientSearch(event.target.value)
+                      setClientsPage(1)
+                    }}
+                    placeholder="Buscar por DNI, nombre, telefono o sorteo"
+                    className="border-zinc-700 bg-zinc-900 pl-9 text-white focus:border-amber-400"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={exportClientsCsv}
+                  disabled={filteredClientSummaries.length === 0}
+                  className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+                >
+                  Exportar CSV
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-5 grid gap-3 md:grid-cols-4">
+              <SummaryBox label="Clientes" value={String(clientSummaries.length)} />
+              <SummaryBox label="Cartones" value={String(totalCards)} />
+              <SummaryBox label="Con premios" value={String(clientSummaries.filter((client) => client.awards.length > 0).length)} />
+              <SummaryBox label="Ingreso estimado" value={formatARS(totalEstimatedIncome)} />
+            </div>
+            <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
+              {visibleClients.length === 0 ? (
+                <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
+                  Todavia no hay clientes para mostrar.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/10">
+                  <div className="hidden grid-cols-[0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <span>DNI</span>
+                    <span>Cliente</span>
+                    <span>Contacto</span>
+                    <span>Cartones</span>
+                    <span>Compras</span>
+                    <span>Premios</span>
+                    <span className="text-right">Detalles</span>
+                  </div>
+                  {visibleClients.map((client) => (
+                    <div key={client.key} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] xl:items-center">
+                      <div>
+                        <p className="font-mono font-bold text-amber-200">{client.dni}</p>
+                        <p className="mt-1 text-xs text-zinc-500 xl:hidden">DNI</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-white">{client.fullName}</p>
+                        <p className="mt-1 truncate text-xs text-zinc-500">{Array.from(client.raffleNames).join(', ') || 'Sin sorteo'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-zinc-300">{client.phone}</p>
+                        <p className="mt-1 truncate text-xs text-zinc-500">{client.email}</p>
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{client.cards.length}</p>
+                        <p className="mt-1 text-xs text-zinc-500">carton{client.cards.length !== 1 ? 'es' : ''}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-zinc-200">{formatARS(client.estimatedAmount)}</p>
+                        <p className="mt-1 text-xs text-zinc-500">{formatDateTime(client.lastPurchase)}</p>
+                      </div>
+                      <div>
+                        {client.awards.length > 0 ? (
+                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">{client.awards.length} premio{client.awards.length !== 1 ? 's' : ''}</Badge>
+                        ) : (
+                          <span className="text-zinc-500">Sin premios</span>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedClientDni(client.key)}
+                        className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10 xl:justify-self-end"
+                      >
+                        Ver
+                      </Button>
+                    </div>
+                  ))}
+                  {filteredClientSummaries.length > clientsPerPage && (
+                    <div className="px-4 py-3">
+                      <AdminPagination
+                        page={clientsPage}
+                        pageCount={clientsPageCount}
+                        total={filteredClientSummaries.length}
+                        onPrevious={() => setClientsPage((page) => Math.max(1, page - 1))}
+                        onNext={() => setClientsPage((page) => Math.min(clientsPageCount, page + 1))}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        )}
+
+        {activeSection === 'sales' && (
+        <Card className="lbb-premium-panel mb-8 rounded-[1.35rem] border-white/10 text-zinc-100">
+          <CardHeader>
+            <div>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <WalletCards className="h-5 w-5 text-amber-300" />
+                Ventas por billetera
+              </CardTitle>
+              <p className="mt-1 text-sm text-zinc-400">Cantidad de cartones e ingreso estimado agrupado por cuenta de cobro asignada.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={exportSalesCsv}
+              disabled={walletSalesSummaries.length === 0}
+              className="mt-4 border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+            >
+              Exportar CSV
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-5 grid gap-3 md:grid-cols-3">
+              <SummaryBox label="Cuentas con ventas" value={String(walletSalesSummaries.length)} />
+              <SummaryBox label="Cartones vendidos" value={String(totalCards)} />
+              <SummaryBox label="Monto ingresado estimado" value={formatARS(totalEstimatedIncome)} />
+            </div>
+            <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
+              {visibleWalletSales.length === 0 ? (
+                <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
+                  Todavia no hay ventas registradas.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/10">
+                  <div className="hidden grid-cols-[1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <span>Billetera</span>
+                    <span>Alias / titular</span>
+                    <span>Cartones</span>
+                    <span>Monto</span>
+                    <span>Sorteos</span>
+                    <span>Ultima venta</span>
+                  </div>
+                  {visibleWalletSales.map((sale) => (
+                    <div key={sale.accountId ?? 'unassigned'} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] xl:items-center">
+                      <div>
+                        <p className="font-bold text-white">{sale.name}</p>
+                        <p className="mt-1 text-xs text-zinc-500">{Array.from(sale.methods).join(', ') || 'Sin metodo informado'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="break-all font-semibold text-amber-200">{sale.alias}</p>
+                        <p className="mt-1 truncate text-xs text-zinc-500">{sale.holder}</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-white">{sale.cardsCount}</p>
+                        <p className="text-xs text-zinc-500">carton{sale.cardsCount !== 1 ? 'es' : ''}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-emerald-200">{formatARS(sale.estimatedAmount)}</p>
+                        <p className="mt-1 text-xs text-zinc-500">estimado</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-zinc-300">{Array.from(sale.raffles).join(', ') || 'Sin sorteo'}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-300">{formatDateTime(sale.lastSale)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {walletSalesSummaries.length > salesPerPage && (
+                    <div className="px-4 py-3">
+                      <AdminPagination
+                        page={salesPage}
+                        pageCount={salesPageCount}
+                        total={walletSalesSummaries.length}
+                        onPrevious={() => setSalesPage((page) => Math.max(1, page - 1))}
+                        onNext={() => setSalesPage((page) => Math.min(salesPageCount, page + 1))}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <p className="mt-4 rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-50">
+              El monto es estimado porque el sistema todavia no guarda el importe real detectado en cada comprobante. Para promos, conviene agregar una columna de importe pagado o extraerlo del comprobante.
+            </p>
+          </CardContent>
+        </Card>
         )}
 
         {activeSection === 'payments' && (
@@ -848,7 +1271,133 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             )}
           </DialogContent>
         </Dialog>
+
+        <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClientDni(null)}>
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1280px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
+            <DialogHeader>
+              <DialogTitle className="text-white">{selectedClient?.fullName ?? 'Cliente'}</DialogTitle>
+            </DialogHeader>
+            {selectedClient && (
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <SummaryBox label="DNI" value={selectedClient.dni} />
+                  <SummaryBox label="Cartones" value={String(selectedClient.cards.length)} />
+                  <SummaryBox label="Compras estimadas" value={formatARS(selectedClient.estimatedAmount)} />
+                  <SummaryBox label="Premios" value={String(selectedClient.awards.length)} />
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <InfoPanel label="Telefono" value={selectedClient.phone} />
+                  <InfoPanel label="Email" value={selectedClient.email} />
+                  <InfoPanel label="Direccion" value={selectedClient.address} />
+                  <InfoPanel label="Primera / ultima compra" value={`${formatDateTime(selectedClient.firstPurchase)} - ${formatDateTime(selectedClient.lastPurchase)}`} />
+                </div>
+                {selectedClient.awards.length > 0 && (
+                  <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-4">
+                    <p className="mb-2 text-sm font-bold uppercase text-emerald-100">Premios adjudicados</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedClient.awards.map((award, index) => (
+                        <Badge key={`${award}-${index}`} className="bg-emerald-500 text-white hover:bg-emerald-500">{award}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
+                  <div className="hidden grid-cols-[0.85fr_1fr_0.85fr_0.9fr_0.9fr_90px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 lg:grid">
+                    <span>Carton</span>
+                    <span>Sorteo</span>
+                    <span>Fecha</span>
+                    <span>Pago</span>
+                    <span>Cuenta premio</span>
+                    <span className="text-right">Archivo</span>
+                  </div>
+                  <div className="divide-y divide-white/10">
+                    {selectedClient.cards.map((card) => {
+                      const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+                      const fileUrl = `/api/file?pathname=${encodeURIComponent(card.payment_receipt_url)}`
+
+                      return (
+                        <div key={card.id} className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[0.85fr_1fr_0.85fr_0.9fr_0.9fr_90px] lg:items-center">
+                          <div>
+                            <p className="break-all font-mono font-bold text-amber-200">{card.card_number}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-white">{raffle?.name ?? 'Sorteo eliminado'}</p>
+                            <p className="mt-1 text-xs text-zinc-500">{formatMoneyAmount(raffle?.amount, 'Sin monto')}</p>
+                          </div>
+                          <div>
+                            <p className="text-zinc-300">{formatDateTime(card.created_at)}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-zinc-300">{card.payment_method ?? 'Sin metodo'}</p>
+                            <p className="mt-1 truncate text-xs text-zinc-500">{card.payment_reference ?? 'Sin operacion'}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-zinc-300">{card.payout_account_kind ?? 'Sin tipo'}</p>
+                            <p className="mt-1 truncate text-xs text-zinc-500">{card.payout_account ?? 'Sin cuenta'}</p>
+                          </div>
+                          <Button asChild size="sm" variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10 lg:justify-self-end">
+                            <a href={fileUrl} target="_blank" rel="noreferrer">
+                              Abrir
+                            </a>
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
+    </div>
+  )
+}
+
+function normalizeDni(value?: string | null) {
+  return (value ?? '').replace(/\D/g, '')
+}
+
+function parseMoneyAmount(value?: string | null) {
+  const normalized = (value ?? '')
+    .replace(/[^\d,.-]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+  const amount = Number(normalized)
+
+  return Number.isFinite(amount) ? amount : 0
+}
+
+function formatARS(value: number) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function minIsoDate(current: string, candidate: string) {
+  return new Date(candidate).getTime() < new Date(current).getTime() ? candidate : current
+}
+
+function maxIsoDate(current: string, candidate: string) {
+  return new Date(candidate).getTime() > new Date(current).getTime() ? candidate : current
+}
+
+function SummaryBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-amber-200">{label}</p>
+      <p className="mt-2 break-words text-xl font-bold text-white">{value}</p>
+    </div>
+  )
+}
+
+function InfoPanel({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] p-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 break-words font-semibold text-white">{value}</p>
     </div>
   )
 }

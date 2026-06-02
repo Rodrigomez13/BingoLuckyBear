@@ -68,7 +68,7 @@ async function getWinnerRecords() {
     .order('created_at', { ascending: false })
 
   if (!raffles?.length) {
-    return { raffles: [] as Raffle[], winners: [] as WinnerRecord[] }
+    return { raffles: [] as Raffle[], winners: [] as WinnerRecord[], cards: [] as BingoCard[] }
   }
 
   const raffleIds = raffles.map((raffle) => raffle.id)
@@ -109,7 +109,7 @@ async function getWinnerRecords() {
     )
   })
 
-  return { raffles: raffles as Raffle[], winners }
+  return { raffles: raffles as Raffle[], winners, cards: cards ?? [] }
 }
 
 function toWinnerDisplay(winner: WinnerRecord, index: number): WinnerDisplay {
@@ -152,10 +152,12 @@ function getExampleDisplays(): WinnerDisplay[] {
 }
 
 export default async function WinnersPage() {
-  const { raffles, winners } = await getWinnerRecords()
+  const { raffles, winners, cards } = await getWinnerRecords()
   const displays = winners.map(toWinnerDisplay)
   const visibleDisplays = displays.length > 0 ? displays : getExampleDisplays()
   const latestRaffle = raffles[0]
+  const latestRaffleCards = latestRaffle ? cards.filter((card) => card.raffle_id === latestRaffle.id) : []
+  const latestRaffleWinners = latestRaffle ? winners.filter((winner) => winner.raffle.id === latestRaffle.id) : []
 
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
@@ -178,9 +180,10 @@ export default async function WinnersPage() {
           </div>
 
           <Card className="lbb-premium-panel rounded-[1.35rem] border-white/10 text-zinc-100">
-            <CardContent className="grid grid-cols-3 gap-3 p-4">
+            <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
               <Metric value={String(raffles.length)} label="sorteos" />
               <Metric value={String(winners.length)} label="premios" />
+              <Metric value={String(cards.length)} label="cartones" />
               <Metric value={latestRaffle ? 'Activo' : 'Listo'} label="historial" />
             </CardContent>
           </Card>
@@ -208,6 +211,11 @@ export default async function WinnersPage() {
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 Fecha: {formatArgentinaDate(latestRaffle.draw_date ?? latestRaffle.created_at)}. Los resultados quedan disponibles como referencia para cualquier jugador.
               </p>
+              <div className="mt-4 grid max-w-2xl gap-2 sm:grid-cols-3">
+                <Metric value={String(latestRaffleCards.length)} label="cartones vendidos" />
+                <Metric value={String(latestRaffleWinners.length)} label="premios adjudicados" />
+                <Metric value={String((latestRaffle.drawn_numbers ?? []).length)} label="bolillas cantadas" />
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {(latestRaffle.drawn_numbers ?? []).slice(-6).map((number) => (

@@ -31,6 +31,7 @@ interface RaffleForLifecycle {
   amount?: string | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
+  countdown_seconds?: number | null
   draw_started_at?: string | null
   drawn_numbers?: number[] | null
 }
@@ -66,10 +67,6 @@ export function getPurchaseAvailability(raffle: Pick<RaffleForLifecycle, 'draw_d
     return { canPurchase: false, reason: 'closed' as const }
   }
 
-  if (raffle.draw_status === 'running') {
-    return { canPurchase: false, reason: 'running' as const }
-  }
-
   if (!raffle.draw_date) {
     return { canPurchase: false, reason: 'missing_date' as const }
   }
@@ -78,6 +75,10 @@ export function getPurchaseAvailability(raffle: Pick<RaffleForLifecycle, 'draw_d
 
   if (!Number.isFinite(drawTime)) {
     return { canPurchase: false, reason: 'missing_date' as const }
+  }
+
+  if (raffle.draw_status === 'running') {
+    return { canPurchase: false, reason: Date.now() < drawTime ? 'cutoff' as const : 'running' as const }
   }
 
   if (drawTime - Date.now() <= PURCHASE_CLOSE_MS) {
@@ -218,13 +219,16 @@ export async function syncRaffleLifecycle(supabase: SupabaseLike, raffle: Raffle
   const status = current.draw_status ?? 'idle'
   const drawTime = current.draw_date ? new Date(current.draw_date).getTime() : NaN
 
-  if (status === 'idle' && Number.isFinite(drawTime) && drawTime <= Date.now()) {
-    const startedAt = new Date(drawTime).toISOString()
+  if (status === 'idle' && Number.isFinite(drawTime) && drawTime - Date.now() <= PURCHASE_CLOSE_MS) {
+    const countdownSeconds = Math.max(0, Math.floor((drawTime - Math.min(Date.now(), drawTime)) / 1000))
+    const startedAt = countdownSeconds > 0
+      ? new Date(drawTime - countdownSeconds * 1000).toISOString()
+      : new Date(drawTime).toISOString()
     const { data, error } = await table(supabase, 'raffles')
       .update({
         draw_status: 'running',
         draw_started_at: startedAt,
-        countdown_seconds: 0,
+        countdown_seconds: countdownSeconds,
         drawn_numbers: [],
       })
       .eq('id', current.id)
@@ -244,7 +248,8 @@ export async function syncRaffleLifecycle(supabase: SupabaseLike, raffle: Raffle
   }
 
   const startedAt = current.draw_started_at ? new Date(current.draw_started_at).getTime() : Date.now()
-  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+  const countdownSeconds = Math.max(0, Number(current.countdown_seconds ?? 0))
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000) - countdownSeconds)
   const targetDrawCount = Math.min(BINGO_TOTAL_BALLS, Math.floor(elapsedSeconds / getAutoDrawIntervalSeconds()))
 
   while (drawnNumbers.length < targetDrawCount) {
