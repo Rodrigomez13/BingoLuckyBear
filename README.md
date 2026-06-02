@@ -24,6 +24,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Deploy
+
+Para evitar mezclar cuentas de Vercel, usa la guia de despliegue del proyecto:
+
+[DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## Stitch UI Workflow
 
 This project includes `.stitch/DESIGN.md` and `.stitch/PROMPT.md` so the visual system can be used as a handoff for Google Stitch.
