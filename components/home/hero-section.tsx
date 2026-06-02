@@ -12,8 +12,6 @@ const floatingBalls = [
   { number: 88, className: 'right-[11%] bottom-28 border-white/10 bg-zinc-950 text-amber-300' },
 ]
 
-const storyChips = ['🎉 Primer BINGO', '🎱 Bolillas en vivo', '🃏 Tu carton digital', '👑 Corona de ganador', '🐻 Lucky Bear']
-
 interface HeroSectionProps {
   raffleName?: string | null
   firstPrize?: string
@@ -124,17 +122,6 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
               <HeroStat label={hasActiveRaffle ? 'Carton' : 'Proximo sorteo'} value={hasActiveRaffle ? 'Participa solo' : nextDraw} />
               <HeroStat label="Resultado" value={hasActiveRaffle ? 'Aviso por WhatsApp' : 'Publicado al cerrar'} />
             </div>
-          </div>
-        </div>
-
-        <div className="mt-7 border-y border-white/10 py-4">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Historias destacadas</p>
-          <div className="grid gap-2 sm:grid-cols-5">
-            {storyChips.map((item) => (
-              <div key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-300">
-                {item}
-              </div>
-            ))}
           </div>
         </div>
       </div>

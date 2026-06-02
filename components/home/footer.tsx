@@ -3,8 +3,21 @@ import { BearLogo } from '@/components/bear-logo'
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#0b0b10] py-12 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="overflow-hidden border-t border-white/10 bg-[#0b0b10] py-12 text-white">
+      <div className="border-b border-white/10 pb-8">
+        <div className="lbb-big-marquee flex w-max whitespace-nowrap">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <span
+              key={index}
+              className="px-4 font-mono text-5xl font-black uppercase leading-none tracking-normal text-white/[0.045] sm:text-7xl lg:text-8xl"
+            >
+              Tu suerte empieza aca - Lucky Bingo Bear - Bingo digital en vivo -
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-3">
             <BearLogo size={44} />

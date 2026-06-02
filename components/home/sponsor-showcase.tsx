@@ -1,5 +1,5 @@
-import Image from 'next/image'
 import type { ReactNode } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { BadgeDollarSign, Radio, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -44,12 +44,10 @@ interface SponsorShowcaseProps {
 export function SponsorShowcase({
   activeAmount,
   drawDate,
-  prizeSchedule = [],
   hasActiveRaffle = true,
   nextRaffleName,
 }: SponsorShowcaseProps) {
   const paymentAmount = formatMoneyAmount(activeAmount, 'A confirmar')
-  const visiblePrizes = prizeSchedule.filter((target) => target.amount)
   const nextDraw = formatArgentinaDate(drawDate)
   const title = hasActiveRaffle
     ? 'Compras una vez y tu carton sigue participando'
@@ -149,18 +147,6 @@ export function SponsorShowcase({
             })}
           </div>
         </div>
-
-        <div className="mt-5 grid auto-rows-fr gap-4 min-[520px]:grid-cols-2 md:grid-cols-3">
-          <VisualPanel title="Carton digital">
-            <MiniBingoCard />
-          </VisualPanel>
-          <VisualPanel title="Premios">
-            <PrizeVisual prizes={visiblePrizes} hasActiveRaffle={hasActiveRaffle} />
-          </VisualPanel>
-          <VisualPanel title="Bolillas cantadas">
-            <DrawVisual />
-          </VisualPanel>
-        </div>
       </div>
     </section>
   )
@@ -182,109 +168,3 @@ function Metric({ value, label, icon }: { value: string; label: string; icon?: R
   )
 }
 
-function VisualPanel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="lbb-compact-card flex h-full min-h-[15rem] flex-col overflow-hidden transition-all duration-300 hover:border-[#04f77c]/60">
-      <div className="flex min-h-44 flex-1 items-center justify-center bg-black/20 p-4">{children}</div>
-      <div className="border-t border-[#04f77c]/20 px-4 py-3">
-        <p className="font-mono text-sm font-bold tracking-normal text-white">{title}</p>
-      </div>
-    </div>
-  )
-}
-
-function MiniBingoCard() {
-  const rows = [
-    [7, null, 23, 34, null, 56, null, 71, 88],
-    [null, 16, null, 39, 45, null, 64, 77, null],
-    [3, 19, 28, null, null, 58, 69, null, 90],
-  ]
-  const labels = ['1-9', '10', '20', '30', '40', '50', '60', '70', '80']
-
-  return (
-    <div className="w-full max-w-[300px] overflow-hidden rounded-md border-[3px] border-amber-300 bg-zinc-950 shadow-2xl">
-      <div className="grid grid-cols-[2rem_repeat(9,minmax(0,1fr))] text-center text-[9px] font-medium leading-none text-white">
-        <div className="bg-amber-800 text-amber-100">P</div>
-        {labels.map((letter, index) => (
-          <div
-            key={letter}
-            className={['bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500', 'bg-blue-500', 'bg-sky-500', 'bg-violet-500', 'bg-pink-500', 'bg-teal-500'][index]}
-          >
-            {letter}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-[2rem_repeat(9,minmax(0,1fr))]">
-        {rows.flatMap((row, rowIndex) => [
-          <div key={`p-${rowIndex}`} className="flex aspect-square items-center justify-center border-r border-t border-amber-200 bg-amber-400 text-[10px] font-semibold text-zinc-950">
-            P{rowIndex + 1}
-          </div>,
-          ...row.map((number, index) => (
-          <div
-            key={`${number}-${rowIndex}-${index}`}
-            className="flex aspect-square items-center justify-center border-r border-t border-amber-200 text-xs font-semibold text-zinc-100 last:border-r-0"
-          >
-            {number}
-          </div>
-          )),
-        ])}
-      </div>
-    </div>
-  )
-}
-
-function PrizeVisual({ prizes, hasActiveRaffle }: { prizes: BingoPrizeTarget[]; hasActiveRaffle: boolean }) {
-  return (
-    <div className="relative flex h-full w-full items-center justify-center">
-      <div className="absolute left-8 top-8 h-14 w-14 rounded-full bg-emerald-400 text-center text-lg font-bold leading-[3.5rem] text-zinc-950 shadow-xl">
-        21
-      </div>
-      <div className="absolute right-8 top-10 h-12 w-12 rounded-full bg-sky-400 text-center text-base font-bold leading-[3rem] text-zinc-950 shadow-xl">
-        54
-      </div>
-      <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
-        <Image src="/brand/gold-medal.svg" alt="" width={54} height={54} className="mx-auto mb-2 h-12 w-12 object-contain" />
-        {hasActiveRaffle && prizes.length > 0 ? (
-          <div className="space-y-1">
-            {prizes.slice(0, 4).map((prize) => (
-              <p key={prize.prizeNumber} className="text-sm font-bold">
-                {prize.label}: {prize.amount}
-              </p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xl font-bold">{hasActiveRaffle ? 'Premios a confirmar' : 'Sin sorteo activo'}</p>
-        )}
-        <p className="mt-2 text-xs font-semibold uppercase tracking-wide">{hasActiveRaffle ? 'sin orden fijo' : 'proximo a publicar'}</p>
-      </div>
-    </div>
-  )
-}
-
-function DrawVisual() {
-  return (
-    <div className="relative flex h-full w-full items-center justify-center">
-      <div className="grid grid-cols-4 gap-2">
-        {[5, 14, 26, 39, 48, 53, 62, 90].map((number, index) => (
-          <div
-            key={number}
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg ${
-              index % 4 === 0
-                ? 'bg-red-500'
-                : index % 4 === 1
-                  ? 'bg-amber-500'
-                  : index % 4 === 2
-                    ? 'bg-emerald-500'
-                    : 'bg-blue-500'
-            }`}
-          >
-            {number}
-          </div>
-        ))}
-      </div>
-      <div className="absolute bottom-4 right-4 rounded-md border border-red-400/30 bg-red-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-200">
-        En vivo
-      </div>
-    </div>
-  )
-}

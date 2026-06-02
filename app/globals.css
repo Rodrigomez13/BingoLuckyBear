@@ -219,6 +219,10 @@
     padding-left: max(1rem, calc((100vw - 72rem) / 2));
   }
 
+  .lbb-big-marquee {
+    animation: lbb-marquee 34s linear infinite;
+  }
+
   .lbb-page-shell {
     background:
       radial-gradient(70% 52% at 82% 12%, rgba(4, 247, 124, 0.2), rgba(0, 0, 0, 0) 62%),
