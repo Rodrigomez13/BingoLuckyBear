@@ -34,7 +34,7 @@ alter table public.winner_notifications
 
 alter table public.winner_notifications
   add constraint winner_notifications_prize_number_check
-  check (prize_number in (1, 2, 3));
+  check (prize_number in (1, 2, 3, 4));
 
 create index if not exists winner_notifications_raffle_idx
   on public.winner_notifications (raffle_id);

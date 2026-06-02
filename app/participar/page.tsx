@@ -9,7 +9,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LiveDrawCard } from '@/components/live/live-draw-card'
 import { Card, CardContent } from '@/components/ui/card'
-import { Clock, Radio, Trophy } from 'lucide-react'
+import { Clock, MessageCircle, Radio, Trophy } from 'lucide-react'
+import { CONTACT_LINKS } from '@/lib/contact'
 
 interface Raffle {
   id: string
@@ -50,6 +51,7 @@ export default function ParticipatePage() {
   const [salesClosedReason, setSalesClosedReason] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [sessionToken, setSessionToken] = useState<string>('')
+  const [autoOpenCardId, setAutoOpenCardId] = useState<string | null>(null)
 
   useEffect(() => {
     // Get or create session token from localStorage
@@ -99,6 +101,7 @@ export default function ParticipatePage() {
 
   const handleCardsCreated = (cards: BingoCard[]) => {
     setExistingCards((current) => [...current, ...cards])
+    setAutoOpenCardId(cards[0]?.id ?? null)
   }
 
   if (isLoading) {
@@ -113,9 +116,10 @@ export default function ParticipatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
+    <div className="lbb-page-shell relative min-h-screen text-zinc-100">
+      <div className="lbb-ambient" />
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-amber-400/20 bg-zinc-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-[#04f77c]/20 bg-[#101010]/92 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
@@ -124,14 +128,14 @@ export default function ParticipatePage() {
                 Lucky Bingo Bear
               </span>
             </Link>
-            <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+            <Button asChild variant="outline" className="border-[#04f77c]/40 bg-transparent text-[#04f77c] hover:bg-[#04f77c]/10">
               <Link href="/">Volver al Inicio</Link>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         {activeRaffle && (
           <div className="mx-auto max-w-5xl">
             <LiveDrawCard initialRaffle={activeRaffle} compact />
@@ -144,6 +148,16 @@ export default function ParticipatePage() {
           <div className="space-y-8">
             <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-center text-emerald-100">
               Tenes {existingCards.length} carton{existingCards.length !== 1 ? 'es' : ''} para este sorteo. Si sale ganador, te avisamos por WhatsApp con el premio y el monto.
+              {CONTACT_LINKS.whatsappGroupUrl && (
+                <div className="mt-4">
+                  <Button asChild className="bg-[#25d366] font-bold text-zinc-950 hover:bg-[#30e17b]">
+                    <Link href={CONTACT_LINKS.whatsappGroupUrl} target="_blank" rel="noreferrer">
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Unirme al grupo del sorteo
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="grid items-start gap-6 xl:grid-cols-2">
               {existingCards.map((card) => (
@@ -153,6 +167,7 @@ export default function ParticipatePage() {
                   raffleName={activeRaffle.name}
                   drawnNumbers={activeRaffle.drawn_numbers ?? []}
                   compact
+                  autoOpen={card.id === autoOpenCardId}
                 />
               ))}
             </div>

@@ -8,7 +8,7 @@ import { Footer } from '@/components/home/footer'
 import { SponsorShowcase } from '@/components/home/sponsor-showcase'
 import { TrustSection } from '@/components/home/trust-section'
 import { createServiceClient } from '@/lib/supabase/server'
-import { getPrizeAmounts } from '@/lib/bingo'
+import { getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 
 export const dynamic = 'force-dynamic'
@@ -43,7 +43,9 @@ async function getActiveRafflePromo() {
 
 export default async function HomePage() {
   const activeRaffle = await getActiveRafflePromo()
-  const firstPrize = getPrizeAmounts(activeRaffle?.prize, activeRaffle?.additional_prizes)[0]
+  const prizeAmounts = getPrizeAmounts(activeRaffle?.prize, activeRaffle?.additional_prizes)
+  const prizeSchedule = getPrizeSchedule(prizeAmounts)
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)?.amount
 
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-slate-50">
@@ -62,10 +64,10 @@ export default async function HomePage() {
               </div>
             </div>
             <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-4">
-              {firstPrize && (
+              {jackpotPrize && (
                 <span className="hidden h-8 items-center gap-2 rounded border border-[#04f77c]/45 bg-[#04f77c] px-3 text-xs font-bold uppercase tracking-wide text-zinc-950 lg:inline-flex">
                   <Trophy className="h-4 w-4" />
-                  {firstPrize}
+                  {jackpotPrize}
                 </span>
               )}
               <Link 
@@ -91,9 +93,13 @@ export default async function HomePage() {
 
       {/* Main Content */}
       <div className="relative z-10 pt-[60px]">
-        <HeroSection raffleName={activeRaffle?.name} firstPrize={firstPrize} />
+        <HeroSection raffleName={activeRaffle?.name} firstPrize={jackpotPrize} />
         <HowItWorks />
-        <SponsorShowcase />
+        <SponsorShowcase
+          activeAmount={activeRaffle?.amount ?? null}
+          drawDate={activeRaffle?.draw_date ?? null}
+          prizeSchedule={prizeSchedule}
+        />
         <TrustSection />
         <Footer />
       </div>

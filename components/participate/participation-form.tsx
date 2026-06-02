@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { BearLogo } from '@/components/bear-logo'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
 import { PAYMENT_METHODS } from '@/lib/payment'
-import { formatMoneyAmount, getPrizeAmounts } from '@/lib/bingo'
+import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 
 const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
 const MIN_RECEIPT_SIZE = 10 * 1024
@@ -78,7 +78,8 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
-  const firstPrize = prizeAmounts[0]
+  const prizeSchedule = getPrizeSchedule(prizeAmounts)
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
   const cardAmount = formatMoneyAmount(raffle.amount, 'Ver datos de pago')
 
   useEffect(() => {
@@ -256,18 +257,18 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
         )}
       </div>
 
-      {firstPrize && (
+      {jackpotPrize?.amount && (
         <div className="rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-center text-zinc-950 shadow-xl shadow-amber-950/20">
-          <p className="text-xs font-semibold uppercase tracking-wide">Primer premio</p>
+          <p className="text-xs font-semibold uppercase tracking-wide">Premio mayor</p>
           <p className="mt-1 break-words text-3xl font-bold tracking-tight md:text-4xl">
-            {firstPrize}
+            {jackpotPrize.amount}
           </p>
-          <p className="mt-2 text-sm font-semibold">El premio mayor se juega al final.</p>
+          <p className="mt-2 text-sm font-semibold">Se gana completando el carton.</p>
         </div>
       )}
 
       <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
-        <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premios" value={prizeAmounts.length === 3 ? '3 premios por fila' : 'A confirmar'} />
+        <RaffleDetail icon={<Gift className="h-5 w-5" />} label="Premios" value={prizeAmounts.length === 4 ? '4 premios' : 'A confirmar'} />
         <RaffleDetail icon={<WalletCards className="h-5 w-5" />} label="Monto" value={cardAmount} />
         <RaffleDetail
           icon={<CalendarDays className="h-5 w-5" />}
@@ -282,17 +283,17 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
             <Gift className="h-4 w-4" />
             Todos los premios
           </p>
-          <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-            {[1, 2, 3].map((prizeNumber) => (
-              <div key={prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
-                <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
-                {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
-                <span className="mt-1 block text-xs text-zinc-400">Fila {prizeNumber}</span>
+          <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+            {prizeSchedule.map((target) => (
+              <div key={target.prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white">
+                <span className="block text-xs uppercase text-amber-200">{target.label}</span>
+                {target.amount || 'A confirmar'}
+                <span className="mt-1 block text-xs text-zinc-400">{target.conditionLabel}</span>
               </div>
             ))}
           </div>
           <p className="mt-3 text-xs font-semibold uppercase text-zinc-400">
-            Orden del sorteo: premio 3, premio 2 y premio 1 al final.
+            Las bolillas salen al azar y cada premio se adjudica cuando se completa su condicion.
           </p>
         </div>
       )}
@@ -647,7 +648,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                   Generando tus cartones...
                 </span>
               ) : (
-                firstPrize ? `Participar por ${firstPrize}` : Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
+                jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
               )}
             </Button>
 

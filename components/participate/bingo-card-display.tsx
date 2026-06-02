@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
-import { CheckCircle, Download, Eye, X, Hash, Trophy } from 'lucide-react'
+import { CheckCircle, Download, Eye, X, Hash, Trophy, Share2 } from 'lucide-react'
 import { getBingoColumnLabels, getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
 
 interface BingoCard {
@@ -21,6 +21,7 @@ interface BingoCardDisplayProps {
   raffleName: string
   drawnNumbers?: number[]
   compact?: boolean
+  autoOpen?: boolean
 }
 
 const HEADER_COLORS = [
@@ -35,8 +36,10 @@ const HEADER_COLORS = [
   'bg-emerald-500',
 ]
 
-export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false }: BingoCardDisplayProps) {
-  const [showModal, setShowModal] = useState(false)
+export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false, autoOpen = false }: BingoCardDisplayProps) {
+  const [showModal, setShowModal] = useState(autoOpen)
+  const cardPreviewRef = useRef<HTMLDivElement>(null)
+  const modalCardRef = useRef<HTMLDivElement>(null)
 
   const formattedDate = new Date(card.created_at).toLocaleDateString('es-ES', {
     year: 'numeric',
@@ -49,188 +52,18 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
   const isWinner = winningLines.length > 0
 
-  const drawRoundedRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number
-  ) => {
-    ctx.beginPath()
-    ctx.moveTo(x + radius, y)
-    ctx.lineTo(x + width - radius, y)
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-    ctx.lineTo(x + width, y + height - radius)
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-    ctx.lineTo(x + radius, y + height)
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-    ctx.lineTo(x, y + radius)
-    ctx.quadraticCurveTo(x, y, x + radius, y)
-    ctx.closePath()
-  }
-
-  const drawCenteredText = (
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    x: number,
-    y: number,
-    maxWidth: number,
-    fontSize: number,
-    weight = '700',
-    color = '#ffffff'
-  ) => {
-    let size = fontSize
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillStyle = color
-
-    do {
-      ctx.font = `${weight} ${size}px Arial`
-      size -= 1
-    } while (ctx.measureText(text).width > maxWidth && size > 14)
-
-    ctx.fillText(text, x, y)
-  }
-
-  const drawLogoMark = (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) => {
-    const gradient = ctx.createLinearGradient(x - radius, y - radius, x + radius, y + radius)
-    gradient.addColorStop(0, '#fbbf24')
-    gradient.addColorStop(1, '#f97316')
-
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = '#451a03'
-    ctx.beginPath()
-    ctx.arc(x - radius * 0.42, y - radius * 0.58, radius * 0.22, 0, Math.PI * 2)
-    ctx.arc(x + radius * 0.42, y - radius * 0.58, radius * 0.22, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = '#fff7ed'
-    ctx.beginPath()
-    ctx.arc(x, y + radius * 0.14, radius * 0.48, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = '#451a03'
-    ctx.beginPath()
-    ctx.arc(x - radius * 0.18, y - radius * 0.04, radius * 0.06, 0, Math.PI * 2)
-    ctx.arc(x + radius * 0.18, y - radius * 0.04, radius * 0.06, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.beginPath()
-    ctx.arc(x, y + radius * 0.18, radius * 0.08, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const loadLogoImage = () =>
-    new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new window.Image()
-      image.onload = () => resolve(image)
-      image.onerror = reject
-      image.src = '/logo-solo.svg'
-    })
-
   const downloadCard = async () => {
     try {
-      const canvas = document.createElement('canvas')
-      const scale = 2
-      const width = 720
-      const height = 980
-      canvas.width = width * scale
-      canvas.height = height * scale
+      const target = modalCardRef.current ?? cardPreviewRef.current
+      if (!target) return
 
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      ctx.scale(scale, scale)
-
-      const background = ctx.createLinearGradient(0, 0, width, height)
-      background.addColorStop(0, '#09090b')
-      background.addColorStop(0.62, '#18181b')
-      background.addColorStop(1, '#3f1d08')
-      ctx.fillStyle = background
-      ctx.fillRect(0, 0, width, height)
-
-      ctx.strokeStyle = '#f59e0b'
-      ctx.lineWidth = 4
-      drawRoundedRect(ctx, 32, 32, width - 64, height - 64, 22)
-      ctx.stroke()
-
-      try {
-        const logo = await loadLogoImage()
-        const logoSize = 76
-        ctx.drawImage(logo, width / 2 - logoSize / 2, 48, logoSize, logoSize)
-      } catch {
-        drawLogoMark(ctx, width / 2, 86, 38)
-      }
-      drawCenteredText(ctx, 'Lucky Bingo Bear', width / 2, 150, 610, 34, '800')
-      drawCenteredText(ctx, raffleName, width / 2, 190, 610, 22, '600', '#fde68a')
-
-      ctx.fillStyle = '#f59e0b'
-      drawRoundedRect(ctx, width / 2 - 145, 216, 290, 42, 20)
-      ctx.fill()
-      drawCenteredText(ctx, card.card_number, width / 2, 238, 245, 22, '900', '#111827')
-
-      const gridX = 45
-      const gridY = 292
-      const columnCount = columnLabels.length
-      const rowCount = rows.length
-      const labelWidth = columnCount === 9 ? 42 : 0
-      const cellSize = columnCount === 9 ? 70 : 112
-      const headerHeight = 52
-      const headerColors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#0ea5e9', '#8b5cf6', '#ec4899', '#10b981']
-
-      ctx.lineWidth = 6
-      ctx.strokeStyle = '#fbbf24'
-      drawRoundedRect(ctx, gridX - 3, gridY - 3, labelWidth + cellSize * columnCount + 6, headerHeight + cellSize * rowCount + 6, 16)
-      ctx.stroke()
-
-      if (labelWidth > 0) {
-        ctx.fillStyle = '#78350f'
-        ctx.fillRect(gridX, gridY, labelWidth, headerHeight)
-        drawCenteredText(ctx, 'P', gridX + labelWidth / 2, gridY + headerHeight / 2, labelWidth - 8, 14, '700')
-      }
-
-      columnLabels.forEach((letter, index) => {
-        ctx.fillStyle = headerColors[index]
-        ctx.fillRect(gridX + labelWidth + index * cellSize, gridY, cellSize, headerHeight)
-        ctx.fillStyle = '#ffffff'
-        drawCenteredText(ctx, letter, gridX + labelWidth + index * cellSize + cellSize / 2, gridY + headerHeight / 2, cellSize - 10, columnCount === 9 ? 12 : 28, '600')
+      const { default: html2canvas } = await import('html2canvas')
+      const canvas = await html2canvas(target, {
+        backgroundColor: null,
+        scale: Math.min(3, window.devicePixelRatio || 2),
+        useCORS: true,
+        logging: false,
       })
-
-      rows.forEach((row, rowIndex) => {
-        if (labelWidth > 0) {
-          const labelY = gridY + headerHeight + rowIndex * cellSize
-          ctx.fillStyle = '#f59e0b'
-          ctx.fillRect(gridX, labelY, labelWidth, cellSize)
-          ctx.strokeStyle = '#fde68a'
-          ctx.lineWidth = 2
-          ctx.strokeRect(gridX, labelY, labelWidth, cellSize)
-          drawCenteredText(ctx, `P${rowIndex + 1}`, gridX + labelWidth / 2, labelY + cellSize / 2, labelWidth - 8, 15, '700', '#111827')
-        }
-
-        row.forEach((cell, colIndex) => {
-          const x = gridX + labelWidth + colIndex * cellSize
-          const y = gridY + headerHeight + rowIndex * cellSize
-          const marked = isMarked(cell, drawnNumbers)
-
-          ctx.fillStyle = cell === null ? '#09090b' : cell === 'FREE' ? '#f59e0b' : marked ? '#10b981' : '#111827'
-          ctx.fillRect(x, y, cellSize, cellSize)
-          ctx.strokeStyle = '#fde68a'
-          ctx.lineWidth = 2
-          ctx.strokeRect(x, y, cellSize, cellSize)
-
-          if (cell !== null) {
-            drawCenteredText(ctx, String(cell), x + cellSize / 2, y + cellSize / 2, cellSize - 16, cell === 'FREE' ? 16 : 28, '700')
-          }
-        })
-      })
-
-      drawCenteredText(ctx, card.full_name, width / 2, 920, 610, 26, '800', '#fff7ed')
-      drawCenteredText(ctx, formattedDate, width / 2, 950, 610, 18, '500', '#fcd34d')
 
       const link = document.createElement('a')
       link.download = `bingo-card-${card.card_number}.png`
@@ -238,6 +71,26 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       link.click()
     } catch (error) {
       console.error('Error downloading card:', error)
+    }
+  }
+
+  const shareCard = async () => {
+    const text = `Mi carton ${card.card_number} participa en ${raffleName}.`
+    const url = `${window.location.origin}/participar`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Lucky Bingo Bear',
+          text,
+          url,
+        })
+        return
+      }
+
+      await navigator.clipboard.writeText(`${text} ${url}`)
+    } catch (error) {
+      console.error('Error sharing card:', error)
     }
   }
 
@@ -362,10 +215,12 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       {/* Bingo Card Preview */}
       <Card className="overflow-hidden border-zinc-800 bg-zinc-950/85 shadow-xl backdrop-blur-sm">
         <CardContent className="p-3 sm:p-4">
-          <BingoCardVisual />
+          <div ref={cardPreviewRef}>
+            <BingoCardVisual />
+          </div>
 
           {/* Action Buttons */}
-          <div className="grid gap-3 mt-4 sm:grid-cols-2">
+          <div className="grid gap-3 mt-4 sm:grid-cols-3">
             <Button
               onClick={() => setShowModal(true)}
               variant="outline"
@@ -373,6 +228,14 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             >
               <Eye className="w-4 h-4 mr-2" />
               Ver Carton Completo
+            </Button>
+            <Button
+              onClick={shareCard}
+              variant="outline"
+              className="h-11 w-full border-sky-300/40 bg-transparent text-sm font-semibold text-sky-100 hover:bg-sky-400/10"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Compartir
             </Button>
             <Button
               onClick={downloadCard}
@@ -406,13 +269,19 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             </button>
             
             <div className="min-h-0 flex-1 p-3 sm:p-4">
+              <div ref={modalCardRef}>
               <BingoCardVisual forDownload={true} />
+              </div>
             </div>
 
-            <div className="shrink-0 border-t border-zinc-800 bg-zinc-950/95 p-3">
+            <div className="grid shrink-0 gap-2 border-t border-zinc-800 bg-zinc-950/95 p-3 sm:grid-cols-2">
+              <Button onClick={shareCard} variant="outline" className="w-full border-sky-300/40 bg-transparent text-sky-100 hover:bg-sky-400/10">
+                <Share2 className="w-4 h-4 mr-2" />
+                Compartir
+              </Button>
               <Button
                 onClick={downloadCard}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Descargar Carton

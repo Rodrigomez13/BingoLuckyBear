@@ -20,6 +20,7 @@ import {
   getCurrentPrizeTarget,
   getPrizeAmounts,
   getPrizeAwards,
+  getPrizeSchedule,
   getBingoColumnLabels,
   getBingoRows,
   isMarked,
@@ -179,7 +180,8 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     bundle_offers: raffle.bundle_offers ?? [],
     draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
   })
-  const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '']
+  const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '', details.additional_prizes[2] ?? '']
+  const detailPrizeTargets = getPrizeSchedule(detailPrizeValues)
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true)
@@ -260,7 +262,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
         return { ...current, prize: value }
       }
 
-      const additionalPrizes = [current.additional_prizes[0] ?? '', current.additional_prizes[1] ?? '']
+      const additionalPrizes = [current.additional_prizes[0] ?? '', current.additional_prizes[1] ?? '', current.additional_prizes[2] ?? '']
       additionalPrizes[index - 1] = value
       return { ...current, additional_prizes: additionalPrizes }
     })
@@ -276,14 +278,14 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       const supabase = createClient()
       const sortedPrizes = normalizePrizeAmounts(detailPrizeValues)
 
-      if (sortedPrizes.length !== 3) {
-        alert('Carga los 3 montos de premios antes de guardar.')
+      if (sortedPrizes.length !== 4) {
+        alert('Carga los 4 montos de premios antes de guardar.')
         return
       }
 
       const payload = {
         prize: sortedPrizes[0],
-        additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
+        additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
         amount: details.amount || null,
         payment_account_id: details.payment_account_id || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
@@ -409,24 +411,29 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
             <div>
               <p className="font-semibold text-white">Premios por fila</p>
               <p className="text-sm text-zinc-400">
-                El sistema ordena estos tres montos de mayor a menor. El sorteo se juega en orden inverso: premio 3, premio 2 y premio 1.
+                Menor: fila 3. Intermedio: fila 2. Grande: fila 1. Mayor: carton completo.
               </p>
             </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              {detailPrizeValues.map((item, index) => (
+            <div className="mt-3 grid gap-3 md:grid-cols-4">
+              {detailPrizeValues.map((item, index) => {
+                const target = detailPrizeTargets[index]
+
+                return (
                 <div key={index} className="space-y-2">
                   <label htmlFor={`raffle-row-prize-${index}`} className="text-sm font-medium text-zinc-300">
-                    Monto de premio {index + 1}
+                    {target?.label ?? `Premio ${index + 1}`}
                   </label>
                     <Input
                       id={`raffle-row-prize-${index}`}
                       value={item}
                       onChange={(event) => updateDetailPrize(index, event.target.value)}
-                      placeholder={index === 0 ? '$100.000' : index === 1 ? '$50.000' : '$25.000'}
+                      placeholder={index === 0 ? '$25.000' : index === 1 ? '$50.000' : index === 2 ? '$100.000' : '$250.000'}
                       className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                     />
+                    <p className="text-xs text-zinc-500">{target?.conditionLabel}</p>
                   </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -539,34 +546,33 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       <CardContent>
         <div className="mb-5 grid gap-3 md:grid-cols-3">
           <SummaryTile icon={<Users className="h-5 w-5" />} label="Participantes" value={String(cards.length)} />
-          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/3`} />
+          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/4`} />
           <SummaryTile icon={<Search className="h-5 w-5" />} label="Vista actual" value={String(filteredCards.length)} />
         </div>
 
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/25 bg-amber-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premio en juego</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premios pendientes</p>
             <p className="mt-2 text-xl font-bold text-white">
-              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Sorteo completo'}
+              {currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Sorteo completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
               {currentPrizeTarget
-                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
-                : 'Ya se adjudicaron los 3 premios.'}
+                ? 'Las bolillas pueden completar cualquier premio, sin orden fijo.'
+                : 'Ya se adjudicaron los 4 premios.'}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Orden del sorteo</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {[3, 2, 1].map((prizeNumber) => {
-                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
-                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+            <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Premios del sorteo</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+              {getPrizeSchedule(prizeAmounts).map((target) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
 
                 return (
-                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-black/20 p-3">
-                    <p className="font-bold text-white">Premio {prizeNumber}</p>
-                    <p className="text-sm text-amber-100">{amount}</p>
-                    <p className="mt-1 text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  <div key={target.prizeNumber} className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <p className="font-bold text-white">{target.label}</p>
+                    <p className="text-sm text-amber-100">{target.amount || 'A confirmar'}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : target.conditionLabel}</p>
                   </div>
                 )
               })}
@@ -644,7 +650,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                       <p className="truncate font-medium text-white">{card.full_name}</p>
                       {cardAwards.map((award) => (
                         <Badge key={award.prizeNumber} className="bg-emerald-500 text-white hover:bg-emerald-500">
-                          Premio {award.prizeNumber}
+                          {award.label}
                         </Badge>
                       ))}
                     </div>

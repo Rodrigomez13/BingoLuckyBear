@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 const trustItems = [
   {
     title: 'Sorteo visible',
-    copy: 'Podes mirar la cuenta regresiva, las bolillas y el premio en juego desde la pantalla en vivo.',
+    copy: 'Podes mirar la cuenta regresiva, las bolillas y los premios pendientes desde la pantalla en vivo.',
     icon: Radio,
   },
   {

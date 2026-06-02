@@ -6,7 +6,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts } from '@/lib/bingo'
+import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -27,8 +27,8 @@ interface Raffle {
 interface ActiveRaffleResponse {
   raffle: Raffle | null
   participantCount?: number
-  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string } | null
-  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; winners: { id: string; full_name: string; card_number: string }[] }[]
+  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string; label?: string; conditionLabel?: string } | null
+  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; label?: string; conditionLabel?: string; winners: { id: string; full_name: string; card_number: string }[] }[]
 }
 
 function formatTime(seconds: number) {
@@ -73,7 +73,8 @@ export function LiveWall() {
 
   const drawnNumbers = useMemo(() => raffle?.drawn_numbers ?? [], [raffle?.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle?.prize, raffle?.additional_prizes), [raffle?.prize, raffle?.additional_prizes])
-  const firstPrize = prizeAmounts[0]
+  const prizeSchedule = useMemo(() => getPrizeSchedule(prizeAmounts), [prizeAmounts])
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
   const cardAmount = formatMoneyAmount(raffle?.amount)
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
   const hasStarted = raffle?.draw_status === 'running' || raffle?.draw_status === 'finished' || drawnNumbers.length > 0
@@ -125,11 +126,11 @@ export function LiveWall() {
             <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
               {raffle.name}
             </h1>
-            {firstPrize && (
+            {jackpotPrize?.amount && (
               <div className="mt-6 max-w-2xl rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-zinc-950 shadow-2xl shadow-amber-950/20">
-                <p className="text-sm font-semibold uppercase tracking-wide">Primer premio</p>
+                <p className="text-sm font-semibold uppercase tracking-wide">Premio mayor</p>
                 <p className="mt-1 break-words text-4xl font-bold tracking-tight sm:text-5xl">
-                  {firstPrize}
+                  {jackpotPrize.amount}
                 </p>
               </div>
             )}
@@ -138,9 +139,9 @@ export function LiveWall() {
             <div className="mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
               <Stat
                 icon={<Gift className="h-6 w-6" />}
-                label="Ahora en juego"
-                value={currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
-                detail={currentPrizeTarget ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'A confirmar'}` : '3 premios adjudicados'}
+                label="Premios pendientes"
+                value={currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
+                detail={currentPrizeTarget ? 'Sin orden fijo' : '4 premios adjudicados'}
                 compact
               />
               <Stat icon={<WalletCards className="h-6 w-6" />} label="Monto" value={cardAmount} compact />
@@ -158,14 +159,14 @@ export function LiveWall() {
             {prizeAmounts.length > 0 && (
               <div className="mt-5 max-w-4xl rounded-lg border border-amber-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-200">Todos los premios</p>
-                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-                  {[1, 2, 3].map((prizeNumber) => {
-                    const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+                  {prizeSchedule.map((target) => {
+                    const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
                     return (
-                    <div key={prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
-                      <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
-                      <span>{prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}</span>
-                      <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
+                    <div key={target.prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                      <span className="block text-xs uppercase text-amber-200">{target.label}</span>
+                      <span>{target.amount || 'A confirmar'}</span>
+                      <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : target.conditionLabel}</span>
                     </div>
                     )
                   })}
@@ -213,7 +214,7 @@ export function LiveWall() {
             <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-5 text-center font-bold leading-tight text-zinc-950 hover:bg-amber-300">
               <Link href="/participar" className="flex items-center justify-center">
                 <Ticket className="mr-2 h-5 w-5" />
-                {firstPrize ? `Participar por ${firstPrize}` : 'Participar desde el celular'}
+                {jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : 'Participar desde el celular'}
               </Link>
             </Button>
 

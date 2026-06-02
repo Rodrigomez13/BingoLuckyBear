@@ -105,7 +105,7 @@ export function HeroSection({ raffleName, firstPrize }: { raffleName?: string | 
               className="absolute right-5 top-7 hidden h-20 w-28 object-contain opacity-90 drop-shadow-2xl md:block lg:h-24 lg:w-36"
             />
             <div className="relative ml-auto grid w-full max-w-[24rem] gap-2 min-[560px]:grid-cols-1 lg:gap-3">
-              <HeroStat label="Premio" value={firstPrize || 'A confirmar'} />
+              <HeroStat label="Premio mayor" value={firstPrize || 'A confirmar'} />
               <HeroStat label="Carton" value="Participa solo" />
               <HeroStat label="Resultado" value="Aviso por WhatsApp" />
             </div>

@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { RaffleParticipants } from './raffle-participants'
 import type { User } from '@supabase/supabase-js'
-import { formatMoneyAmount, getPrizeAmounts, normalizePrizeAmounts } from '@/lib/bingo'
+import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule, normalizePrizeAmounts } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -93,7 +93,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const totalCards = raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
 
   const cleanTextItems = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
-  const prizeInputValues = [prize, additionalPrizes[0] ?? '', additionalPrizes[1] ?? '']
+  const prizeInputValues = [prize, additionalPrizes[0] ?? '', additionalPrizes[1] ?? '', additionalPrizes[2] ?? '']
+  const prizeTargets = getPrizeSchedule(prizeInputValues)
 
   const updatePrizeInput = (index: number, value: string) => {
     if (index === 0) {
@@ -102,7 +103,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     }
 
     setAdditionalPrizes((current) => {
-      const next = [current[0] ?? '', current[1] ?? '']
+      const next = [current[0] ?? '', current[1] ?? '', current[2] ?? '']
       next[index - 1] = value
       return next
     })
@@ -122,8 +123,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     try {
       const sortedPrizes = normalizePrizeAmounts(prizeInputValues)
 
-      if (sortedPrizes.length !== 3) {
-        setCreateError('Carga los 3 montos de premios antes de crear el sorteo.')
+      if (sortedPrizes.length !== 4) {
+        setCreateError('Carga los 4 montos de premios antes de crear el sorteo.')
         return
       }
 
@@ -312,9 +313,10 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
+    <div className="lbb-page-shell relative min-h-screen text-zinc-100">
+      <div className="lbb-ambient" />
       {/* Header */}
-      <header className="bg-zinc-950/80 backdrop-blur-md border-b border-amber-400/20 sticky top-0 z-50">
+      <header className="sticky top-0 z-50 border-b border-[#04f77c]/20 bg-[#101010]/92 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex min-w-0 items-center gap-3">
@@ -329,7 +331,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="shrink-0 border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+              className="shrink-0 border-[#04f77c]/40 bg-transparent text-[#04f77c] hover:bg-[#04f77c]/10"
             >
               <span className="hidden sm:inline">Cerrar Sesion</span>
               <span className="sm:hidden">Salir</span>
@@ -338,7 +340,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <AdminMetric
             icon={<Ticket className="h-5 w-5" />}
@@ -543,25 +545,29 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                       <div>
                         <Label className="text-zinc-200">Premios por fila</Label>
                         <p className="mt-1 text-sm text-zinc-400">
-                          Carga tres montos. Se ordenan de mayor a menor: premio 1, premio 2 y premio 3.
+                          Carga cuatro montos: menor por fila 3, intermedio por fila 2, grande por fila 1 y mayor por carton completo.
                         </p>
                       </div>
                       <div className="grid gap-3">
-                        {prizeInputValues.map((value, index) => (
+                        {prizeInputValues.map((value, index) => {
+                          const target = prizeTargets[index]
+
+                          return (
                           <div key={index} className="space-y-2">
                             <Label htmlFor={`prize-${index}`} className="text-zinc-300">
-                              Monto de premio {index + 1}
+                              {target?.label ?? `Premio ${index + 1}`} ({target?.conditionLabel ?? 'Condicion'})
                             </Label>
                             <Input
                               id={`prize-${index}`}
                               value={value}
                               onChange={(event) => updatePrizeInput(index, event.target.value)}
-                              placeholder={index === 0 ? 'Ej: $100.000' : index === 1 ? 'Ej: $50.000' : 'Ej: $25.000'}
+                              placeholder={index === 0 ? 'Ej: $25.000' : index === 1 ? 'Ej: $50.000' : index === 2 ? 'Ej: $100.000' : 'Ej: $250.000'}
                               required
                               className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                             />
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -635,8 +641,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                           )}
                           <div className="mt-3 grid gap-2 text-xs text-zinc-300">
                             {getPrizeAmounts(raffle.prize, raffle.additional_prizes).length > 0 ? (
-                              getPrizeAmounts(raffle.prize, raffle.additional_prizes).map((item, index) => (
-                                <RaffleMeta key={`${item}-${index}`} icon={index === 0 ? <Gift className="h-3.5 w-3.5" /> : <Trophy className="h-3.5 w-3.5" />} value={`Premio ${index + 1}: ${item}`} />
+                              getPrizeSchedule(getPrizeAmounts(raffle.prize, raffle.additional_prizes)).map((target) => (
+                                <RaffleMeta key={target.prizeNumber} icon={target.prizeNumber === 1 ? <Gift className="h-3.5 w-3.5" /> : <Trophy className="h-3.5 w-3.5" />} value={`${target.label}: ${target.amount || 'A confirmar'} (${target.conditionLabel})`} />
                               ))
                             ) : (
                               <RaffleMeta icon={<Gift className="h-3.5 w-3.5" />} value="Premios sin cargar" />

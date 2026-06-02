@@ -29,8 +29,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Carga el nombre del sorteo' }, { status: 400 })
     }
 
-    if (sortedPrizes.length !== 3) {
-      return NextResponse.json({ error: 'Carga los 3 montos de premios' }, { status: 400 })
+    if (sortedPrizes.length !== 4) {
+      return NextResponse.json({ error: 'Carga los 4 montos de premios' }, { status: 400 })
     }
 
     const supabase = await createServiceClient()
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         name,
         description: description || null,
         prize: sortedPrizes[0],
-        additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
+        additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
         amount: amount || null,
         bundle_offers: cleanTextItems(body.bundle_offers),
         draw_date: drawDate || null,

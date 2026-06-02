@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts } from '@/lib/bingo'
+import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -31,8 +31,8 @@ interface LiveDrawCardProps {
 
 interface ActiveRaffleResponse {
   raffle: Raffle | null
-  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string } | null
-  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number }[]
+  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string; label?: string; conditionLabel?: string } | null
+  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; label?: string; conditionLabel?: string }[]
 }
 
 function formatTime(seconds: number) {
@@ -77,7 +77,8 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
   const drawnNumbers = useMemo(() => raffle?.drawn_numbers ?? [], [raffle?.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle?.prize, raffle?.additional_prizes), [raffle?.prize, raffle?.additional_prizes])
-  const firstPrize = prizeAmounts[0]
+  const prizeSchedule = useMemo(() => getPrizeSchedule(prizeAmounts), [prizeAmounts])
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
   const cardAmount = formatMoneyAmount(raffle?.amount)
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
   const isRunning = raffle?.draw_status === 'running'
@@ -109,11 +110,11 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {raffle.name}
             </h2>
-            {firstPrize && (
+            {jackpotPrize?.amount && (
               <div className="mt-4 rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-4 text-zinc-950 shadow-lg shadow-amber-950/20">
-                <p className="text-xs font-semibold uppercase tracking-wide">Primer premio</p>
+                <p className="text-xs font-semibold uppercase tracking-wide">Premio mayor</p>
                 <p className="mt-1 break-words text-3xl font-bold tracking-tight sm:text-4xl">
-                  {firstPrize}
+                  {jackpotPrize.amount}
                 </p>
               </div>
             )}
@@ -122,9 +123,9 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             <div className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-3">
               <LiveInfo
                 icon={<Gift className="h-4 w-4" />}
-                label="Ahora en juego"
-                value={currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
-                detail={currentPrizeTarget ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'A confirmar'}` : '3 premios adjudicados'}
+                label="Premios pendientes"
+                value={currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
+                detail={currentPrizeTarget ? 'Sin orden fijo' : '4 premios adjudicados'}
               />
               <LiveInfo icon={<WalletCards className="h-4 w-4" />} label="Monto" value={cardAmount} />
               <LiveInfo
@@ -137,14 +138,14 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             {prizeAmounts.length > 0 && (
               <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Todos los premios</p>
-                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-                  {[1, 2, 3].map((prizeNumber) => {
-                    const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+                  {prizeSchedule.map((target) => {
+                    const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
                     return (
-                    <span key={prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
-                      <span className="block text-xs uppercase">Premio {prizeNumber}</span>
-                      {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
-                      <span className="block text-xs text-zinc-400">{award ? `Con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
+                    <span key={target.prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
+                      <span className="block text-xs uppercase">{target.label}</span>
+                      {target.amount || 'A confirmar'}
+                      <span className="block text-xs text-zinc-400">{award ? `Con el ${award.drawnNumber}` : target.conditionLabel}</span>
                     </span>
                     )
                   })}
@@ -207,7 +208,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-3 text-center font-semibold leading-tight text-zinc-950 hover:bg-amber-300">
               <Link href="/participar" className="flex items-center justify-center">
                 <Ticket className="mr-2 h-4 w-4" />
-                {firstPrize ? `Participar por ${firstPrize}` : 'Ver mi carton'}
+                {jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : 'Ver mi carton'}
               </Link>
             </Button>
           </div>

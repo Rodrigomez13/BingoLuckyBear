@@ -28,6 +28,7 @@ interface RaffleForLifecycle {
   is_active?: boolean | null
   prize?: string | null
   additional_prizes?: string[] | null
+  amount?: string | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   draw_started_at?: string | null
@@ -147,7 +148,7 @@ async function notifyNewWinnerAwards(
           to: winner.phone,
           fullName: winner.full_name,
           raffleName: raffle.name,
-          prizeLabel: `Premio ${award.prizeNumber}`,
+          prizeLabel: award.label,
           amount: award.amount,
           cardNumber: winner.card_number,
         })
@@ -186,7 +187,7 @@ async function shouldCloseRaffle(supabase: SupabaseLike, raffle: RaffleForLifecy
     getPrizeAmounts(raffle.prize, raffle.additional_prizes)
   )
 
-  return awards.length >= 3
+  return awards.length >= 4
 }
 
 export async function closeRaffle(supabase: SupabaseLike, raffleId: string) {

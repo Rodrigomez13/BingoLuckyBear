@@ -14,6 +14,7 @@ import {
   getCurrentPrizeTarget,
   getPrizeAmounts,
   getPrizeAwards,
+  getPrizeSchedule,
 } from '@/lib/bingo'
 
 interface Raffle {
@@ -135,7 +136,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
       const updatedAwards = getPrizeAwards(cards, updatedDrawnNumbers, prizeAmounts)
       const updatedTarget = getCurrentPrizeTarget(cards, updatedDrawnNumbers, prizeAmounts)
 
-      if (updatedDrawnNumbers.length >= BINGO_TOTAL_BALLS || !updatedTarget || updatedAwards.length >= 3) {
+      if (updatedDrawnNumbers.length >= BINGO_TOTAL_BALLS || !updatedTarget || updatedAwards.length >= 4) {
         setIsAutoDrawEnabled(false)
         setAutoStatus('Automatico pausado: ya se adjudicaron los premios del sorteo.')
       }
@@ -193,28 +194,27 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
 
         <div className="grid gap-3 md:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/30 bg-amber-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Se esta jugando</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premios pendientes</p>
             <p className="mt-2 text-2xl font-bold text-white">
-              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
+              {currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
               {currentPrizeTarget
-                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
-                : 'Ya se adjudicaron los tres premios.'}
+                ? 'Cualquier premio se adjudica cuando el carton completa su condicion.'
+                : 'Ya se adjudicaron los cuatro premios.'}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-zinc-200">Orden inverso del sorteo</p>
-            <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-              {[3, 2, 1].map((prizeNumber) => {
-                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
-                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+            <p className="mb-3 text-sm font-semibold text-zinc-200">Premios del sorteo</p>
+            <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+              {getPrizeSchedule(prizeAmounts).map((target) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
 
                 return (
-                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
-                    <p className="font-semibold text-white">Premio {prizeNumber}</p>
-                    <p className="text-amber-100">{amount}</p>
-                    <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  <div key={target.prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
+                    <p className="font-semibold text-white">{target.label}</p>
+                    <p className="text-amber-100">{target.amount || 'A confirmar'}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : target.conditionLabel}</p>
                   </div>
                 )
               })}
@@ -350,9 +350,9 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             <div className="space-y-2">
               {prizeAwards.map((award) => (
                 <div key={award.prizeNumber} className="rounded-md bg-black/20 p-3 text-sm">
-                  <p className="font-bold text-white">Premio {award.prizeNumber} - {award.amount || 'monto a confirmar'}</p>
+                  <p className="font-bold text-white">{award.label} - {award.amount || 'monto a confirmar'}</p>
                   <p className="text-emerald-100">
-                    Fila {award.rowIndex + 1}, adjudicado con el numero {award.drawnNumber}
+                    {award.conditionLabel}, adjudicado con el numero {award.drawnNumber}
                   </p>
                   <div className="mt-2 space-y-1">
                     {award.winners.map((winner) => (

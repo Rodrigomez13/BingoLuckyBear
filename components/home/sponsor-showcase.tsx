@@ -3,13 +3,12 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { BadgeDollarSign, Radio, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PAYMENT_INFO } from '@/lib/payment'
-import { formatMoneyAmount } from '@/lib/bingo'
+import { formatMoneyAmount, type BingoPrizeTarget } from '@/lib/bingo'
 
 const prizeHighlights = [
   {
     title: 'Premios visibles',
-    copy: 'Antes de comprar ves los montos disponibles y el orden en que se adjudican.',
+    copy: 'Antes de comprar ves los montos disponibles y que condicion gana cada premio.',
     asset: '/brand/winner-crown.svg',
     tone: 'from-amber-300 to-orange-500',
   },
@@ -27,8 +26,16 @@ const prizeHighlights = [
   },
 ]
 
-export function SponsorShowcase() {
-  const paymentAmount = /\d/.test(PAYMENT_INFO.amount) ? formatMoneyAmount(PAYMENT_INFO.amount) : 'A confirmar'
+interface SponsorShowcaseProps {
+  activeAmount?: string | null
+  drawDate?: string | null
+  prizeSchedule?: BingoPrizeTarget[]
+}
+
+export function SponsorShowcase({ activeAmount, drawDate, prizeSchedule = [] }: SponsorShowcaseProps) {
+  const paymentAmount = formatMoneyAmount(activeAmount, 'A confirmar')
+  const visiblePrizes = prizeSchedule.filter((target) => target.amount)
+  const nextDraw = drawDate ? new Date(drawDate).toLocaleDateString('es-ES') : 'A confirmar'
 
   return (
     <section className="lbb-scroll-reveal border-y border-[#04f77c]/20 bg-black/25 py-10 sm:py-12">
@@ -82,9 +89,9 @@ export function SponsorShowcase() {
 
               <div className="border-t border-white/10 p-5 sm:col-span-2 sm:p-6">
                 <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
-                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={paymentAmount} label="monto" />
+                  <Metric icon={<BadgeDollarSign className="h-5 w-5" />} value={paymentAmount} label="carton" />
                   <Metric value="Auto" label="marcado" />
-                  <Metric value="90" label="bolillas" />
+                  <Metric value={nextDraw} label="sorteo" />
                 </div>
               </div>
             </div>
@@ -117,8 +124,8 @@ export function SponsorShowcase() {
           <VisualPanel title="Carton digital">
             <MiniBingoCard />
           </VisualPanel>
-          <VisualPanel title="Orden de premios">
-            <PrizeVisual />
+          <VisualPanel title="Premios">
+            <PrizeVisual prizes={visiblePrizes} />
           </VisualPanel>
           <VisualPanel title="Bolillas cantadas">
             <DrawVisual />
@@ -196,7 +203,7 @@ function MiniBingoCard() {
   )
 }
 
-function PrizeVisual() {
+function PrizeVisual({ prizes }: { prizes: BingoPrizeTarget[] }) {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
       <div className="absolute left-8 top-8 h-14 w-14 rounded-full bg-emerald-400 text-center text-lg font-bold leading-[3.5rem] text-zinc-950 shadow-xl">
@@ -207,8 +214,18 @@ function PrizeVisual() {
       </div>
       <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-300 to-orange-500 px-8 py-6 text-center text-zinc-950 shadow-2xl">
         <Image src="/brand/gold-medal.svg" alt="" width={54} height={54} className="mx-auto mb-2 h-12 w-12 object-contain" />
-        <p className="text-xl font-bold">P3 - P2 - P1</p>
-        <p className="text-xs font-semibold uppercase tracking-wide">mayor al final</p>
+        {prizes.length > 0 ? (
+          <div className="space-y-1">
+            {prizes.slice(0, 4).map((prize) => (
+              <p key={prize.prizeNumber} className="text-sm font-bold">
+                {prize.label}: {prize.amount}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xl font-bold">Premios a confirmar</p>
+        )}
+        <p className="mt-2 text-xs font-semibold uppercase tracking-wide">sin orden fijo</p>
       </div>
     </div>
   )

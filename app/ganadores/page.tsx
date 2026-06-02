@@ -5,7 +5,7 @@ import { CalendarDays, Crown, Hash, Radio, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
+import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards, getPrizeLabel } from '@/lib/bingo'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -177,7 +177,7 @@ export default async function WinnersPage() {
                       <div>
                         <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
                           <Trophy className="mr-1 h-3.5 w-3.5" />
-                          Premio {winner.prizeNumber}
+                          {getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4)}
                         </Badge>
                         <h2 className="text-xl font-semibold tracking-tight text-white">
                           {winner.card.full_name}
@@ -198,7 +198,7 @@ export default async function WinnersPage() {
                     <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-4">
                       <p className="text-sm font-semibold text-emerald-100">Fila premiada</p>
                       <p className="mt-1 text-sm text-zinc-200">
-                        Premio {winner.prizeNumber} - fila {winner.rowIndex + 1}
+                        {getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4)} - {winner.rowIndex >= 0 ? `fila ${winner.rowIndex + 1}` : 'carton completo'}
                       </p>
                     </div>
 
