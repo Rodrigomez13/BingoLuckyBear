@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const MIN_FILE_SIZE = 10 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const ALLOWED_EXTENSIONS_BY_TYPE: Record<(typeof ALLOWED_TYPES)[number], string[]> = {
   'image/jpeg': ['jpg', 'jpeg'],
   'image/png': ['png'],
@@ -111,9 +112,15 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const purpose = String(formData.get('purpose') ?? 'receipt')
+    const isWinnerPhoto = purpose === 'winner-photo'
 
     if (!file) {
       return NextResponse.json({ error: 'No se proporciono archivo' }, { status: 400 })
+    }
+
+    if (isWinnerPhoto && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'Solo se permiten fotos JPG, PNG o WebP' }, { status: 400 })
     }
 
     if (!ALLOWED_TYPES.includes(file.type as (typeof ALLOWED_TYPES)[number])) {
@@ -171,7 +178,7 @@ export async function POST(request: NextRequest) {
     }
 
     const timestamp = Date.now()
-    const filename = `receipts/${timestamp}-${sanitizeFilename(file.name)}`
+    const filename = `${isWinnerPhoto ? 'winner-photos' : 'receipts'}/${timestamp}-${sanitizeFilename(file.name)}`
 
     const blob = await put(filename, arrayBuffer, {
       access: 'private',

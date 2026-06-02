@@ -60,6 +60,8 @@ interface BingoCard {
   payout_account_kind?: string | null
   payout_account?: string | null
   payout_holder_name?: string | null
+  winner_photo_url?: string | null
+  winner_testimonial?: string | null
   created_at: string
   bingo_numbers: number[][] | null
 }
@@ -162,9 +164,13 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingDetails, setIsSavingDetails] = useState(false)
+  const [isSavingShowcase, setIsSavingShowcase] = useState(false)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
+  const [winnerPhotoFile, setWinnerPhotoFile] = useState<File | null>(null)
+  const [winnerTestimonial, setWinnerTestimonial] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [winnerOnly, setWinnerOnly] = useState(false)
+  const [participantsPage, setParticipantsPage] = useState(1)
   const [details, setDetails] = useState({
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
@@ -231,6 +237,24 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       return matchesWinner && matchesSearch
     })
   }, [awardedCardIds, cards, searchTerm, winnerOnly])
+  const participantsPerPage = 8
+  const participantsPageCount = Math.max(1, Math.ceil(filteredCards.length / participantsPerPage))
+  const visibleCards = filteredCards.slice((participantsPage - 1) * participantsPerPage, participantsPage * participantsPerPage)
+
+  useEffect(() => {
+    setParticipantsPage(1)
+  }, [searchTerm, winnerOnly, raffle.id])
+
+  useEffect(() => {
+    if (participantsPage > participantsPageCount) {
+      setParticipantsPage(participantsPageCount)
+    }
+  }, [participantsPage, participantsPageCount])
+
+  useEffect(() => {
+    setWinnerPhotoFile(null)
+    setWinnerTestimonial(selectedCard?.winner_testimonial ?? '')
+  }, [selectedCard])
 
   const statusLabel =
     raffle.draw_status === 'finished'
@@ -329,6 +353,55 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     link.href = URL.createObjectURL(blob)
     link.download = `${raffle.name.replace(/\s+/g, '_')}_participantes.csv`
     link.click()
+  }
+
+  const saveWinnerShowcase = async () => {
+    if (!selectedCard) return
+
+    setIsSavingShowcase(true)
+
+    try {
+      let winnerPhotoUrl = selectedCard.winner_photo_url ?? null
+
+      if (winnerPhotoFile) {
+        const uploadForm = new FormData()
+        uploadForm.append('file', winnerPhotoFile)
+        uploadForm.append('purpose', 'winner-photo')
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadForm,
+        })
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'No se pudo subir la foto')
+        }
+
+        winnerPhotoUrl = uploadData.pathname
+      }
+
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('bingo_cards')
+        .update({
+          winner_photo_url: winnerPhotoUrl,
+          winner_testimonial: winnerTestimonial.trim() || null,
+        })
+        .eq('id', selectedCard.id)
+        .select('*')
+        .single()
+
+      if (error) throw error
+
+      setCards((current) => current.map((card) => (card.id === selectedCard.id ? data as BingoCard : card)))
+      setSelectedCard(data as BingoCard)
+      setWinnerPhotoFile(null)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo guardar la referencia del ganador.')
+    } finally {
+      setIsSavingShowcase(false)
+    }
   }
 
   return (
@@ -625,7 +698,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
               <span>Fecha</span>
               <span>Acciones</span>
             </div>
-            {filteredCards.map((card) => {
+            {visibleCards.map((card) => {
               const cardAwards = prizeAwards.filter((award) => award.winners.some((winner) => winner.id === card.id))
 
               return (
@@ -671,20 +744,29 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                 </div>
               )
             })}
+            {filteredCards.length > participantsPerPage && (
+              <PaginationControls
+                page={participantsPage}
+                pageCount={participantsPageCount}
+                total={filteredCards.length}
+                onPrevious={() => setParticipantsPage((page) => Math.max(1, page - 1))}
+                onNext={() => setParticipantsPage((page) => Math.min(participantsPageCount, page + 1))}
+              />
+            )}
           </div>
         )}
       </CardContent>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(96vw,1180px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1520px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
           <DialogHeader className="border-b border-zinc-800 px-5 py-4">
             <DialogTitle className="text-white">
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
             {selectedCard && (
-            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,0.95fr)_minmax(260px,0.8fr)_minmax(220px,320px)] xl:overflow-hidden">
+            <div className="lbb-scrollbar grid min-h-0 flex-1 gap-0 overflow-y-auto 2xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.68fr)_minmax(220px,300px)] 2xl:overflow-hidden">
               <div className="min-w-0 space-y-4 border-b border-zinc-800 p-4 sm:p-5 xl:border-b-0">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>
@@ -741,6 +823,35 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                     </p>
                   </div>
                 </div>
+
+                {awardedCardIds.has(selectedCard.id) && (
+                  <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-3">
+                    <p className="font-semibold text-white">Referencia publica del ganador</p>
+                    <p className="mt-1 text-sm text-zinc-400">Estos datos pueden mostrarse en Ganadores para generar confianza.</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)]">
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(event) => setWinnerPhotoFile(event.target.files?.[0] ?? null)}
+                        className="border-zinc-700 bg-zinc-900 text-white file:mr-3 file:rounded file:border-0 file:bg-amber-400 file:px-3 file:py-1 file:text-sm file:font-bold file:text-zinc-950"
+                      />
+                      <Input
+                        value={winnerTestimonial}
+                        onChange={(event) => setWinnerTestimonial(event.target.value)}
+                        placeholder="Ej: Premio pagado y ganador verificado"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={saveWinnerShowcase}
+                      disabled={isSavingShowcase}
+                      className="mt-3 bg-emerald-500 font-bold text-white hover:bg-emerald-600"
+                    >
+                      {isSavingShowcase ? 'Guardando' : 'Guardar referencia'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="border-b border-zinc-800 bg-black/20 p-4 sm:p-5 xl:border-b-0 xl:border-l">
@@ -801,6 +912,48 @@ function SummaryTile({ icon, label, value }: { icon: ReactNode; label: string; v
         {label}
       </p>
       <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+    </div>
+  )
+}
+
+function PaginationControls({
+  page,
+  pageCount,
+  total,
+  onPrevious,
+  onNext,
+}: {
+  page: number
+  pageCount: number
+  total: number
+  onPrevious: () => void
+  onNext: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-zinc-400">
+        {total} resultado{total !== 1 ? 's' : ''} - pagina {page} de {pageCount}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrevious}
+          disabled={page <= 1}
+          className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+        >
+          Anterior
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onNext}
+          disabled={page >= pageCount}
+          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+        >
+          Siguiente
+        </Button>
+      </div>
     </div>
   )
 }

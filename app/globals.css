@@ -157,6 +157,31 @@
     display: none;
   }
 
+  .lbb-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(4, 247, 124, 0.72) rgba(255, 255, 255, 0.06);
+  }
+
+  .lbb-scrollbar::-webkit-scrollbar {
+    width: 0.55rem;
+    height: 0.55rem;
+  }
+
+  .lbb-scrollbar::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .lbb-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 2px solid rgba(11, 11, 16, 0.92);
+    background: linear-gradient(180deg, #04f77c, #fbbf24);
+  }
+
+  .lbb-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #30e17b, #f59e0b);
+  }
+
   .animate-banner-drift {
     animation: banner-drift 10s ease-in-out infinite alternate;
   }

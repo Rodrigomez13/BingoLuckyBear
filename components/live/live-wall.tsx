@@ -202,9 +202,9 @@ export function LiveWall() {
                 <p className="text-sm font-semibold text-zinc-200">Bolillero</p>
                 <p className="text-sm text-amber-200">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
               </div>
-              <div className="grid max-h-64 grid-cols-5 gap-2 overflow-hidden sm:grid-cols-6 lg:grid-cols-5">
+              <div className="grid max-h-52 grid-cols-6 gap-1.5 overflow-hidden sm:grid-cols-8 lg:grid-cols-6">
                 {[...drawnNumbers].reverse().slice(0, 30).map((number) => (
-                  <div key={number} className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950">
+                  <div key={number} className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950">
                     {number}
                   </div>
                 ))}

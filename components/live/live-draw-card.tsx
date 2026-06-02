@@ -190,7 +190,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
           <div className="min-w-0 border-t border-white/10 bg-black/30 p-4 sm:p-5 lg:border-l lg:border-t-0">
             <p className="mb-3 text-sm font-semibold text-zinc-200">Bolillero</p>
-            <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-2">
+            <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-2">
               {drawnNumbers.length === 0 ? (
                 <div className="w-full flex-none rounded-md border border-dashed border-white/15 p-5 text-center text-sm text-zinc-400">
                   Todavia no salieron numeros.
@@ -199,7 +199,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
                 [...drawnNumbers].reverse().map((number) => (
                   <div
                     key={number}
-                    className="flex h-12 w-12 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-14 sm:w-14"
+                    className="flex h-9 w-9 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-10 sm:w-10"
                   >
                     {number}
                   </div>

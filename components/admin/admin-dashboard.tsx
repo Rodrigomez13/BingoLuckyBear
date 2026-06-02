@@ -94,6 +94,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isSavingPayment, setIsSavingPayment] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [rafflesPage, setRafflesPage] = useState(1)
+  const [paymentsPage, setPaymentsPage] = useState(1)
   const router = useRouter()
   const supabase = createClient()
   const activeRaffle = raffles.find((raffle) => raffle.is_active)
@@ -119,6 +121,12 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const cleanTextItems = (items: string[]) => items.map((item) => item.trim()).filter(Boolean)
   const prizeInputValues = [prize, additionalPrizes[0] ?? '', additionalPrizes[1] ?? '', additionalPrizes[2] ?? '']
   const prizeTargets = getPrizeSchedule(prizeInputValues)
+  const rafflesPerPage = 9
+  const paymentsPerPage = 8
+  const rafflesPageCount = Math.max(1, Math.ceil(sortedRaffles.length / rafflesPerPage))
+  const paymentsPageCount = Math.max(1, Math.ceil(paymentAccounts.length / paymentsPerPage))
+  const visibleRaffles = sortedRaffles.slice((rafflesPage - 1) * rafflesPerPage, rafflesPage * rafflesPerPage)
+  const visiblePaymentAccounts = paymentAccounts.slice((paymentsPage - 1) * paymentsPerPage, paymentsPage * paymentsPerPage)
 
   const updatePrizeInput = (index: number, value: string) => {
     if (index === 0) {
@@ -487,7 +495,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                     <span>Estado</span>
                     <span className="text-right">Acciones</span>
                   </div>
-                  {paymentAccounts.map((account) => (
+                  {visiblePaymentAccounts.map((account) => (
                     <div key={account.id} className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.1fr_1fr_1.15fr_0.9fr_0.75fr_96px] lg:items-center">
                       <div className="min-w-0">
                         <p className="truncate font-bold text-white">{account.name}</p>
@@ -522,6 +530,17 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                       </div>
                     </div>
                   ))}
+                  {paymentAccounts.length > paymentsPerPage && (
+                    <div className="px-4 py-3">
+                      <AdminPagination
+                        page={paymentsPage}
+                        pageCount={paymentsPageCount}
+                        total={paymentAccounts.length}
+                        onPrevious={() => setPaymentsPage((page) => Math.max(1, page - 1))}
+                        onNext={() => setPaymentsPage((page) => Math.min(paymentsPageCount, page + 1))}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -567,7 +586,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                     <span className="text-right">Acciones</span>
                   </div>
                   <div className="divide-y divide-white/10">
-                    {sortedRaffles.map((raffle) => {
+                    {visibleRaffles.map((raffle) => {
                       const badge = getRaffleBadge(raffle)
                       const cardsCount = raffle.bingo_cards?.[0]?.count ?? 0
 
@@ -637,6 +656,17 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                         </div>
                       )
                     })}
+                    {sortedRaffles.length > rafflesPerPage && (
+                      <div className="px-4 py-3">
+                        <AdminPagination
+                          page={rafflesPage}
+                          pageCount={rafflesPageCount}
+                          total={sortedRaffles.length}
+                          onPrevious={() => setRafflesPage((page) => Math.max(1, page - 1))}
+                          onNext={() => setRafflesPage((page) => Math.min(rafflesPageCount, page + 1))}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -648,7 +678,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(96vw,880px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
+          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-2rem)] w-[min(96vw,1120px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">Crear Nuevo Sorteo</DialogTitle>
             </DialogHeader>
@@ -767,7 +797,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-          <DialogContent className="w-[min(96vw,520px)] max-w-none border-zinc-800 bg-zinc-950 text-zinc-100">
+          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-2rem)] w-[min(96vw,640px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</DialogTitle>
             </DialogHeader>
@@ -798,7 +828,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={!!selectedRaffle} onOpenChange={(open) => !open && setSelectedRaffle(null)}>
-          <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1680px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 p-4 text-zinc-100 sm:p-6">
+          <DialogContent className="lbb-scrollbar max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1900px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 p-4 text-zinc-100 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-white">{selectedRaffle?.name ?? 'Sorteo'}</DialogTitle>
             </DialogHeader>
@@ -874,6 +904,48 @@ function AdminNavButton({
       {icon}
       <span>{label}</span>
     </button>
+  )
+}
+
+function AdminPagination({
+  page,
+  pageCount,
+  total,
+  onPrevious,
+  onNext,
+}: {
+  page: number
+  pageCount: number
+  total: number
+  onPrevious: () => void
+  onNext: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-zinc-400">
+        {total} registro{total !== 1 ? 's' : ''} - pagina {page} de {pageCount}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrevious}
+          disabled={page <= 1}
+          className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+        >
+          Anterior
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onNext}
+          disabled={page >= pageCount}
+          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+        >
+          Siguiente
+        </Button>
+      </div>
+    </div>
   )
 }
 

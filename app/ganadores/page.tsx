@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { CalendarDays, Crown, Hash, Radio, Trophy } from 'lucide-react'
+import { CalendarDays, Crown, Hash, Quote, Radio, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,6 +30,8 @@ interface BingoCard {
   created_at: string
   bingo_numbers: number[][]
   raffle_id: string
+  winner_photo_url?: string | null
+  winner_testimonial?: string | null
 }
 
 interface WinnerRecord {
@@ -55,10 +57,22 @@ async function getWinnerRecords() {
   }
 
   const raffleIds = raffles.map((raffle) => raffle.id)
-  const { data: cards } = await supabase
+  let cards: BingoCard[] | null = null
+  const { data, error } = await supabase
     .from('bingo_cards')
-    .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
+    .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id, winner_photo_url, winner_testimonial')
     .in('raffle_id', raffleIds)
+
+  if (error && /winner_photo_url|winner_testimonial|schema cache|column/i.test(error.message)) {
+    const fallback = await supabase
+      .from('bingo_cards')
+      .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
+      .in('raffle_id', raffleIds)
+
+    cards = (fallback.data ?? []) as BingoCard[]
+  } else {
+    cards = (data ?? []) as BingoCard[]
+  }
 
   const winners = (raffles as Raffle[]).flatMap((raffle) => {
     const raffleCards = (cards ?? []).filter((card) => card.raffle_id === raffle.id)
@@ -169,12 +183,30 @@ export default async function WinnersPage() {
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
             {winners.map((winner) => {
               const drawnNumbers = winner.raffle.drawn_numbers ?? []
-              const lastNumber = drawnNumbers[drawnNumbers.length - 1]
+              const compactNumbers = drawnNumbers.slice(-8)
+              const photoPath = winner.card.winner_photo_url
 
               return (
                 <Card key={`${winner.raffle.id}-${winner.card.id}-${winner.prizeNumber}`} className="overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
+                  <div className="grid min-h-full md:grid-cols-[180px_minmax(0,1fr)]">
+                    <div className="relative min-h-48 border-b border-amber-400/20 bg-gradient-to-br from-amber-400/25 to-emerald-400/10 md:border-b-0 md:border-r">
+                      {photoPath ? (
+                        <Image
+                          src={`/api/file?pathname=${encodeURIComponent(photoPath)}`}
+                          alt={`Foto de ${winner.card.full_name}`}
+                          fill
+                          sizes="(min-width: 768px) 180px, 100vw"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full min-h-48 items-center justify-center">
+                          <Image src="/logo-solo.svg" alt="" width={120} height={120} className="h-24 w-24 object-contain opacity-90" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
                   <div className="border-b border-amber-400/20 bg-gradient-to-r from-amber-400/15 to-emerald-400/10 p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
                           <Trophy className="mr-1 h-3.5 w-3.5" />
@@ -186,13 +218,16 @@ export default async function WinnersPage() {
                         <p className="mt-1 text-sm text-zinc-300">{winner.raffle.name}</p>
                         <p className="mt-1 font-bold text-amber-200">{winner.amount || 'Monto a confirmar'}</p>
                       </div>
-                      <Image src="/logo-solo.svg" alt="" width={84} height={84} className="h-16 w-16 object-contain opacity-90" />
+                      <div className="rounded-md border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-right">
+                        <p className="text-xs font-bold uppercase text-emerald-100">Pago publicado</p>
+                        <p className="text-xs text-zinc-300">Referencia oficial</p>
+                      </div>
                     </div>
                   </div>
                   <CardContent className="space-y-5 p-5">
                     <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
                       <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.card.card_number} />
-                      <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber || lastNumber)} />
+                      <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber)} />
                       <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={formatArgentinaDate(winner.raffle.created_at)} />
                     </div>
 
@@ -203,17 +238,32 @@ export default async function WinnersPage() {
                       </p>
                     </div>
 
-                    <div>
-                      <p className="mb-3 text-sm font-semibold text-zinc-200">Numeros cantados</p>
-                      <div className="flex flex-wrap gap-2">
-                        {drawnNumbers.map((number) => (
-                          <span key={number} className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950">
+                    <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
+                        <Quote className="h-4 w-4 text-amber-200" />
+                        Confianza Lucky Bingo Bear
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-zinc-300">
+                        {winner.card.winner_testimonial || 'Ganador validado con carton registrado y premio adjudicado automaticamente por el sistema.'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-200">Bolillas de cierre</p>
+                        <p className="text-xs text-zinc-500">{drawnNumbers.length} numeros cantados en total</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {compactNumbers.map((number) => (
+                          <span key={number} className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-[11px] font-bold text-zinc-950">
                             {number}
                           </span>
                         ))}
                       </div>
                     </div>
                   </CardContent>
+                    </div>
+                  </div>
                 </Card>
               )
             })}
