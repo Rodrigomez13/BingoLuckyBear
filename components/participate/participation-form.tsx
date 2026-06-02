@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { BearLogo } from '@/components/bear-logo'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
+import { PurchaseConfirmation } from '@/components/participate/purchase-confirmation'
 import { PAYMENT_METHODS } from '@/lib/payment'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
@@ -77,6 +78,9 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
   const [previewType, setPreviewType] = useState<'image' | 'pdf' | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [confirmedCards, setConfirmedCards] = useState<BingoCard[]>([])
+  const [receiptUrl, setReceiptUrl] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
   const prizeSchedule = getPrizeSchedule(prizeAmounts)
@@ -235,7 +239,10 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
             },
           ]
 
-      onCardsCreated(createdCards)
+      // Show confirmation with receipt download
+      setConfirmedCards(createdCards)
+      setReceiptUrl(cardData.payment_receipt_url || pathname)
+      setShowConfirmation(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -243,8 +250,45 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
     }
   }
 
+  const handleConfirmationContinue = () => {
+    setShowConfirmation(false)
+    setConfirmedCards([])
+    setReceiptUrl('')
+    onCardsCreated(confirmedCards)
+    // Reset form
+    setFormData({
+      full_name: '',
+      dni: '',
+      address: '',
+      phone: '',
+      email: '',
+      payment_method: '',
+      payment_reference: '',
+      payout_account_kind: '',
+      payout_account: '',
+      payout_holder_name: '',
+      quantity: '1',
+    })
+    if (preview) {
+      URL.revokeObjectURL(preview)
+    }
+    setFile(null)
+    setPreview(null)
+    setPreviewType(null)
+  }
+
   return (
     <div className="space-y-6">
+      {/* Purchase Confirmation Modal */}
+      {showConfirmation && (
+        <PurchaseConfirmation
+          cards={confirmedCards}
+          raffle={raffle}
+          receiptUrl={receiptUrl}
+          onContinue={handleConfirmationContinue}
+        />
+      )}
+
       {/* Raffle Info Header */}
       <div className="text-center">
         <BearLogo size={68} className="mx-auto mb-4" />

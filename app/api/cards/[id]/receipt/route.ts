@@ -22,7 +22,7 @@ interface BingoCardRecord {
   payment_reference?: string | null
 }
 
-const OPENAI_RECEIPT_MODEL = process.env.OPENAI_RECEIPT_MODEL || 'gpt-4.1-mini'
+const OPENAI_RECEIPT_MODEL = process.env.OPENAI_RECEIPT_MODEL || 'gpt-4o-mini'
 
 async function ensureAdminOwnsCard(cardId: string, userId: string) {
   const supabase = await createServiceClient()
@@ -123,19 +123,46 @@ async function parseReceiptWithOpenAI({
   }
 
   const isPdf = contentType === 'application/pdf'
-  const filePart = isPdf
-    ? {
-        type: 'input_file',
-        filename,
-        file_data: `data:${contentType};base64,${base64}`,
-      }
-    : {
-        type: 'input_image',
-        image_url: `data:${contentType};base64,${base64}`,
-        detail: 'high',
-      }
+  
+  // Construir el content array con imagen/documento y texto
+  const content: Array<{ type: string; [key: string]: unknown }> = [
+    {
+      type: 'text',
+      text: [
+        'Extrae datos de este comprobante de transferencia argentino.',
+        'Devuelve solo JSON valido con las claves del schema.',
+        `Monto esperado del carton: ${expectedAmount || 'desconocido'}.`,
+        `Numero de operacion informado por el comprador: ${expectedOperationNumber || 'desconocido'}.`,
+        `Cuenta destino esperada: ${expectedDestinationAccount || 'desconocida'}.`,
+      ].join('\n'),
+    },
+  ]
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  if (isPdf) {
+    // Para PDFs usar document type
+    content.push({
+      type: 'document',
+      document: {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: base64,
+        },
+      },
+    })
+  } else {
+    // Para imágenes usar image_url type
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${contentType};base64,${base64}`,
+        detail: 'high',
+      },
+    })
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -143,27 +170,15 @@ async function parseReceiptWithOpenAI({
     },
     body: JSON.stringify({
       model: OPENAI_RECEIPT_MODEL,
-      input: [
+      messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: [
-                'Extrae datos de este comprobante de transferencia argentino.',
-                'Devuelve solo JSON valido con las claves del schema.',
-                `Monto esperado del carton: ${expectedAmount || 'desconocido'}.`,
-                `Numero de operacion informado por el comprador: ${expectedOperationNumber || 'desconocido'}.`,
-                `Cuenta destino esperada: ${expectedDestinationAccount || 'desconocida'}.`,
-              ].join('\n'),
-            },
-            filePart,
-          ],
+          content,
         },
       ],
-      text: {
-        format: {
-          type: 'json_schema',
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
           name: 'receipt_parse',
           strict: true,
           schema: {
@@ -192,7 +207,15 @@ async function parseReceiptWithOpenAI({
     throw new Error(message)
   }
 
-  return { configured: true as const, parsed: coerceParsedReceiptData(JSON.parse(extractOutputText(data))) }
+  // Extraer el contenido JSON de la respuesta
+  const choice = (data.choices?.[0] as { message?: { content?: string } })
+  const content_text = choice?.message?.content
+  
+  if (!content_text) {
+    throw new Error('OpenAI no devolvio una respuesta valida')
+  }
+
+  return { configured: true as const, parsed: coerceParsedReceiptData(JSON.parse(content_text)) }
 }
 
 export async function PATCH(
