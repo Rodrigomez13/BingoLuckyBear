@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Pause, Play, RefreshCw, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
+import { AlertTriangle, MessageCircle, Pause, Play, RefreshCw, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import {
   getPrizeAwards,
   getPrizeSchedule,
 } from '@/lib/bingo'
+import { buildWinnerWhatsAppUrl } from '@/lib/whatsapp'
 
 interface Raffle {
   id: string
@@ -35,6 +36,7 @@ interface BingoCard {
   id: string
   card_number: string
   full_name: string
+  phone?: string | null
   bingo_numbers?: number[][] | null
 }
 
@@ -356,9 +358,32 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
                   </p>
                   <div className="mt-2 space-y-1">
                     {award.winners.map((winner) => (
-                      <p key={`${award.prizeNumber}-${winner.id}`} className="text-zinc-200">
-                        {winner.full_name} - {winner.card_number}
-                      </p>
+                      <div key={`${award.prizeNumber}-${winner.id}`} className="flex flex-col gap-2 rounded-md border border-white/10 bg-white/[0.03] p-2 text-zinc-200 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                          {winner.full_name} - {winner.card_number}
+                        </span>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="bg-[#25d366] font-bold text-zinc-950 hover:bg-[#30e17b]"
+                        >
+                          <a
+                            href={buildWinnerWhatsAppUrl({
+                              to: winner.phone ?? '',
+                              fullName: winner.full_name,
+                              raffleName: raffle.name,
+                              prizeLabel: award.label,
+                              amount: award.amount,
+                              cardNumber: winner.card_number,
+                            })}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            WhatsApp
+                          </a>
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>

@@ -152,12 +152,17 @@ async function notifyNewWinnerAwards(
           amount: award.amount,
           cardNumber: winner.card_number,
         })
+        const status = result.sent ? 'sent' : result.reason === 'missing_config' ? 'pending' : 'failed'
 
         await table(supabase, 'winner_notifications')
           .update({
-            status: result.sent ? 'sent' : 'failed',
+            status,
             provider_message_id: result.providerMessageId ?? null,
-            error_message: result.sent ? null : result.error ?? result.reason ?? 'No se pudo enviar WhatsApp',
+            error_message: result.sent
+              ? null
+              : result.reason === 'missing_config'
+                ? 'Envio manual pendiente'
+                : result.error ?? result.reason ?? 'No se pudo enviar WhatsApp',
             sent_at: result.sent ? new Date().toISOString() : null,
           })
           .eq('id', notification.id)

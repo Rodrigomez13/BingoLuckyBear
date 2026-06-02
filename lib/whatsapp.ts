@@ -1,4 +1,4 @@
-interface WinnerWhatsAppPayload {
+export interface WinnerWhatsAppPayload {
   to: string
   fullName: string
   raffleName: string
@@ -11,13 +11,20 @@ function normalizePhoneNumber(value: string) {
   return value.replace(/[^\d]/g, '')
 }
 
-function buildWinnerMessage(payload: WinnerWhatsAppPayload) {
+export function buildWinnerMessage(payload: WinnerWhatsAppPayload) {
   return [
     `Hola ${payload.fullName}.`,
     `Tu carton ${payload.cardNumber} gano el ${payload.prizeLabel} de ${payload.raffleName}.`,
     `Premio: ${payload.amount || 'monto a confirmar'}.`,
     'Lucky Bingo Bear ya tiene tus datos de cobro para coordinar el pago.',
   ].join('\n')
+}
+
+export function buildWinnerWhatsAppUrl(payload: WinnerWhatsAppPayload) {
+  const to = normalizePhoneNumber(payload.to)
+  const message = encodeURIComponent(buildWinnerMessage(payload))
+
+  return to ? `https://wa.me/${to}?text=${message}` : `https://wa.me/?text=${message}`
 }
 
 export async function sendWinnerWhatsApp(payload: WinnerWhatsAppPayload) {

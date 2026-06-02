@@ -30,6 +30,7 @@ export interface BingoPrizeCard {
   id: string
   card_number: string
   full_name: string
+  phone?: string | null
   bingo_numbers?: number[][] | null
 }
 
