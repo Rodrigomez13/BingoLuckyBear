@@ -759,14 +759,14 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1520px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(99vw,1760px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
           <DialogHeader className="border-b border-zinc-800 px-5 py-4">
             <DialogTitle className="text-white">
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
             {selectedCard && (
-            <div className="lbb-scrollbar grid min-h-0 flex-1 gap-0 overflow-y-auto 2xl:grid-cols-[minmax(0,0.92fr)_minmax(260px,0.68fr)_minmax(220px,300px)] 2xl:overflow-hidden">
+            <div className="lbb-scrollbar grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,0.92fr)_minmax(280px,0.68fr)_minmax(240px,320px)] xl:overflow-hidden">
               <div className="min-w-0 space-y-4 border-b border-zinc-800 p-4 sm:p-5 xl:border-b-0">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>

@@ -1,12 +1,13 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { CalendarDays, Crown, Hash, Quote, Radio, Trophy } from 'lucide-react'
+import { CalendarDays, CheckCircle2, Crown, Hash, MessageCircle, Quote, Star, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { SiteHeader } from '@/components/site-header'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards, getPrizeLabel } from '@/lib/bingo'
 import { formatArgentinaDate } from '@/lib/date'
 import { createServiceClient } from '@/lib/supabase/server'
-import { SiteHeader } from '@/components/site-header'
+import { getWinnerExample, winnerExamples } from '@/lib/winner-examples'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,21 @@ interface WinnerRecord {
   rowIndex: number
   amount: string
   drawnNumber: number
+}
+
+interface WinnerDisplay {
+  key: string
+  name: string
+  date: string
+  raffleName: string
+  cardNumber: string
+  prizeLabel: string
+  amount: string
+  photo: string
+  quote: string
+  drawnNumber?: number
+  rowLabel: string
+  isExample: boolean
 }
 
 async function getWinnerRecords() {
@@ -96,184 +112,189 @@ async function getWinnerRecords() {
   return { raffles: raffles as Raffle[], winners }
 }
 
+function toWinnerDisplay(winner: WinnerRecord, index: number): WinnerDisplay {
+  const example = getWinnerExample(index)
+  const photo = winner.card.winner_photo_url
+    ? `/api/file?pathname=${encodeURIComponent(winner.card.winner_photo_url)}`
+    : example.image
+
+  return {
+    key: `${winner.raffle.id}-${winner.card.id}-${winner.prizeNumber}`,
+    name: winner.card.full_name,
+    date: formatArgentinaDate(winner.raffle.draw_date ?? winner.raffle.created_at),
+    raffleName: winner.raffle.name,
+    cardNumber: winner.card.card_number,
+    prizeLabel: getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4),
+    amount: winner.amount || 'Monto a confirmar',
+    photo,
+    quote: winner.card.winner_testimonial || 'Ganador validado con carton registrado, premio publicado y aviso enviado por WhatsApp.',
+    drawnNumber: winner.drawnNumber,
+    rowLabel: winner.rowIndex >= 0 ? `Fila ${winner.rowIndex + 1}` : 'Carton completo',
+    isExample: false,
+  }
+}
+
+function getExampleDisplays(): WinnerDisplay[] {
+  return winnerExamples.slice(0, 4).map((winner, index) => ({
+    key: `example-${winner.name}`,
+    name: winner.name,
+    date: winner.date,
+    raffleName: 'Sorteo de referencia',
+    cardNumber: `LBB-${String(index + 1).padStart(4, '0')}`,
+    prizeLabel: winner.label,
+    amount: winner.prize,
+    photo: winner.image,
+    quote: winner.quote,
+    drawnNumber: undefined,
+    rowLabel: winner.label,
+    isExample: true,
+  }))
+}
+
 export default async function WinnersPage() {
   const { raffles, winners } = await getWinnerRecords()
+  const displays = winners.map(toWinnerDisplay)
+  const visibleDisplays = displays.length > 0 ? displays : getExampleDisplays()
   const latestRaffle = raffles[0]
-  const latestWinners = latestRaffle ? winners.filter((winner) => winner.raffle.id === latestRaffle.id) : []
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
+    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
+      <div className="lbb-ambient" />
       <SiteHeader activePath="ganadores" kicker="Resultados oficiales" compact />
 
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+      <section className="relative z-10 mx-auto max-w-[1800px] px-4 pb-12 pt-[104px] sm:px-6 lg:px-8 2xl:px-10">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
           <div>
             <Badge className="mb-5 rounded-full bg-emerald-500 text-white hover:bg-emerald-500">
               <Crown className="mr-1 h-3.5 w-3.5" />
-              Resultados oficiales
+              Comunidad Lucky
             </Badge>
-            <h1 className="max-w-4xl font-mono text-4xl font-bold leading-[0.98] tracking-normal text-white sm:text-6xl">
-              Ganadores reales. Resultados claros.
+            <h1 className="max-w-4xl font-mono text-4xl font-black leading-[0.92] tracking-normal text-white sm:text-6xl lg:text-7xl">
+              Lo que dicen nuestros jugadores
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
-              Cada sorteo cerrado queda como referencia publica: premio, monto, carton ganador y datos que demuestran que la jugada se resolvio con transparencia.
+              Cada sorteo cerrado deja una referencia publica con ganador, premio y monto. Cuando se carga una foto del ganador, tambien queda visible para reforzar la confianza de la comunidad.
             </p>
           </div>
 
-          <Card className="border-amber-400/25 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
-            <CardContent className="grid grid-cols-2 gap-4 p-5">
-              <Metric value={String(raffles.length)} label="sorteos cerrados" />
-              <Metric value={String(winners.length)} label="premios adjudicados" />
+          <Card className="lbb-premium-panel rounded-[1.35rem] border-white/10 text-zinc-100">
+            <CardContent className="grid grid-cols-3 gap-3 p-4">
+              <Metric value={String(raffles.length)} label="sorteos" />
+              <Metric value={String(winners.length)} label="premios" />
+              <Metric value={latestRaffle ? 'Activo' : 'Listo'} label="historial" />
             </CardContent>
           </Card>
         </div>
 
-        {winners.length === 0 ? (
-          <div className="mt-12 rounded-lg border border-dashed border-amber-300/30 bg-zinc-950/55 p-10 text-center">
-            <Trophy className="mx-auto mb-4 h-12 w-12 text-amber-300" />
-            <h2 className="text-xl font-semibold tracking-tight text-white">
-              Todavia no hay ganadores publicados
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-zinc-400">
-              Cuando un sorteo se finalice y exista una fila premiada, aparecera automaticamente en esta pagina.
-            </p>
+        {displays.length === 0 && (
+          <div className="mt-8 rounded-[1.2rem] border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-50">
+            Esta es una vista de ejemplo con imagenes de referencia. Cuando finalices sorteos reales, los ganadores publicados reemplazaran automaticamente esta seccion.
           </div>
-        ) : (
-          <>
-          {latestRaffle && (
-            <div className="mt-12 rounded-lg border border-amber-400/25 bg-zinc-950/80 p-5 shadow-xl shadow-black/20">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
-                <div>
-                  <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
-                    Ultimo sorteo cerrado
-                  </Badge>
-                  <h2 className="text-2xl font-semibold tracking-tight text-white">{latestRaffle.name}</h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-300">
-                    {latestWinners.length} premio{latestWinners.length !== 1 ? 's' : ''} adjudicado{latestWinners.length !== 1 ? 's' : ''}. Si fuiste ganador, tambien recibis el aviso por WhatsApp con el monto correspondiente.
-                  </p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-black/20 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Fecha</p>
-                  <p className="mt-2 font-bold text-white">
-                    {formatArgentinaDate(latestRaffle.draw_date ?? latestRaffle.created_at)}
-                  </p>
-                </div>
-              </div>
+        )}
+
+        <div className="mt-8">
+          <div className="no-scrollbar -mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 xl:grid-cols-4">
+            {visibleDisplays.map((winner, index) => (
+              <WinnerCard key={winner.key} winner={winner} index={index} />
+            ))}
+          </div>
+        </div>
+
+        {latestRaffle && (
+          <section className="mt-8 grid gap-4 rounded-[1.35rem] border border-white/10 bg-black/30 p-4 shadow-2xl shadow-black/25 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Ultimo sorteo cerrado</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">{latestRaffle.name}</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">
+                Fecha: {formatArgentinaDate(latestRaffle.draw_date ?? latestRaffle.created_at)}. Los resultados quedan disponibles como referencia para cualquier jugador.
+              </p>
             </div>
-          )}
-
-          <div className="mt-6 grid gap-5 lg:grid-cols-2">
-            {winners.map((winner) => {
-              const drawnNumbers = winner.raffle.drawn_numbers ?? []
-              const compactNumbers = drawnNumbers.slice(-8)
-              const photoPath = winner.card.winner_photo_url
-
-              return (
-                <Card key={`${winner.raffle.id}-${winner.card.id}-${winner.prizeNumber}`} className="overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
-                  <div className="grid min-h-full md:grid-cols-[180px_minmax(0,1fr)]">
-                    <div className="relative min-h-48 border-b border-amber-400/20 bg-gradient-to-br from-amber-400/25 to-emerald-400/10 md:border-b-0 md:border-r">
-                      {photoPath ? (
-                        <Image
-                          src={`/api/file?pathname=${encodeURIComponent(photoPath)}`}
-                          alt={`Foto de ${winner.card.full_name}`}
-                          fill
-                          sizes="(min-width: 768px) 180px, 100vw"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full min-h-48 items-center justify-center">
-                          <Image src="/logo-solo.svg" alt="" width={120} height={120} className="h-24 w-24 object-contain opacity-90" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                  <div className="border-b border-amber-400/20 bg-gradient-to-r from-amber-400/15 to-emerald-400/10 p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
-                          <Trophy className="mr-1 h-3.5 w-3.5" />
-                          {getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4)}
-                        </Badge>
-                        <h2 className="text-xl font-semibold tracking-tight text-white">
-                          {winner.card.full_name}
-                        </h2>
-                        <p className="mt-1 text-sm text-zinc-300">{winner.raffle.name}</p>
-                        <p className="mt-1 font-bold text-amber-200">{winner.amount || 'Monto a confirmar'}</p>
-                      </div>
-                      <div className="rounded-md border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-right">
-                        <p className="text-xs font-bold uppercase text-emerald-100">Pago publicado</p>
-                        <p className="text-xs text-zinc-300">Referencia oficial</p>
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="space-y-5 p-5">
-                    <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
-                      <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.card.card_number} />
-                      <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber)} />
-                      <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={formatArgentinaDate(winner.raffle.created_at)} />
-                    </div>
-
-                    <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-4">
-                      <p className="text-sm font-semibold text-emerald-100">Fila premiada</p>
-                      <p className="mt-1 text-sm text-zinc-200">
-                        {getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4)} - {winner.rowIndex >= 0 ? `fila ${winner.rowIndex + 1}` : 'carton completo'}
-                      </p>
-                    </div>
-
-                    <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-                      <p className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-                        <Quote className="h-4 w-4 text-amber-200" />
-                        Confianza Lucky Bingo Bear
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-zinc-300">
-                        {winner.card.winner_testimonial || 'Ganador validado con carton registrado y premio adjudicado automaticamente por el sistema.'}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-200">Bolillas de cierre</p>
-                        <p className="text-xs text-zinc-500">{drawnNumbers.length} numeros cantados en total</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {compactNumbers.map((number) => (
-                          <span key={number} className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-[11px] font-bold text-zinc-950">
-                            {number}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-          </>
+            <div className="flex flex-wrap gap-2">
+              {(latestRaffle.drawn_numbers ?? []).slice(-6).map((number) => (
+                <span key={number} className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-300 text-xs font-black text-zinc-950">
+                  {number}
+                </span>
+              ))}
+            </div>
+          </section>
         )}
       </section>
     </main>
   )
 }
 
+function WinnerCard({ winner, index }: { winner: WinnerDisplay; index: number }) {
+  return (
+    <article className="group w-[min(82vw,330px)] shrink-0 snap-start overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-amber-300/40 lg:w-auto">
+      <div className="relative aspect-[1.25] overflow-hidden bg-zinc-950">
+        <Image
+          src={winner.photo}
+          alt={`Ganador ${winner.name}`}
+          fill
+          sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 82vw"
+          className="object-cover transition duration-500 group-hover:scale-105"
+          priority={index < 2}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        <Badge className="absolute left-3 top-3 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
+          <Trophy className="mr-1 h-3.5 w-3.5" />
+          {winner.prizeLabel}
+        </Badge>
+        {winner.isExample && (
+          <Badge className="absolute right-3 top-3 rounded-full bg-zinc-950/75 text-zinc-200 hover:bg-zinc-950/75">
+            Ejemplo
+          </Badge>
+        )}
+        <div className="absolute bottom-3 left-3 right-3">
+          <p className="text-2xl font-black text-white">{winner.amount}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-200">{winner.raffleName}</p>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <div className="flex gap-1 text-amber-300">
+          {Array.from({ length: 5 }).map((_, starIndex) => (
+            <Star key={starIndex} className="h-4 w-4 fill-current" />
+          ))}
+        </div>
+
+        <p className="line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-zinc-300">
+          <Quote className="mr-1 inline h-4 w-4 text-amber-200" />
+          {winner.quote}
+        </p>
+
+        <div className="grid gap-2 text-xs text-zinc-400">
+          <Info icon={<CheckCircle2 className="h-4 w-4" />} label={winner.name} value={winner.date} />
+          <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.cardNumber} />
+          <Info icon={<CalendarDays className="h-4 w-4" />} label={winner.rowLabel} value={winner.drawnNumber ? `Bolilla ${formatDrawnNumber(winner.drawnNumber)}` : 'Referencia visual'} />
+        </div>
+
+        <div className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-100">
+          <MessageCircle className="h-4 w-4" />
+          Aviso y pago coordinado por WhatsApp
+        </div>
+      </div>
+    </article>
+  )
+}
+
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-md border border-white/10 bg-black/20 p-4">
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-200">{label}</p>
+    <div className="rounded-md border border-white/10 bg-black/20 p-3">
+      <p className="text-xl font-black text-white">{value}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-amber-200">{label}</p>
     </div>
   )
 }
 
 function Info({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/10 bg-white/[0.04] p-3">
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-200">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+      <span className="flex min-w-0 items-center gap-2 font-semibold text-zinc-200">
         {icon}
-        {label}
-      </p>
-      <p className="mt-2 break-all text-sm font-semibold text-white">{value}</p>
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="shrink-0 text-right text-zinc-400">{value}</span>
     </div>
   )
 }

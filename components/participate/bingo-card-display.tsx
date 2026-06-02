@@ -58,11 +58,24 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       if (!target) return
 
       const { default: html2canvas } = await import('html2canvas')
+      await document.fonts?.ready
+      await Promise.all(
+        Array.from(target.querySelectorAll('img')).map((image) => {
+          if (image.complete) return Promise.resolve()
+          return new Promise<void>((resolve) => {
+            image.onload = () => resolve()
+            image.onerror = () => resolve()
+          })
+        })
+      )
+
       const canvas = await html2canvas(target, {
-        backgroundColor: null,
-        scale: Math.min(3, window.devicePixelRatio || 2),
+        backgroundColor: '#09090b',
+        scale: Math.max(2, Math.min(3, window.devicePixelRatio || 2)),
         useCORS: true,
         logging: false,
+        windowWidth: target.scrollWidth,
+        windowHeight: target.scrollHeight,
       })
 
       const link = document.createElement('a')
@@ -260,7 +273,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       {/* Full Screen Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
-          <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-[min(94vw,430px)] flex-col overflow-hidden rounded-lg border border-amber-400/25 bg-zinc-950/95 shadow-2xl shadow-black/50">
+          <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-[min(96vw,520px)] flex-col overflow-hidden rounded-[1.25rem] border border-amber-400/25 bg-zinc-950/95 shadow-2xl shadow-black/50">
             <button
               onClick={() => setShowModal(false)}
               className="absolute right-3 top-3 z-20 rounded-full bg-zinc-900/90 p-2 transition-colors hover:bg-zinc-800"

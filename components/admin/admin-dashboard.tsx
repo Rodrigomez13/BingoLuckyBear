@@ -678,11 +678,11 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </div>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(96vw,1120px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(98vw,1480px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">Crear Nuevo Sorteo</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateRaffle} className="space-y-4">
+            <form onSubmit={handleCreateRaffle} className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-zinc-300">Nombre del Sorteo</Label>
                 <Input
@@ -694,14 +694,14 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 xl:row-span-2">
                 <Label htmlFor="description" className="text-zinc-300">Descripcion (opcional)</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe el sorteo..."
-                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                  className="min-h-28 border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 xl:min-h-full"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -732,7 +732,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   </select>
                 </div>
               </div>
-              <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
+              <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 xl:col-span-2">
                 <div>
                   <Label className="text-zinc-200">Premios por fila</Label>
                   <p className="mt-1 text-sm text-zinc-400">
@@ -771,6 +771,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                 />
               </div>
+              <div className="xl:col-span-2">
               <DynamicTextList
                 title="Promos por cantidad"
                 emptyText="Opcional: agrega ofertas como 3 cartones por $5.000."
@@ -779,8 +780,9 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                 items={bundleOffers}
                 onChange={setBundleOffers}
               />
+              </div>
               {createError && (
-                <div className="flex items-start gap-2 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
+                <div className="flex items-start gap-2 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100 xl:col-span-2">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{createError}</span>
                 </div>
@@ -788,7 +790,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 xl:col-span-2"
               >
                 {isLoading ? 'Creando...' : 'Crear Sorteo'}
               </Button>
@@ -797,18 +799,18 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(96vw,640px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-2rem)] w-[min(96vw,860px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
             <DialogHeader>
               <DialogTitle className="text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={savePaymentAccount} className="space-y-3">
+            <form onSubmit={savePaymentAccount} className="grid gap-3 sm:grid-cols-2">
               <Input value={paymentForm.name} onChange={(event) => setPaymentForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nombre interno, ej: Mercado Pago" className="border-zinc-700 bg-zinc-900 text-white" />
               <Input value={paymentForm.holder} onChange={(event) => setPaymentForm((current) => ({ ...current, holder: event.target.value }))} placeholder="Titular de la cuenta" className="border-zinc-700 bg-zinc-900 text-white" />
               <Input value={paymentForm.alias} onChange={(event) => setPaymentForm((current) => ({ ...current, alias: event.target.value }))} placeholder="Alias" className="border-zinc-700 bg-zinc-900 text-white" />
               <Input value={paymentForm.cbu} onChange={(event) => setPaymentForm((current) => ({ ...current, cbu: event.target.value }))} placeholder="CBU/CVU" className="border-zinc-700 bg-zinc-900 text-white" />
               <Input value={paymentForm.bank} onChange={(event) => setPaymentForm((current) => ({ ...current, bank: event.target.value }))} placeholder="Banco o billetera" className="border-zinc-700 bg-zinc-900 text-white" />
               <Input value={paymentForm.concept} onChange={(event) => setPaymentForm((current) => ({ ...current, concept: event.target.value }))} placeholder="Concepto sugerido" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Textarea value={paymentForm.note} onChange={(event) => setPaymentForm((current) => ({ ...current, note: event.target.value }))} placeholder="Nota para el comprobante" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Textarea value={paymentForm.note} onChange={(event) => setPaymentForm((current) => ({ ...current, note: event.target.value }))} placeholder="Nota para el comprobante" className="border-zinc-700 bg-zinc-900 text-white sm:col-span-2" />
               <label className="flex items-center gap-2 text-sm text-zinc-300">
                 <input
                   type="checkbox"
@@ -818,8 +820,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                 />
                 Usar como cuenta predeterminada
               </label>
-              {paymentError && <p className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">{paymentError}</p>}
-              <Button type="submit" disabled={isSavingPayment} className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
+              {paymentError && <p className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100 sm:col-span-2">{paymentError}</p>}
+              <Button type="submit" disabled={isSavingPayment} className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300 sm:col-span-2">
                 <Save className="mr-2 h-4 w-4" />
                 {isSavingPayment ? 'Guardando' : 'Guardar'}
               </Button>
@@ -828,7 +830,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </Dialog>
 
         <Dialog open={!!selectedRaffle} onOpenChange={(open) => !open && setSelectedRaffle(null)}>
-          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1900px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 p-4 text-zinc-100 sm:p-6">
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(99vw,2100px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 p-4 text-zinc-100 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-white">{selectedRaffle?.name ?? 'Sorteo'}</DialogTitle>
             </DialogHeader>
