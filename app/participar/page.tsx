@@ -119,16 +119,21 @@ export default function ParticipatePage() {
     <div className="lbb-page-shell relative min-h-screen text-zinc-100">
       <div className="lbb-ambient" />
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[#04f77c]/20 bg-[#101010]/92 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-3">
+      <header className="sticky top-3 z-50 px-3 sm:top-5">
+        <div className="mx-auto max-w-6xl rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex min-w-0 items-center gap-3">
               <BearLogo size={38} />
-              <span className="text-lg font-semibold tracking-tight text-white">
-                Lucky Bingo Bear
-              </span>
+              <div className="min-w-0">
+                <span className="block truncate text-base font-bold tracking-tight text-white">
+                  Lucky Bingo Bear
+                </span>
+                <span className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300 sm:block">
+                  Participar
+                </span>
+              </div>
             </Link>
-            <Button asChild variant="outline" className="border-[#04f77c]/40 bg-transparent text-[#04f77c] hover:bg-[#04f77c]/10">
+            <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
               <Link href="/">Volver al Inicio</Link>
             </Button>
           </div>

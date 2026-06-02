@@ -104,37 +104,42 @@ export default async function WinnersPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
-      <header className="sticky top-0 z-50 border-b border-amber-400/20 bg-zinc-950/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
+      <header className="sticky top-3 z-50 px-3 sm:top-5">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
             <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={46} height={46} className="h-11 w-11 object-contain" />
-            <span className="text-lg font-semibold tracking-tight text-white">
-              Lucky Bingo Bear
-            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-base font-bold tracking-tight text-white">
+                Lucky Bingo Bear
+              </span>
+              <span className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300 sm:block">
+                Resultados oficiales
+              </span>
+            </div>
           </Link>
           <nav className="flex items-center gap-3">
             <Link href="/en-vivo" className="hidden text-sm font-medium text-amber-200 transition-colors hover:text-white sm:inline">
               En vivo
             </Link>
-            <Button asChild className="bg-amber-400 font-semibold text-zinc-950 hover:bg-amber-300">
+            <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
               <Link href="/participar">Participar</Link>
             </Button>
           </nav>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
           <div>
-            <Badge className="mb-5 bg-emerald-500 text-white hover:bg-emerald-500">
+            <Badge className="mb-5 rounded-full bg-emerald-500 text-white hover:bg-emerald-500">
               <Crown className="mr-1 h-3.5 w-3.5" />
               Resultados oficiales
             </Badge>
-            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-              Referencia del ultimo sorteo
+            <h1 className="max-w-4xl font-mono text-4xl font-bold leading-[0.98] tracking-normal text-white sm:text-6xl">
+              Ganadores reales. Resultados claros.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
-              Aca quedan publicados los ganadores, montos, cartones y numeros cantados de los sorteos cerrados.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
+              Cada sorteo cerrado queda como referencia publica: premio, monto, carton ganador y datos que demuestran que la jugada se resolvio con transparencia.
             </p>
           </div>
 

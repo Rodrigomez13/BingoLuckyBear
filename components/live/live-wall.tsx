@@ -100,15 +100,15 @@ export function LiveWall() {
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(245,158,11,0.26),transparent_34rem),radial-gradient(circle_at_85%_20%,rgba(16,185,129,0.14),transparent_30rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
       <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col px-4 py-6 sm:px-6 lg:px-8 2xl:px-10">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
+        <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
             <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={58} height={58} className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-200">Lucky Bingo Bear</p>
-              <p className="text-xs text-zinc-400">Pantalla en vivo</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">Lucky Bingo Bear</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">Pantalla en vivo</p>
             </div>
           </Link>
-          <div className="rounded-md border border-red-400/35 bg-red-500/15 px-4 py-2 text-sm font-bold uppercase tracking-wide text-red-100">
+          <div className="rounded-full border border-red-400/35 bg-red-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wide text-red-100 sm:text-sm">
             <Radio className="mr-2 inline h-4 w-4" />
             {hasStarted ? 'En vivo' : 'Sorteo activo'}
           </div>

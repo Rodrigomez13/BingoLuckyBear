@@ -1,16 +1,18 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Ticket, Trophy } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatArgentinaDate } from '@/lib/date'
 
 const floatingBalls = [
-  { number: 7, className: 'left-[7%] top-28 bg-red-500' },
-  { number: 21, className: 'right-[8%] top-36 bg-amber-400 text-zinc-950' },
-  { number: 45, className: 'left-[18%] bottom-28 bg-emerald-500' },
-  { number: 88, className: 'right-[13%] bottom-20 bg-sky-500' },
+  { number: 7, className: 'left-[54%] top-24 border-white/10 bg-zinc-950 text-amber-300' },
+  { number: 21, className: 'right-[9%] top-36 border-white/10 bg-zinc-950 text-amber-300' },
+  { number: 45, className: 'left-[52%] bottom-24 border-white/10 bg-zinc-950 text-amber-300' },
+  { number: 88, className: 'right-[11%] bottom-28 border-white/10 bg-zinc-950 text-amber-300' },
 ]
+
+const storyChips = ['🎉 Primer BINGO', '🎱 Bolillas en vivo', '🃏 Tu carton digital', '👑 Corona de ganador', '🐻 Lucky Bear']
 
 interface HeroSectionProps {
   raffleName?: string | null
@@ -21,17 +23,15 @@ interface HeroSectionProps {
 
 export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, nextDrawDate }: HeroSectionProps) {
   const nextDraw = formatArgentinaDate(nextDrawDate)
-  const badgeLabel = hasActiveRaffle ? raffleName || 'Sorteo activo' : 'No hay sorteos activos'
-  const headline = hasActiveRaffle
-    ? 'Compra tu carton y espera el aviso si ganas.'
-    : 'En este momento no hay sorteos activos.'
+  const badgeLabel = hasActiveRaffle ? raffleName || 'Bingo digital en vivo' : 'Bingo digital en vivo'
+  const headline = 'Tu suerte empieza aquí.'
   const copy = hasActiveRaffle
-    ? 'Tu carton participa automaticamente. No necesitas marcar bolillas: si tu jugada sale premiada, te avisamos por WhatsApp y coordinamos el pago con los datos que cargaste.'
-    : `Aguarda la fecha del proximo sorteo. Cuando se habilite, vas a poder comprar tu carton y seguir el resultado publicado al finalizar.${nextDrawDate ? ` Proxima fecha: ${nextDraw}.` : ''}`
+    ? 'Compra tu carton, mira el sorteo en vivo y recibi el aviso si ganas. Simple, transparente y 100% digital.'
+    : `En este momento no hay sorteos activos. Aguarda la fecha del proximo sorteo y revisa los resultados publicados.${nextDrawDate ? ` Proxima fecha: ${nextDraw}.` : ''}`
 
   return (
-    <section className="relative isolate w-full overflow-hidden">
-      <div className="absolute inset-0 -z-10 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:46px_46px]" />
+    <section className="relative isolate w-full overflow-hidden pb-8 pt-4 sm:pt-8">
+      <div className="absolute inset-0 -z-10 opacity-[0.04] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:46px_46px]" />
       <Image
         src="/brand/confetti-coins.svg"
         alt=""
@@ -47,37 +47,31 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
         ))}
       </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
-        <div className="lbb-hero-panel lbb-scroll-reveal relative grid overflow-hidden rounded-xl min-[560px]:grid-cols-[minmax(0,1fr)_18rem] lg:min-h-[31rem] lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
-          <Image
-            src="/brand/banner-bg-overlay.png"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="pointer-events-none object-cover opacity-30 mix-blend-screen"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92),rgba(0,0,0,0.62)_48%,rgba(4,247,124,0.12))]" />
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+        <div className="lbb-scroll-reveal relative grid items-center gap-6 lg:min-h-[34rem] lg:grid-cols-[minmax(0,0.92fr)_minmax(24rem,1fr)]">
+          <div className="pointer-events-none absolute left-0 top-20 hidden select-none font-mono text-[13rem] font-bold leading-none text-white/[0.025] lg:block">
+            LUCKY
+          </div>
 
-          <div className="relative z-10 flex min-w-0 flex-col justify-center p-5 text-center min-[560px]:text-left sm:p-8 lg:p-10">
+          <div className="relative z-10 flex min-w-0 flex-col justify-center text-center lg:text-left">
             <h1 className="sr-only">Lucky Bingo Bear</h1>
-            <p className="mb-4 inline-flex h-8 w-fit items-center gap-2 self-center rounded border border-[#04f77c]/45 bg-[#04f77c] px-3 text-xs font-bold uppercase tracking-wide text-zinc-950 min-[560px]:self-start">
-              <Trophy className="h-4 w-4" />
+            <p className="mb-5 inline-flex h-10 w-fit items-center gap-2 self-center rounded-full border border-[#04f77c]/25 bg-[#04f77c]/12 px-4 text-xs font-bold uppercase tracking-[0.16em] text-[#04f77c] lg:self-start">
+              <Sparkles className="h-4 w-4" />
               {badgeLabel}
             </p>
-            <h2 className="mx-auto max-w-[42rem] text-balance font-mono text-3xl font-bold leading-[1.02] tracking-normal text-white min-[560px]:mx-0 sm:text-4xl lg:text-5xl">
+            <h2 className="mx-auto max-w-[42rem] text-balance font-mono text-5xl font-bold leading-[0.94] tracking-normal text-white sm:text-6xl lg:mx-0 lg:text-7xl xl:text-8xl">
               {headline}
             </h2>
-            <p className="mx-auto mt-4 max-w-[38rem] text-balance text-sm leading-6 text-slate-300 min-[560px]:mx-0 sm:text-base">
+            <p className="mx-auto mt-6 max-w-[38rem] text-balance text-base leading-7 text-slate-300 lg:mx-0 sm:text-lg">
               {copy}
             </p>
 
-            <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row min-[560px]:items-start">
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
               {hasActiveRaffle ? (
                 <Button
                   asChild
                   size="lg"
-                  className="h-12 w-full rounded bg-[#04f77c] px-6 text-base font-bold text-zinc-950 hover:bg-[#30e17b] sm:w-auto"
+                  className="h-13 w-full rounded-full bg-amber-300 px-7 text-base font-bold text-zinc-950 shadow-xl shadow-amber-500/20 hover:bg-amber-200 sm:w-auto"
                 >
                   <Link href="/participar">
                     Participar ahora
@@ -88,7 +82,7 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
                 <Button
                   asChild
                   size="lg"
-                  className="h-12 w-full rounded bg-[#04f77c] px-6 text-base font-bold text-zinc-950 hover:bg-[#30e17b] sm:w-auto"
+                  className="h-13 w-full rounded-full bg-amber-300 px-7 text-base font-bold text-zinc-950 shadow-xl shadow-amber-500/20 hover:bg-amber-200 sm:w-auto"
                 >
                   <Link href="/ganadores">
                     Ver ultimo sorteo
@@ -100,7 +94,7 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-12 w-full rounded border-white/30 bg-black/20 px-6 text-base font-bold text-white hover:border-[#04f77c] hover:bg-[#04f77c]/10 hover:text-[#04f77c] sm:w-auto"
+                className="h-13 w-full rounded-full border-white/20 bg-black/30 px-7 text-base font-bold text-white hover:border-amber-300 hover:bg-amber-300/10 hover:text-amber-200 sm:w-auto"
               >
                 <Link href="/en-vivo">
                   <Radio className="mr-2 h-4 w-4" />
@@ -109,35 +103,38 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
               </Button>
             </div>
 
-            <div className="mt-7 grid w-full max-w-2xl gap-2 min-[560px]:grid-cols-3">
+            <div className="mt-8 grid w-full max-w-2xl gap-2 min-[560px]:grid-cols-3">
               <TrustPill icon={<ShieldCheck className="h-4 w-4" />} label="Aviso por WhatsApp" />
               <TrustPill icon={<Ticket className="h-4 w-4" />} label="Carton automatico" />
               <TrustPill icon={<Radio className="h-4 w-4" />} label="Resultado publicado" />
             </div>
           </div>
 
-          <div className="relative z-10 flex min-h-[14rem] flex-col justify-end p-5 sm:min-h-[16rem] sm:p-6 lg:min-h-[20rem] lg:p-8">
+          <div className="relative z-10 flex min-h-[24rem] flex-col justify-end sm:min-h-[30rem] lg:min-h-[34rem]">
             <Image
               src="/brand/banner-logo-main.png"
               alt="Lucky Bingo Bear"
               width={900}
               height={900}
               priority
-              className="absolute left-1/2 top-4 h-28 w-28 -translate-x-1/2 object-contain drop-shadow-2xl sm:h-36 sm:w-36 lg:left-[45%] lg:top-8 lg:h-64 lg:w-64"
+              className="absolute left-1/2 top-2 h-[21rem] w-[21rem] -translate-x-1/2 object-contain drop-shadow-2xl sm:h-[30rem] sm:w-[30rem] lg:left-[48%] lg:top-0 lg:h-[34rem] lg:w-[34rem]"
             />
-            <Image
-              src="/brand/banner-logo-lbb.png"
-              alt="LBB Lucky Bingo Bear"
-              width={900}
-              height={900}
-              priority
-              className="absolute right-5 top-7 hidden h-20 w-28 object-contain opacity-90 drop-shadow-2xl md:block lg:h-24 lg:w-36"
-            />
-            <div className="relative ml-auto grid w-full max-w-[24rem] gap-2 min-[560px]:grid-cols-1 lg:gap-3">
+            <div className="relative mx-auto grid w-full max-w-[28rem] gap-2 min-[560px]:grid-cols-3 lg:ml-auto lg:grid-cols-1 lg:gap-3">
               <HeroStat label={hasActiveRaffle ? 'Premio mayor' : 'Estado'} value={hasActiveRaffle ? firstPrize || 'A confirmar' : 'Sin sorteo activo'} />
               <HeroStat label={hasActiveRaffle ? 'Carton' : 'Proximo sorteo'} value={hasActiveRaffle ? 'Participa solo' : nextDraw} />
               <HeroStat label="Resultado" value={hasActiveRaffle ? 'Aviso por WhatsApp' : 'Publicado al cerrar'} />
             </div>
+          </div>
+        </div>
+
+        <div className="mt-7 border-y border-white/10 py-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Historias destacadas</p>
+          <div className="grid gap-2 sm:grid-cols-5">
+            {storyChips.map((item) => (
+              <div key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-300">
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -147,8 +144,8 @@ export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, ne
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-h-20 rounded border border-[#04f77c]/25 bg-black/55 p-3 backdrop-blur">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+    <div className="min-h-20 rounded-2xl border border-white/10 bg-black/62 p-3 shadow-xl shadow-black/20 backdrop-blur">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-300">{label}</p>
       <p className="mt-1 break-words font-mono text-lg font-bold leading-6 text-white">{value}</p>
     </div>
   )
@@ -156,8 +153,8 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 
 function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="lbb-soft-transition flex min-h-10 min-w-0 items-center justify-center gap-2 rounded border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-100 hover:border-[#04f77c]/45 hover:bg-[#04f77c]/10">
-      <span className="text-[#04f77c]">{icon}</span>
+    <div className="lbb-soft-transition flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-100 hover:border-amber-300/45 hover:bg-amber-300/10">
+      <span className="text-amber-300">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
       <CheckCircle2 className="h-4 w-4 text-[#04f77c]" />
     </div>
@@ -167,10 +164,10 @@ function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
 function BingoBall({ number, className }: { number: number; className: string }) {
   return (
     <div
-      className={`absolute hidden h-12 w-12 animate-bounce items-center justify-center rounded-full text-sm font-bold text-white shadow-xl md:flex ${className}`}
+      className={`absolute hidden h-14 w-14 animate-bounce items-center justify-center rounded-full border text-sm font-bold shadow-2xl md:flex ${className}`}
       style={{ animationDuration: `${3 + (number % 4) * 0.35}s` }}
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-950">{number}</span>
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-amber-300">{number}</span>
     </div>
   )
 }
