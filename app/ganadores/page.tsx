@@ -15,6 +15,7 @@ interface Raffle {
   name: string
   description: string | null
   created_at: string
+  draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   drawn_numbers?: number[] | null
   prize?: string | null
@@ -83,6 +84,8 @@ async function getWinnerRecords() {
 
 export default async function WinnersPage() {
   const { raffles, winners } = await getWinnerRecords()
+  const latestRaffle = raffles[0]
+  const latestWinners = latestRaffle ? winners.filter((winner) => winner.raffle.id === latestRaffle.id) : []
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
@@ -113,10 +116,10 @@ export default async function WinnersPage() {
               Resultados oficiales
             </Badge>
             <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-              Ganadores y sorteos finalizados
+              Referencia del ultimo sorteo
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
-              Un registro publico para revisar los sorteos cerrados, los cartones ganadores y el orden de numeros cantados.
+              Aca quedan publicados los ganadores, montos, cartones y numeros cantados de los sorteos cerrados.
             </p>
           </div>
 
@@ -139,13 +142,36 @@ export default async function WinnersPage() {
             </p>
           </div>
         ) : (
-          <div className="mt-12 grid gap-5 lg:grid-cols-2">
+          <>
+          {latestRaffle && (
+            <div className="mt-12 rounded-lg border border-amber-400/25 bg-zinc-950/80 p-5 shadow-xl shadow-black/20">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                <div>
+                  <Badge className="mb-3 bg-amber-400 text-zinc-950 hover:bg-amber-400">
+                    Ultimo sorteo cerrado
+                  </Badge>
+                  <h2 className="text-2xl font-semibold tracking-tight text-white">{latestRaffle.name}</h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-300">
+                    {latestWinners.length} premio{latestWinners.length !== 1 ? 's' : ''} adjudicado{latestWinners.length !== 1 ? 's' : ''}. Si fuiste ganador, tambien recibis el aviso por WhatsApp con el monto correspondiente.
+                  </p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Fecha</p>
+                  <p className="mt-2 font-bold text-white">
+                    {new Date(latestRaffle.draw_date ?? latestRaffle.created_at).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-5 lg:grid-cols-2">
             {winners.map((winner) => {
               const drawnNumbers = winner.raffle.drawn_numbers ?? []
               const lastNumber = drawnNumbers[drawnNumbers.length - 1]
 
               return (
-                <Card key={`${winner.raffle.id}-${winner.card.id}`} className="overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
+                <Card key={`${winner.raffle.id}-${winner.card.id}-${winner.prizeNumber}`} className="overflow-hidden border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
                   <div className="border-b border-amber-400/20 bg-gradient-to-r from-amber-400/15 to-emerald-400/10 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
@@ -191,6 +217,7 @@ export default async function WinnersPage() {
               )
             })}
           </div>
+          </>
         )}
       </section>
     </main>

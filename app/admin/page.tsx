@@ -18,5 +18,12 @@ export default async function AdminPage() {
     .eq('admin_id', user.id)
     .order('created_at', { ascending: false })
 
-  return <AdminDashboard user={user} initialRaffles={raffles || []} />
+  const { data: paymentAccounts } = await supabase
+    .from('payment_accounts')
+    .select('*')
+    .eq('admin_id', user.id)
+    .order('is_default', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  return <AdminDashboard user={user} initialRaffles={raffles || []} initialPaymentAccounts={paymentAccounts || []} />
 }

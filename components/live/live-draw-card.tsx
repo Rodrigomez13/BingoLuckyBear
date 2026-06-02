@@ -101,7 +101,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               {isFinished && (
                 <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">
                   <Crown className="mr-1 h-3.5 w-3.5" />
-                  Finalizado
+                  Cerrado
                 </Badge>
               )}
             </div>

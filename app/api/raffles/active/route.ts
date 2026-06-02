@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getCurrentPrizeTarget, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
+import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 
 export async function GET() {
   try {
@@ -8,7 +9,7 @@ export async function GET() {
 
     const { data: raffle, error } = await supabase
       .from('raffles')
-      .select('*')
+      .select('*, payment_account:payment_accounts(*)')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -18,23 +19,37 @@ export async function GET() {
       return NextResponse.json({ raffle: null })
     }
 
+    const syncedRaffle = await syncRaffleLifecycle(supabase, raffle)
+
+    if (!syncedRaffle.is_active && syncedRaffle.draw_status === 'finished') {
+      return NextResponse.json({ raffle: null, justClosedRaffle: syncedRaffle })
+    }
+
     const [{ count }, { data: cards }] = await Promise.all([
       supabase
       .from('bingo_cards')
       .select('id', { count: 'exact', head: true })
-        .eq('raffle_id', raffle.id),
+        .eq('raffle_id', syncedRaffle.id),
       supabase
         .from('bingo_cards')
         .select('id, card_number, full_name, bingo_numbers')
-        .eq('raffle_id', raffle.id),
+        .eq('raffle_id', syncedRaffle.id),
     ])
 
-    const drawnNumbers = Array.isArray(raffle.drawn_numbers) ? raffle.drawn_numbers : []
-    const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
+    const drawnNumbers = Array.isArray(syncedRaffle.drawn_numbers) ? syncedRaffle.drawn_numbers : []
+    const prizeAmounts = getPrizeAmounts(syncedRaffle.prize, syncedRaffle.additional_prizes)
     const prizeAwards = getPrizeAwards(cards ?? [], drawnNumbers, prizeAmounts)
     const currentPrizeTarget = getCurrentPrizeTarget(cards ?? [], drawnNumbers, prizeAmounts)
+    const purchaseAvailability = getPurchaseAvailability(syncedRaffle)
 
-    return NextResponse.json({ raffle, participantCount: count ?? 0, prizeAwards, currentPrizeTarget })
+    return NextResponse.json({
+      raffle: syncedRaffle,
+      participantCount: count ?? 0,
+      prizeAwards,
+      currentPrizeTarget,
+      salesClosed: !purchaseAvailability.canPurchase,
+      salesClosedReason: purchaseAvailability.reason,
+    })
   } catch (error) {
     console.error('Error fetching active raffle:', error)
     return NextResponse.json(

@@ -4,21 +4,23 @@ import { useState } from 'react'
 import { Check, ClipboardCopy, Landmark, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatMoneyAmount } from '@/lib/bingo'
-import { PAYMENT_INFO } from '@/lib/payment'
+import { PAYMENT_INFO, normalizePaymentAccountInfo, type PaymentAccountInput } from '@/lib/payment'
 
 interface PaymentInstructionsProps {
   amount?: string | null
+  account?: PaymentAccountInput | null
 }
 
-export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
+export function PaymentInstructions({ amount, account }: PaymentInstructionsProps) {
   const [copied, setCopied] = useState<string | null>(null)
+  const paymentInfo = normalizePaymentAccountInfo(account)
   const paymentAmount = formatMoneyAmount(amount || PAYMENT_INFO.amount)
   const paymentRows = [
-    { label: 'Titular', value: PAYMENT_INFO.holder },
-    { label: 'Alias', value: PAYMENT_INFO.alias },
-    { label: 'CBU/CVU', value: PAYMENT_INFO.cbu },
-    { label: 'Banco/Billetera', value: PAYMENT_INFO.bank },
-    { label: 'Concepto', value: PAYMENT_INFO.concept },
+    { label: 'Titular', value: paymentInfo.holder },
+    { label: 'Alias', value: paymentInfo.alias },
+    { label: 'CBU/CVU', value: paymentInfo.cbu },
+    { label: 'Banco/Billetera', value: paymentInfo.bank },
+    { label: 'Concepto', value: paymentInfo.concept },
     { label: 'Monto', value: paymentAmount },
   ]
 
@@ -69,7 +71,7 @@ export function PaymentInstructions({ amount }: PaymentInstructionsProps) {
       <div className="border-t border-white/10 px-5 py-4">
         <p className="flex gap-2 text-sm leading-relaxed text-zinc-300">
           <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-          {PAYMENT_INFO.note}
+          {paymentInfo.note}
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CalendarDays, ClipboardCopy, DollarSign, ExternalLink, Gift, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users } from 'lucide-react'
+import { CalendarDays, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,7 @@ interface Raffle {
   countdown_seconds?: number | null
   draw_started_at?: string | null
   drawn_numbers?: number[] | null
+  payment_account_id?: string | null
 }
 
 interface BingoCard {
@@ -54,13 +55,26 @@ interface BingoCard {
   payment_receipt_url: string
   payment_method?: string | null
   payment_reference?: string | null
+  payout_account_kind?: string | null
+  payout_account?: string | null
+  payout_holder_name?: string | null
   created_at: string
   bingo_numbers: number[][] | null
 }
 
 interface RaffleParticipantsProps {
   raffle: Raffle
+  paymentAccounts: PaymentAccount[]
   onRaffleUpdated: (raffle: Raffle) => void
+}
+
+interface PaymentAccount {
+  id: string
+  name: string
+  holder: string
+  alias?: string | null
+  cbu?: string | null
+  is_default: boolean
 }
 
 function toDateTimeLocalValue(value: string | null) {
@@ -150,7 +164,7 @@ function MiniBingoCard({
   )
 }
 
-export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipantsProps) {
+export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }: RaffleParticipantsProps) {
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingDetails, setIsSavingDetails] = useState(false)
@@ -161,6 +175,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
     amount: raffle.amount ?? '',
+    payment_account_id: raffle.payment_account_id ?? '',
     bundle_offers: raffle.bundle_offers ?? [],
     draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
   })
@@ -194,10 +209,11 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       prize: raffle.prize ?? '',
       additional_prizes: raffle.additional_prizes ?? [],
       amount: raffle.amount ?? '',
+      payment_account_id: raffle.payment_account_id ?? '',
       bundle_offers: raffle.bundle_offers ?? [],
       draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
     })
-  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.bundle_offers, raffle.draw_date])
+  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.payment_account_id, raffle.bundle_offers, raffle.draw_date])
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle.prize, raffle.additional_prizes), [raffle.prize, raffle.additional_prizes])
@@ -214,12 +230,29 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       const matchesWinner = !winnerOnly || awardedCardIds.has(card.id)
       const matchesSearch =
         !normalizedSearch ||
-        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '']
+        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '', card.payout_account ?? '', card.payout_holder_name ?? '']
           .some((value) => value.toLowerCase().includes(normalizedSearch))
 
       return matchesWinner && matchesSearch
     })
   }, [awardedCardIds, cards, searchTerm, winnerOnly])
+
+  const statusLabel =
+    raffle.draw_status === 'finished'
+      ? 'Cerrado'
+      : raffle.draw_status === 'running'
+        ? 'En vivo'
+        : raffle.is_active
+          ? 'Disponible'
+          : 'Pausado'
+  const statusClass =
+    raffle.draw_status === 'finished'
+      ? 'bg-zinc-600 text-white hover:bg-zinc-600'
+      : raffle.draw_status === 'running'
+        ? 'bg-red-500 text-white hover:bg-red-500'
+        : raffle.is_active
+          ? 'bg-green-500 text-white hover:bg-green-500'
+          : 'bg-gray-400 text-zinc-950 hover:bg-gray-400'
 
   const updateDetailPrize = (index: number, value: string) => {
     setDetails((current) => {
@@ -252,6 +285,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
         prize: sortedPrizes[0],
         additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
         amount: details.amount || null,
+        payment_account_id: details.payment_account_id || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
         draw_date: details.draw_date || null,
       }
@@ -274,7 +308,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
   const exportToCSV = () => {
     if (filteredCards.length === 0) return
 
-    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Metodo Pago', 'Operacion', 'Fecha Registro']
+    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Metodo Pago', 'Operacion', 'Tipo Cuenta Premio', 'Cuenta Premio', 'Titular Cuenta Premio', 'Fecha Registro']
     const rows = filteredCards.map(card => [
       card.card_number,
       card.full_name,
@@ -284,6 +318,9 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       card.email,
       card.payment_method ?? '',
       card.payment_reference ?? '',
+      card.payout_account_kind ?? '',
+      card.payout_account ?? '',
+      card.payout_holder_name ?? '',
       new Date(card.created_at).toLocaleString('es-ES')
     ])
 
@@ -311,7 +348,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[180px_210px_auto] lg:items-end">
+          <div className="grid gap-3 lg:grid-cols-[180px_210px_minmax(220px,1fr)_auto] lg:items-end">
             <div className="space-y-2">
               <label htmlFor="raffle-amount" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
                 <DollarSign className="h-4 w-4 text-amber-200" />
@@ -337,6 +374,25 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                 onChange={(event) => setDetails((current) => ({ ...current, draw_date: event.target.value }))}
                 className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
               />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="raffle-payment-account" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <Landmark className="h-4 w-4 text-amber-200" />
+                Cuenta de cobro
+              </label>
+              <select
+                id="raffle-payment-account"
+                value={details.payment_account_id}
+                onChange={(event) => setDetails((current) => ({ ...current, payment_account_id: event.target.value }))}
+                className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+              >
+                <option value="">Usar datos por defecto</option>
+                {paymentAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}{account.is_default ? ' - predeterminada' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <Button
               type="button"
@@ -438,11 +494,8 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               {raffle.name}
-              <Badge 
-                variant={raffle.is_active ? 'default' : 'secondary'}
-                className={raffle.is_active ? 'bg-green-500' : 'bg-gray-400'}
-              >
-                {raffle.is_active ? 'Activo' : 'Inactivo'}
+              <Badge className={statusClass}>
+                {statusLabel}
               </Badge>
             </CardTitle>
             <p className="text-sm text-zinc-400 mt-1">
@@ -669,6 +722,18 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                   <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Operacion</p>
                     <p className="truncate font-medium text-white">{selectedCard.payment_reference ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Tipo Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_account_kind ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_account ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Titular Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_holder_name ?? 'Sin registrar'}</p>
                   </div>
                   <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Fecha de Registro</p>

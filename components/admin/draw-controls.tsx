@@ -166,7 +166,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             {raffle.draw_status === 'running'
               ? 'En vivo'
               : raffle.draw_status === 'finished'
-                ? 'Finalizado'
+                ? 'Cerrado'
                 : 'Sin iniciar'}
           </Badge>
         </div>
