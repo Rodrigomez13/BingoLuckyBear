@@ -16,3 +16,5 @@ tsconfig.tsbuildinfo
 dev-server*.log
 prod-server*.log
 .DS_Store
+
+.vercel
