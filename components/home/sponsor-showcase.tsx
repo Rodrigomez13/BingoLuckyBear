@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { BadgeDollarSign, Radio, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatMoneyAmount, type BingoPrizeTarget } from '@/lib/bingo'
+import { formatArgentinaDate } from '@/lib/date'
 
 const prizeHighlights = [
   {
@@ -43,7 +44,7 @@ export function SponsorShowcase({
 }: SponsorShowcaseProps) {
   const paymentAmount = formatMoneyAmount(activeAmount, 'A confirmar')
   const visiblePrizes = prizeSchedule.filter((target) => target.amount)
-  const nextDraw = drawDate ? new Date(drawDate).toLocaleDateString('es-ES') : 'A confirmar'
+  const nextDraw = formatArgentinaDate(drawDate)
   const title = hasActiveRaffle
     ? 'Compras una vez y tu carton sigue participando'
     : 'No hay sorteo activo en este momento'

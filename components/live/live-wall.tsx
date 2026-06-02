@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
 
 interface Raffle {
   id: string
@@ -98,7 +99,7 @@ export function LiveWall() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(245,158,11,0.26),transparent_34rem),radial-gradient(circle_at_85%_20%,rgba(16,185,129,0.14),transparent_30rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col px-4 py-6 sm:px-6 lg:px-8 2xl:px-10">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
             <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={58} height={58} className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
@@ -148,7 +149,7 @@ export function LiveWall() {
               <Stat
                 icon={<CalendarDays className="h-6 w-6" />}
                 label="Fecha"
-                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+                value={formatArgentinaDateTime(raffle.draw_date)}
                 compact
               />
               <Stat icon={<Clock className="h-6 w-6" />} label="Cuenta regresiva" value={formatTime(remaining)} />

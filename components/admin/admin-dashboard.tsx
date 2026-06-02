@@ -16,6 +16,13 @@ import { BearLogo } from '@/components/bear-logo'
 import { RaffleParticipants } from './raffle-participants'
 import type { User } from '@supabase/supabase-js'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule, normalizePrizeAmounts } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface Raffle {
   id: string
@@ -70,6 +77,7 @@ const emptyPaymentForm = {
 export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }: AdminDashboardProps) {
   const [raffles, setRaffles] = useState<Raffle[]>(initialRaffles)
   const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(initialPaymentAccounts)
+  const [activeSection, setActiveSection] = useState<'overview' | 'raffles' | 'payments'>('overview')
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -83,6 +91,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
   const [createError, setCreateError] = useState<string | null>(null)
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null)
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isSavingPayment, setIsSavingPayment] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const router = useRouter()
@@ -245,9 +254,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
     return jackpot ? jackpot.amount : 'Premios sin cargar'
   }
 
-  const formatDateTime = (date?: string | null) => {
-    return date ? new Date(date).toLocaleString('es-ES') : 'Sin fecha'
-  }
+  const formatDateTime = (date?: string | null) => formatArgentinaDateTime(date, 'Sin fecha')
 
   const deleteRaffle = async (raffleId: string) => {
     if (!confirm('Estas seguro de eliminar este sorteo? Se eliminaran todos los cartones asociados.')) {
@@ -296,6 +303,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
           : [data.account, ...next]
       })
       setPaymentForm(emptyPaymentForm)
+      setIsPaymentModalOpen(false)
       if (!paymentAccountId || data.account.is_default) {
         setPaymentAccountId(data.account.id)
       }
@@ -318,6 +326,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
       note: account.note ?? '',
       is_default: account.is_default,
     })
+    setIsPaymentModalOpen(true)
   }
 
   const deletePaymentAccount = async (accountId: string) => {
@@ -347,7 +356,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
       <div className="lbb-ambient" />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[#04f77c]/20 bg-[#101010]/92 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 2xl:px-10">
           <div className="flex items-center justify-between h-16">
             <div className="flex min-w-0 items-center gap-3">
               <BearLogo size={40} />
@@ -370,7 +379,19 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="relative z-10 mx-auto grid max-w-[1800px] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:px-8 2xl:px-10">
+        <aside className="h-fit rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 shadow-xl shadow-black/20 lg:sticky lg:top-24">
+          <p className="px-3 pb-3 text-xs font-bold uppercase tracking-wide text-zinc-500">Panel</p>
+          <nav className="grid gap-2">
+            <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
+            <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
+            <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
+          </nav>
+        </aside>
+
+        <div className="min-w-0">
+        {activeSection === 'overview' && (
+        <>
         <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <AdminMetric
             icon={<Ticket className="h-5 w-5" />}
@@ -427,15 +448,30 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             </Button>
           </div>
         </div>
+        </>
+        )}
 
+        {activeSection === 'payments' && (
         <Card className="mb-8 border-zinc-800 bg-zinc-950/80 text-zinc-100">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Landmark className="h-5 w-5 text-amber-300" />
-              Cuentas para recibir pagos
-            </CardTitle>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Landmark className="h-5 w-5 text-amber-300" />
+                Cuentas para recibir pagos
+              </CardTitle>
+              <Button
+                onClick={() => {
+                  setPaymentForm(emptyPaymentForm)
+                  setIsPaymentModalOpen(true)
+                }}
+                className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva cuenta
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)]">
+          <CardContent>
             <div className="min-w-0 overflow-hidden rounded-md border border-white/10 bg-black/20">
               {paymentAccounts.length === 0 ? (
                 <div className="rounded-md border border-dashed border-zinc-700 p-5 text-sm text-zinc-400">
@@ -489,42 +525,12 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                 </div>
               )}
             </div>
-
-            <form onSubmit={savePaymentAccount} className="space-y-3 rounded-md border border-white/10 bg-black/20 p-4">
-              <p className="font-bold text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</p>
-              <Input value={paymentForm.name} onChange={(event) => setPaymentForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nombre interno, ej: Mercado Pago" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Input value={paymentForm.holder} onChange={(event) => setPaymentForm((current) => ({ ...current, holder: event.target.value }))} placeholder="Titular de la cuenta" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Input value={paymentForm.alias} onChange={(event) => setPaymentForm((current) => ({ ...current, alias: event.target.value }))} placeholder="Alias" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Input value={paymentForm.cbu} onChange={(event) => setPaymentForm((current) => ({ ...current, cbu: event.target.value }))} placeholder="CBU/CVU" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Input value={paymentForm.bank} onChange={(event) => setPaymentForm((current) => ({ ...current, bank: event.target.value }))} placeholder="Banco o billetera" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Input value={paymentForm.concept} onChange={(event) => setPaymentForm((current) => ({ ...current, concept: event.target.value }))} placeholder="Concepto sugerido" className="border-zinc-700 bg-zinc-900 text-white" />
-              <Textarea value={paymentForm.note} onChange={(event) => setPaymentForm((current) => ({ ...current, note: event.target.value }))} placeholder="Nota para el comprobante" className="border-zinc-700 bg-zinc-900 text-white" />
-              <label className="flex items-center gap-2 text-sm text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={paymentForm.is_default}
-                  onChange={(event) => setPaymentForm((current) => ({ ...current, is_default: event.target.checked }))}
-                  className="h-4 w-4 accent-amber-400"
-                />
-                Usar como cuenta predeterminada
-              </label>
-              {paymentError && <p className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">{paymentError}</p>}
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Button type="submit" disabled={isSavingPayment} className="bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSavingPayment ? 'Guardando' : 'Guardar'}
-                </Button>
-                {paymentForm.id && (
-                  <Button type="button" variant="outline" onClick={() => setPaymentForm(emptyPaymentForm)} className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10">
-                    Cancelar
-                  </Button>
-                )}
-              </div>
-            </form>
           </CardContent>
         </Card>
+        )}
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+        {activeSection === 'raffles' && (
+        <div className="grid gap-6">
           {/* Left Column - Raffles List */}
           <div className="min-w-0 space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -532,134 +538,12 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                 Mis Sorteos
               </h2>
               <Button 
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => setShowForm(true)}
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
               >
-                {showForm ? 'Cancelar' : 'Nuevo Sorteo'}
+                Nuevo Sorteo
               </Button>
             </div>
-
-            {/* Create Raffle Form */}
-            {showForm && (
-              <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
-                <CardHeader>
-                  <CardTitle className="text-white">Crear Nuevo Sorteo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleCreateRaffle} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-zinc-300">Nombre del Sorteo</Label>
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ej: Sorteo Navidad 2024"
-                        required
-                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description" className="text-zinc-300">Descripcion (opcional)</Label>
-                      <Textarea
-                        id="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Describe el sorteo..."
-                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                      />
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="amount" className="text-zinc-300">Monto del carton</Label>
-                        <Input
-                          id="amount"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Ej: $2.000"
-                          className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paymentAccount" className="text-zinc-300">Cuenta de cobro</Label>
-                        <select
-                          id="paymentAccount"
-                          value={paymentAccountId}
-                          onChange={(event) => setPaymentAccountId(event.target.value)}
-                          className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
-                        >
-                          <option value="">Usar datos por defecto</option>
-                          {paymentAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {account.name}{account.is_default ? ' - predeterminada' : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
-                      <div>
-                        <Label className="text-zinc-200">Premios por fila</Label>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          Carga cuatro montos: menor por fila 3, intermedio por fila 2, grande por fila 1 y mayor por carton completo.
-                        </p>
-                      </div>
-                      <div className="grid gap-3">
-                        {prizeInputValues.map((value, index) => {
-                          const target = prizeTargets[index]
-
-                          return (
-                          <div key={index} className="space-y-2">
-                            <Label htmlFor={`prize-${index}`} className="text-zinc-300">
-                              {target?.label ?? `Premio ${index + 1}`} ({target?.conditionLabel ?? 'Condicion'})
-                            </Label>
-                            <Input
-                              id={`prize-${index}`}
-                              value={value}
-                              onChange={(event) => updatePrizeInput(index, event.target.value)}
-                              placeholder={index === 0 ? 'Ej: $25.000' : index === 1 ? 'Ej: $50.000' : index === 2 ? 'Ej: $100.000' : 'Ej: $250.000'}
-                              required
-                              className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                            />
-                          </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drawDate" className="text-zinc-300">Fecha del sorteo</Label>
-                      <Input
-                        id="drawDate"
-                        type="datetime-local"
-                        value={drawDate}
-                        onChange={(e) => setDrawDate(e.target.value)}
-                        className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
-                      />
-                    </div>
-                    <DynamicTextList
-                      title="Promos por cantidad"
-                      emptyText="Opcional: agrega ofertas como 3 cartones por $5.000."
-                      addLabel="Agregar promo"
-                      placeholder="Ej: 3 cartones por $5.000"
-                      items={bundleOffers}
-                      onChange={setBundleOffers}
-                    />
-                    {createError && (
-                      <div className="flex items-start gap-2 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span>{createError}</span>
-                      </div>
-                    )}
-                    <Button 
-                      type="submit" 
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                    >
-                      {isLoading ? 'Creando...' : 'Crear Sorteo'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Raffles List */}
             <div className="space-y-4">
@@ -759,9 +643,166 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
             </div>
           </div>
 
-          {/* Right Column - Participants */}
-          <div className="min-w-0">
-            {selectedRaffle ? (
+        </div>
+        )}
+        </div>
+
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(96vw,880px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 text-zinc-100">
+            <DialogHeader>
+              <DialogTitle className="text-white">Crear Nuevo Sorteo</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateRaffle} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-zinc-300">Nombre del Sorteo</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ej: Sorteo Navidad 2024"
+                  required
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-zinc-300">Descripcion (opcional)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe el sorteo..."
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="amount" className="text-zinc-300">Monto del carton</Label>
+                  <Input
+                    id="amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Ej: $2.000"
+                    className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentAccount" className="text-zinc-300">Cuenta de cobro</Label>
+                  <select
+                    id="paymentAccount"
+                    value={paymentAccountId}
+                    onChange={(event) => setPaymentAccountId(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                  >
+                    <option value="">Usar datos por defecto</option>
+                    {paymentAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}{account.is_default ? ' - predeterminada' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3">
+                <div>
+                  <Label className="text-zinc-200">Premios por fila</Label>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Carga cuatro montos: menor por fila 3, intermedio por fila 2, grande por fila 1 y mayor por carton completo.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {prizeInputValues.map((value, index) => {
+                    const target = prizeTargets[index]
+
+                    return (
+                      <div key={index} className="space-y-2">
+                        <Label htmlFor={`prize-${index}`} className="text-zinc-300">
+                          {target?.label ?? `Premio ${index + 1}`} ({target?.conditionLabel ?? 'Condicion'})
+                        </Label>
+                        <Input
+                          id={`prize-${index}`}
+                          value={value}
+                          onChange={(event) => updatePrizeInput(index, event.target.value)}
+                          placeholder={index === 0 ? 'Ej: $25.000' : index === 1 ? 'Ej: $50.000' : index === 2 ? 'Ej: $100.000' : 'Ej: $250.000'}
+                          required
+                          className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="drawDate" className="text-zinc-300">Fecha y hora del sorteo (Argentina)</Label>
+                <Input
+                  id="drawDate"
+                  type="datetime-local"
+                  value={drawDate}
+                  onChange={(e) => setDrawDate(e.target.value)}
+                  className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
+                />
+              </div>
+              <DynamicTextList
+                title="Promos por cantidad"
+                emptyText="Opcional: agrega ofertas como 3 cartones por $5.000."
+                addLabel="Agregar promo"
+                placeholder="Ej: 3 cartones por $5.000"
+                items={bundleOffers}
+                onChange={setBundleOffers}
+              />
+              {createError && (
+                <div className="flex items-start gap-2 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{createError}</span>
+                </div>
+              )}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+              >
+                {isLoading ? 'Creando...' : 'Crear Sorteo'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <DialogContent className="w-[min(96vw,520px)] max-w-none border-zinc-800 bg-zinc-950 text-zinc-100">
+            <DialogHeader>
+              <DialogTitle className="text-white">{paymentForm.id ? 'Editar cuenta' : 'Agregar cuenta'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={savePaymentAccount} className="space-y-3">
+              <Input value={paymentForm.name} onChange={(event) => setPaymentForm((current) => ({ ...current, name: event.target.value }))} placeholder="Nombre interno, ej: Mercado Pago" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.holder} onChange={(event) => setPaymentForm((current) => ({ ...current, holder: event.target.value }))} placeholder="Titular de la cuenta" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.alias} onChange={(event) => setPaymentForm((current) => ({ ...current, alias: event.target.value }))} placeholder="Alias" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.cbu} onChange={(event) => setPaymentForm((current) => ({ ...current, cbu: event.target.value }))} placeholder="CBU/CVU" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.bank} onChange={(event) => setPaymentForm((current) => ({ ...current, bank: event.target.value }))} placeholder="Banco o billetera" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Input value={paymentForm.concept} onChange={(event) => setPaymentForm((current) => ({ ...current, concept: event.target.value }))} placeholder="Concepto sugerido" className="border-zinc-700 bg-zinc-900 text-white" />
+              <Textarea value={paymentForm.note} onChange={(event) => setPaymentForm((current) => ({ ...current, note: event.target.value }))} placeholder="Nota para el comprobante" className="border-zinc-700 bg-zinc-900 text-white" />
+              <label className="flex items-center gap-2 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={paymentForm.is_default}
+                  onChange={(event) => setPaymentForm((current) => ({ ...current, is_default: event.target.checked }))}
+                  className="h-4 w-4 accent-amber-400"
+                />
+                Usar como cuenta predeterminada
+              </label>
+              {paymentError && <p className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">{paymentError}</p>}
+              <Button type="submit" disabled={isSavingPayment} className="w-full bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
+                <Save className="mr-2 h-4 w-4" />
+                {isSavingPayment ? 'Guardando' : 'Guardar'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!selectedRaffle} onOpenChange={(open) => !open && setSelectedRaffle(null)}>
+          <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1680px)] max-w-none overflow-y-auto border-zinc-800 bg-zinc-950 p-4 text-zinc-100 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-white">{selectedRaffle?.name ?? 'Sorteo'}</DialogTitle>
+            </DialogHeader>
+            {selectedRaffle && (
               <RaffleParticipants
                 raffle={selectedRaffle}
                 paymentAccounts={paymentAccounts}
@@ -772,21 +813,9 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts }:
                   )
                 }}
               />
-            ) : (
-              <Card className="h-full min-h-96 border-zinc-800 bg-zinc-950/70">
-                <CardContent className="flex flex-col items-center justify-center h-full py-16">
-                  <BearLogo size={80} className="mb-4 opacity-30" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    Selecciona un Sorteo
-                  </h3>
-                  <p className="text-zinc-400 text-center max-w-md">
-                    Haz clic en uno de tus sorteos para ver los participantes y sus cartones.
-                  </p>
-                </CardContent>
-              </Card>
             )}
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
@@ -818,6 +847,33 @@ function AdminMetric({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function AdminNavButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: ReactNode
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition ${
+        active
+          ? 'bg-amber-400 text-zinc-950 shadow-lg shadow-amber-950/25'
+          : 'text-zinc-300 hover:bg-white/[0.06] hover:text-white'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   )
 }
 

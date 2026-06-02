@@ -7,6 +7,7 @@ import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lu
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
 
 interface Raffle {
   id: string
@@ -91,7 +92,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
   return (
     <section className={compact ? '' : 'px-4 py-10 sm:px-6 lg:px-8'}>
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-xl shadow-black/30 backdrop-blur">
+      <div className="mx-auto max-w-[1280px] overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-xl shadow-black/30 backdrop-blur">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -131,7 +132,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               <LiveInfo
                 icon={<CalendarDays className="h-4 w-4" />}
                 label="Fecha"
-                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+                value={formatArgentinaDateTime(raffle.draw_date)}
               />
             </div>
 

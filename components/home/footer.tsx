@@ -28,9 +28,6 @@ export function Footer() {
             <Link href="/ganadores" className="text-slate-400 transition-colors hover:text-white">
               Ganadores
             </Link>
-            <Link href="/auth/login" className="text-slate-400 transition-colors hover:text-white">
-              Admin
-            </Link>
           </nav>
         </div>
         

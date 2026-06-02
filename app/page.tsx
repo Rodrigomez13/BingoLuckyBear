@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Radio, Trophy } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { BearLogo } from '@/components/bear-logo'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorks } from '@/components/home/how-it-works'
@@ -95,9 +94,6 @@ export default async function HomePage() {
               >
                 Ganadores
               </Link>
-              <Button asChild variant="outline" className="hidden h-8 rounded border-[#04f77c]/35 bg-transparent px-3 text-sm font-bold text-[#04f77c] hover:bg-[#04f77c] hover:text-zinc-950 sm:inline-flex">
-                <Link href="/auth/login">Admin</Link>
-              </Button>
             </nav>
           </div>
         </div>

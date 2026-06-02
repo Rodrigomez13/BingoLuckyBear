@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards, getPrizeLabel } from '@/lib/bingo'
+import { formatArgentinaDate } from '@/lib/date'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -158,7 +159,7 @@ export default async function WinnersPage() {
                 <div className="rounded-md border border-white/10 bg-black/20 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Fecha</p>
                   <p className="mt-2 font-bold text-white">
-                    {new Date(latestRaffle.draw_date ?? latestRaffle.created_at).toLocaleDateString('es-ES')}
+                    {formatArgentinaDate(latestRaffle.draw_date ?? latestRaffle.created_at)}
                   </p>
                 </div>
               </div>
@@ -192,7 +193,7 @@ export default async function WinnersPage() {
                     <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
                       <Info icon={<Hash className="h-4 w-4" />} label="Carton" value={winner.card.card_number} />
                       <Info icon={<Radio className="h-4 w-4" />} label="Numero premio" value={formatDrawnNumber(winner.drawnNumber || lastNumber)} />
-                      <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={new Date(winner.raffle.created_at).toLocaleDateString('es-ES')} />
+                      <Info icon={<CalendarDays className="h-4 w-4" />} label="Fecha" value={formatArgentinaDate(winner.raffle.created_at)} />
                     </div>
 
                     <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-4">

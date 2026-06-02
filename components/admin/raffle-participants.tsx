@@ -26,6 +26,7 @@ import {
   isMarked,
   normalizePrizeAmounts,
 } from '@/lib/bingo'
+import { formatArgentinaDate, formatArgentinaDateTime, parseArgentinaDateTimeLocal, toArgentinaDateTimeLocal } from '@/lib/date'
 
 interface Raffle {
   id: string
@@ -76,14 +77,6 @@ interface PaymentAccount {
   alias?: string | null
   cbu?: string | null
   is_default: boolean
-}
-
-function toDateTimeLocalValue(value: string | null) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return offsetDate.toISOString().slice(0, 16)
 }
 
 function MiniBingoCard({
@@ -178,7 +171,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     amount: raffle.amount ?? '',
     payment_account_id: raffle.payment_account_id ?? '',
     bundle_offers: raffle.bundle_offers ?? [],
-    draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+    draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
   })
   const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '', details.additional_prizes[2] ?? '']
   const detailPrizeTargets = getPrizeSchedule(detailPrizeValues)
@@ -213,7 +206,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       amount: raffle.amount ?? '',
       payment_account_id: raffle.payment_account_id ?? '',
       bundle_offers: raffle.bundle_offers ?? [],
-      draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+      draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
     })
   }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.payment_account_id, raffle.bundle_offers, raffle.draw_date])
 
@@ -289,7 +282,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
         amount: details.amount || null,
         payment_account_id: details.payment_account_id || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
-        draw_date: details.draw_date || null,
+        draw_date: parseArgentinaDateTimeLocal(details.draw_date),
       }
       const { data, error } = await supabase
         .from('raffles')
@@ -323,7 +316,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       card.payout_account_kind ?? '',
       card.payout_account ?? '',
       card.payout_holder_name ?? '',
-      new Date(card.created_at).toLocaleString('es-ES')
+      formatArgentinaDateTime(card.created_at)
     ])
 
     const csvContent = [
@@ -665,7 +658,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Fecha</p>
-                    <p className="text-zinc-400">{new Date(card.created_at).toLocaleDateString('es-ES')}</p>
+                    <p className="text-zinc-400">{formatArgentinaDate(card.created_at)}</p>
                   </div>
                   <Button
                     size="sm"
@@ -744,7 +737,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Fecha de Registro</p>
                     <p className="truncate font-medium text-white">
-                      {new Date(selectedCard.created_at).toLocaleString('es-ES')}
+                      {formatArgentinaDateTime(selectedCard.created_at)}
                     </p>
                   </div>
                 </div>

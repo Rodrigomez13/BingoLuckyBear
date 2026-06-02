@@ -3,6 +3,7 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Ticket, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { formatArgentinaDate } from '@/lib/date'
 
 const floatingBalls = [
   { number: 7, className: 'left-[7%] top-28 bg-red-500' },
@@ -19,7 +20,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ raffleName, firstPrize, hasActiveRaffle = true, nextDrawDate }: HeroSectionProps) {
-  const nextDraw = nextDrawDate ? new Date(nextDrawDate).toLocaleDateString('es-ES') : 'A confirmar'
+  const nextDraw = formatArgentinaDate(nextDrawDate)
   const badgeLabel = hasActiveRaffle ? raffleName || 'Sorteo activo' : 'No hay sorteos activos'
   const headline = hasActiveRaffle
     ? 'Compra tu carton y espera el aviso si ganas.'

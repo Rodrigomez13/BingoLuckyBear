@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { normalizePrizeAmounts } from '@/lib/bingo'
+import { parseArgentinaDateTimeLocal } from '@/lib/date'
 
 function cleanTextItems(items: unknown) {
   return Array.isArray(items) ? items.map((item) => String(item).trim()).filter(Boolean) : []
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const name = String(body.name ?? '').trim()
     const description = String(body.description ?? '').trim()
     const amount = String(body.amount ?? '').trim()
-    const drawDate = String(body.draw_date ?? '').trim()
+    const drawDate = parseArgentinaDateTimeLocal(String(body.draw_date ?? '').trim())
     const paymentAccountId = String(body.payment_account_id ?? '').trim()
     const sortedPrizes = normalizePrizeAmounts(cleanTextItems(body.prizes))
 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
         additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
         amount: amount || null,
         bundle_offers: cleanTextItems(body.bundle_offers),
-        draw_date: drawDate || null,
+        draw_date: drawDate,
         payment_account_id: paymentAccountId || null,
         admin_id: user.id,
         is_active: false,

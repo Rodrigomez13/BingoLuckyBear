@@ -11,6 +11,7 @@ import { BearLogo } from '@/components/bear-logo'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
 import { PAYMENT_METHODS } from '@/lib/payment'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
 
 const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
 const MIN_RECEIPT_SIZE = 10 * 1024
@@ -273,7 +274,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
         <RaffleDetail
           icon={<CalendarDays className="h-5 w-5" />}
           label="Fecha"
-          value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+            value={formatArgentinaDateTime(raffle.draw_date)}
         />
       </div>
 
