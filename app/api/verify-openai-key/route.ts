@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(_request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY
+  const model = process.env.OPENAI_RECEIPT_MODEL || 'gpt-4o-mini'
 
   if (!apiKey) {
     return NextResponse.json(
@@ -19,45 +20,45 @@ export async function GET(_request: NextRequest) {
   }
 
   try {
-    // Hacer una llamada simple a OpenAI para verificar la validez de la API key
-    const response = await fetch('https://api.openai.com/v1/models', {
-      method: 'GET',
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        model,
+        input: 'Responde solo OK para verificar esta API key.',
+        max_output_tokens: 16,
+      }),
     })
 
     const data = await response.json()
 
     if (!response.ok) {
+      const isQuotaError = response.status === 429
+      const isAuthError = response.status === 401 || response.status === 403
+
       return NextResponse.json(
         {
           valid: false,
           error: data?.error?.message || 'API key inválida',
-          message: 'La API key de OpenAI no es válida o está expirada',
+          message: isQuotaError
+            ? 'La API key esta configurada, pero el proyecto no tiene cuota o billing disponible.'
+            : isAuthError
+              ? 'La API key de OpenAI no es valida o no tiene permisos.'
+              : 'OpenAI rechazo la solicitud de verificacion.',
           status_code: response.status,
         },
-        { status: 401 }
+        { status: response.status }
       )
     }
-
-    // Verificar que tenemos acceso a los modelos de visión
-    const models = data.data || []
-    const hasVisionModel = models.some((model: { id: string }) =>
-      ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4-vision'].some(
-        (visionModel) => model.id.includes(visionModel)
-      )
-    )
 
     return NextResponse.json({
       valid: true,
       configured: true,
+      model,
       message: 'API key válida y configurada correctamente',
-      hasVisionModel,
-      availableModels: models
-        .filter((m: { id: string }) => m.id.includes('gpt-4'))
-        .map((m: { id: string }) => m.id)
-        .slice(0, 10), // Mostrar solo los primeros 10 modelos GPT-4
     })
   } catch (error) {
     return NextResponse.json(

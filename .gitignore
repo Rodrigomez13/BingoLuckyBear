@@ -15,6 +15,7 @@ node_modules
 tsconfig.tsbuildinfo
 dev-server*.log
 prod-server*.log
+.next-dev*.log
 .DS_Store
 
 .vercel

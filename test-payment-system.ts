@@ -296,7 +296,7 @@ function test5_ValidateDataFlow() {
   }
 }
 
-function runAllTests() {
+async function runAllTests() {
   console.log('🚀 INICIANDO PRUEBAS DEL SISTEMA DE PAGOS')
   console.log('═'.repeat(50))
 

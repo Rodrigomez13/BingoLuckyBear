@@ -123,46 +123,19 @@ async function parseReceiptWithOpenAI({
   }
 
   const isPdf = contentType === 'application/pdf'
-  
-  // Construir el content array con imagen/documento y texto
-  const content: Array<{ type: string; [key: string]: unknown }> = [
-    {
-      type: 'text',
-      text: [
-        'Extrae datos de este comprobante de transferencia argentino.',
-        'Devuelve solo JSON valido con las claves del schema.',
-        `Monto esperado del carton: ${expectedAmount || 'desconocido'}.`,
-        `Numero de operacion informado por el comprador: ${expectedOperationNumber || 'desconocido'}.`,
-        `Cuenta destino esperada: ${expectedDestinationAccount || 'desconocida'}.`,
-      ].join('\n'),
-    },
-  ]
-
-  if (isPdf) {
-    // Para PDFs usar document type
-    content.push({
-      type: 'document',
-      document: {
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: 'application/pdf',
-          data: base64,
-        },
-      },
-    })
-  } else {
-    // Para imágenes usar image_url type
-    content.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:${contentType};base64,${base64}`,
+  const filePart = isPdf
+    ? {
+        type: 'input_file',
+        filename,
+        file_data: `data:${contentType};base64,${base64}`,
+      }
+    : {
+        type: 'input_image',
+        image_url: `data:${contentType};base64,${base64}`,
         detail: 'high',
-      },
-    })
-  }
+      }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -170,15 +143,28 @@ async function parseReceiptWithOpenAI({
     },
     body: JSON.stringify({
       model: OPENAI_RECEIPT_MODEL,
-      messages: [
+      input: [
         {
           role: 'user',
-          content,
+          content: [
+            {
+              type: 'input_text',
+              text: [
+                'Extrae datos de este comprobante de transferencia argentino.',
+                'Devuelve solo JSON valido con las claves del schema.',
+                'Si no ves un dato con claridad, usa null y agrega una advertencia.',
+                `Monto esperado del carton: ${expectedAmount || 'desconocido'}.`,
+                `Numero de operacion informado por el comprador: ${expectedOperationNumber || 'desconocido'}.`,
+                `Cuenta destino esperada: ${expectedDestinationAccount || 'desconocida'}.`,
+              ].join('\n'),
+            },
+            filePart,
+          ],
         },
       ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
+      text: {
+        format: {
+          type: 'json_schema',
           name: 'receipt_parse',
           strict: true,
           schema: {
@@ -203,19 +189,19 @@ async function parseReceiptWithOpenAI({
   const data = await response.json()
 
   if (!response.ok) {
-    const message = data?.error?.message || 'OpenAI no pudo procesar el comprobante'
+    const message = response.status === 429
+      ? 'OpenAI no puede parsear el comprobante porque el proyecto no tiene cuota o billing disponible.'
+      : data?.error?.message || 'OpenAI no pudo procesar el comprobante'
     throw new Error(message)
   }
 
-  // Extraer el contenido JSON de la respuesta
-  const choice = (data.choices?.[0] as { message?: { content?: string } })
-  const content_text = choice?.message?.content
-  
-  if (!content_text) {
+  const outputText = extractOutputText(data)
+
+  if (!outputText) {
     throw new Error('OpenAI no devolvio una respuesta valida')
   }
 
-  return { configured: true as const, parsed: coerceParsedReceiptData(JSON.parse(content_text)) }
+  return { configured: true as const, parsed: coerceParsedReceiptData(JSON.parse(outputText)) }
 }
 
 export async function PATCH(

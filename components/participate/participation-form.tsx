@@ -700,7 +700,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                 </>
               ) : (
                 jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : Number(formData.quantity) > 1 ? 'Obtener Mis Cartones' : 'Obtener Mi Carton'
-              )}}
+              )}
             </Button>
 
             <p className="text-xs text-center text-zinc-500">
