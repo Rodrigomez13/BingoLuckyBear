@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { generateBingoNumbers } from '@/lib/bingo'
 import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
+import { isReasonablePhone, normalizePhoneNumber } from '@/lib/phone'
 import { nanoid } from 'nanoid'
 
 function isValidEmail(value: string) {
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       session_token 
     } = body
     const quantity = normalizeQuantity(requestedQuantity)
+    const normalizedPhone = normalizePhoneNumber(phone)
 
     // Validate all required fields
     if (!raffle_id || !full_name || !dni || !address || !phone || !email || !payment_receipt_url || !session_token) {
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
     if (
       !hasReasonableLength(full_name, 3, 120) ||
       !hasReasonableLength(address, 6, 180) ||
-      !hasReasonableLength(phone, 6, 40) ||
+      !isReasonablePhone(normalizedPhone) ||
       !hasReasonableLength(dni, 6, 20)
     ) {
       return NextResponse.json(
@@ -163,7 +165,7 @@ export async function POST(request: Request) {
         full_name: full_name.trim(),
         dni: dni.trim(),
         address: address.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
         email: email.trim(),
         payment_receipt_url,
         payment_method,

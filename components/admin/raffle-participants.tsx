@@ -27,6 +27,7 @@ import {
   normalizePrizeAmounts,
 } from '@/lib/bingo'
 import { formatArgentinaDate, formatArgentinaDateTime, parseArgentinaDateTimeLocal, toArgentinaDateTimeLocal } from '@/lib/date'
+import { formatPhoneInput } from '@/lib/phone'
 
 interface Raffle {
   id: string
@@ -357,7 +358,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       card.full_name,
       card.dni,
       card.address,
-      card.phone,
+      formatPhoneInput(card.phone),
       card.email,
       getPaymentStatusLabel(card.payment_status),
       card.payment_method ?? '',
@@ -783,7 +784,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Telefono</p>
-                    <p className="break-all">{card.phone}</p>
+                    <p className="break-all">{formatPhoneInput(card.phone)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Pago</p>
@@ -847,7 +848,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                   </div>
                   <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Telefono</p>
-                    <p className="truncate font-medium text-white">{selectedCard.phone}</p>
+                    <p className="truncate font-medium text-white">{formatPhoneInput(selectedCard.phone)}</p>
                   </div>
                   <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Email</p>

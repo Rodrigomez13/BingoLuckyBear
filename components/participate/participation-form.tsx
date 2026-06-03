@@ -13,6 +13,7 @@ import { PurchaseConfirmation } from '@/components/participate/purchase-confirma
 import { PAYMENT_METHODS } from '@/lib/payment'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
+import { formatPhoneInput } from '@/lib/phone'
 
 const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
 const MIN_RECEIPT_SIZE = 10 * 1024
@@ -431,6 +432,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                   type="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  onBlur={() => setFormData((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
                   placeholder="+54 11 1234-5678"
                   required
                   className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"

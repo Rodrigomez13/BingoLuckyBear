@@ -17,6 +17,7 @@ import { RaffleParticipants } from './raffle-participants'
 import type { User } from '@supabase/supabase-js'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeAwards, getPrizeSchedule, normalizePrizeAmounts } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
+import { formatPhoneInput } from '@/lib/phone'
 import {
   Dialog,
   DialogContent,
@@ -146,6 +147,22 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const [isSavingReview, setIsSavingReview] = useState(false)
   const [isReadingReceipt, setIsReadingReceipt] = useState(false)
   const [selectedClientDni, setSelectedClientDni] = useState<string | null>(null)
+  const [selectedClientKeys, setSelectedClientKeys] = useState<string[]>([])
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([])
+  const [selectedWalletKeys, setSelectedWalletKeys] = useState<string[]>([])
+  const [selectedRaffleIds, setSelectedRaffleIds] = useState<string[]>([])
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false)
+  const [isClientEditOpen, setIsClientEditOpen] = useState(false)
+  const [clientEditForm, setClientEditForm] = useState({
+    full_name: '',
+    dni: '',
+    address: '',
+    phone: '',
+    email: '',
+    payout_account_kind: '',
+    payout_account: '',
+    payout_holder_name: '',
+  })
   const router = useRouter()
   const supabase = createClient()
   const totalCards = cards.length || raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
@@ -182,6 +199,9 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       phone: string
       email: string
       address: string
+      payoutAccountKind: string
+      payoutAccount: string
+      payoutHolderName: string
       cards: AdminBingoCard[]
       raffleNames: Set<string>
       awards: string[]
@@ -197,9 +217,12 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       const current = byDni.get(key) ?? {
         dni: card.dni || 'Sin DNI',
         fullName: card.full_name,
-        phone: card.phone,
+        phone: formatPhoneInput(card.phone),
         email: card.email,
         address: card.address,
+        payoutAccountKind: card.payout_account_kind ?? '',
+        payoutAccount: card.payout_account ?? '',
+        payoutHolderName: card.payout_holder_name ?? '',
         cards: [],
         raffleNames: new Set<string>(),
         awards: [],
@@ -236,6 +259,8 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       name: string
       holder: string
       alias: string
+      key: string
+      cardIds: string[]
       cardsCount: number
       estimatedAmount: number
       raffles: Set<string>
@@ -250,9 +275,11 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       const key = accountId || 'unassigned'
       const current = byAccount.get(key) ?? {
         accountId,
+        key,
         name: account?.name ?? 'Sin cuenta asignada',
         holder: account?.holder ?? 'Cuenta por defecto/env',
         alias: account?.alias || account?.cbu || 'Sin alias/CBU',
+        cardIds: [],
         cardsCount: 0,
         estimatedAmount: 0,
         raffles: new Set<string>(),
@@ -261,6 +288,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       }
 
       current.cardsCount += 1
+      current.cardIds.push(card.id)
       current.estimatedAmount += card.receipt_amount ?? parseMoneyAmount(raffle?.amount)
       if (raffle?.name) current.raffles.add(raffle.name)
       if (card.payment_method) current.methods.add(card.payment_method)
@@ -345,6 +373,13 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const visibleClients = filteredClientSummaries.slice((clientsPage - 1) * clientsPerPage, clientsPage * clientsPerPage)
   const visibleWalletSales = walletSalesSummaries.slice((salesPage - 1) * salesPerPage, salesPage * salesPerPage)
   const visiblePaymentReviews = filteredPaymentReviews.slice((paymentReviewsPage - 1) * paymentReviewsPerPage, paymentReviewsPage * paymentReviewsPerPage)
+  const selectedClientCards = clientSummaries
+    .filter((client) => selectedClientKeys.includes(client.key))
+    .flatMap((client) => client.cards)
+  const selectedWalletCards = walletSalesSummaries
+    .filter((sale) => selectedWalletKeys.includes(sale.key))
+    .flatMap((sale) => sale.cardIds)
+  const selectedPaymentCards = cards.filter((card) => selectedPaymentIds.includes(card.id))
 
   useEffect(() => {
     setPaymentReviewsPage(1)
@@ -366,6 +401,25 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       receipt_validation_notes: selectedPaymentCard?.receipt_validation_notes ?? '',
     })
   }, [selectedPaymentCard])
+
+  const toggleSelection = (value: string, selectedValues: string[], setSelectedValues: (values: string[]) => void) => {
+    setSelectedValues(
+      selectedValues.includes(value)
+        ? selectedValues.filter((item) => item !== value)
+        : [...selectedValues, value]
+    )
+  }
+
+  const toggleVisibleSelection = (values: string[], selectedValues: string[], setSelectedValues: (values: string[]) => void) => {
+    const visibleSet = new Set(values)
+    const allVisibleSelected = values.length > 0 && values.every((value) => selectedValues.includes(value))
+
+    setSelectedValues(
+      allVisibleSelected
+        ? selectedValues.filter((value) => !visibleSet.has(value))
+        : [...new Set([...selectedValues, ...values])]
+    )
+  }
 
   const updatePrizeInput = (index: number, value: string) => {
     if (index === 0) {
@@ -640,7 +694,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           card.card_number,
           card.full_name,
           card.dni,
-          card.phone,
+          formatPhoneInput(card.phone),
           card.receipt_amount ?? parseMoneyAmount(raffle?.amount),
           card.payment_reference ?? '',
           card.receipt_operation_number ?? '',
@@ -661,6 +715,125 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       )
     )
     setSelectedPaymentCardId(updatedCard.id)
+  }
+
+  const updateCardsInDashboard = (updatedCards: AdminBingoCard[]) => {
+    const updatedById = new Map(updatedCards.map((card) => [card.id, card]))
+    setCards((current) =>
+      current.map((card) => {
+        const updated = updatedById.get(card.id)
+        return updated
+          ? { ...card, ...updated, raffle: card.raffle ?? raffleById.get(updated.raffle_id) ?? updated.raffle ?? null }
+          : card
+      })
+    )
+  }
+
+  const applyBulkPaymentStatus = async (cardIds: string[], status: 'pending' | 'approved' | 'rejected') => {
+    const ids = [...new Set(cardIds)]
+    if (ids.length === 0) return
+
+    setIsBulkUpdating(true)
+
+    try {
+      const response = await fetch('/api/admin/cards/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set_payment_status',
+          cardIds: ids,
+          payment_status: status,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo actualizar la seleccion')
+      }
+
+      updateCardsInDashboard(data.cards as AdminBingoCard[])
+      setSelectedPaymentIds((current) => current.filter((id) => !ids.includes(id)))
+      setSelectedClientKeys([])
+      setSelectedWalletKeys([])
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo actualizar la seleccion.')
+    } finally {
+      setIsBulkUpdating(false)
+    }
+  }
+
+  const openClientEditor = (client: NonNullable<typeof selectedClient>) => {
+    const lastCard = client.cards[0]
+    setClientEditForm({
+      full_name: client.fullName,
+      dni: client.dni,
+      address: client.address,
+      phone: formatPhoneInput(client.phone),
+      email: client.email,
+      payout_account_kind: lastCard?.payout_account_kind ?? '',
+      payout_account: lastCard?.payout_account ?? '',
+      payout_holder_name: lastCard?.payout_holder_name ?? '',
+    })
+    setSelectedClientDni(client.key)
+    setIsClientEditOpen(true)
+  }
+
+  const saveClientEdit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!selectedClient) return
+
+    setIsBulkUpdating(true)
+
+    try {
+      const response = await fetch('/api/admin/cards/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_client',
+          cardIds: selectedClient.cards.map((card) => card.id),
+          client: clientEditForm,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo guardar el cliente')
+      }
+
+      const updatedCards = data.cards as AdminBingoCard[]
+      updateCardsInDashboard(updatedCards)
+      setSelectedClientDni(normalizeDni(clientEditForm.dni) || selectedClient.key)
+      setSelectedClientKeys([])
+      setIsClientEditOpen(false)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo guardar el cliente.')
+    } finally {
+      setIsBulkUpdating(false)
+    }
+  }
+
+  const pauseSelectedRaffles = async () => {
+    const ids = selectedRaffleIds.filter((id) => raffles.find((raffle) => raffle.id === id && raffle.draw_status !== 'finished'))
+    if (ids.length === 0) return
+
+    setIsBulkUpdating(true)
+
+    try {
+      const { error } = await supabase
+        .from('raffles')
+        .update({ is_active: false })
+        .in('id', ids)
+        .eq('admin_id', user.id)
+
+      if (error) throw error
+
+      setRaffles((current) => current.map((raffle) => (ids.includes(raffle.id) ? { ...raffle, is_active: false } : raffle)))
+      setSelectedRaffleIds([])
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudieron pausar los sorteos.')
+    } finally {
+      setIsBulkUpdating(false)
+    }
   }
 
   const savePaymentReview = async (status?: 'pending' | 'approved' | 'rejected') => {
@@ -910,6 +1083,27 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               <SummaryBox label="Con premios" value={String(clientSummaries.filter((client) => client.awards.length > 0).length)} />
               <SummaryBox label="Ingreso estimado" value={formatARS(totalEstimatedIncome)} />
             </div>
+            {selectedClientKeys.length > 0 && (
+              <BulkActionBar
+                label={`${selectedClientKeys.length} cliente${selectedClientKeys.length !== 1 ? 's' : ''} seleccionado${selectedClientKeys.length !== 1 ? 's' : ''} · ${selectedClientCards.length} carton${selectedClientCards.length !== 1 ? 'es' : ''}`}
+                disabled={isBulkUpdating}
+                onClear={() => setSelectedClientKeys([])}
+                actions={[
+                  { label: 'Aprobar pagos', onClick: () => applyBulkPaymentStatus(selectedClientCards.map((card) => card.id), 'approved') },
+                  { label: 'Pendiente', onClick: () => applyBulkPaymentStatus(selectedClientCards.map((card) => card.id), 'pending') },
+                  { label: 'Rechazar', danger: true, onClick: () => applyBulkPaymentStatus(selectedClientCards.map((card) => card.id), 'rejected') },
+                  ...(selectedClientKeys.length === 1
+                    ? [{
+                        label: 'Editar cliente',
+                        onClick: () => {
+                          const client = clientSummaries.find((item) => item.key === selectedClientKeys[0])
+                          if (client) openClientEditor(client)
+                        },
+                      }]
+                    : []),
+                ]}
+              />
+            )}
             <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
               {visibleClients.length === 0 ? (
                 <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
@@ -917,7 +1111,14 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
-                  <div className="hidden grid-cols-[0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                  <div className="hidden grid-cols-[36px_0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <input
+                      type="checkbox"
+                      checked={visibleClients.length > 0 && visibleClients.every((client) => selectedClientKeys.includes(client.key))}
+                      onChange={() => toggleVisibleSelection(visibleClients.map((client) => client.key), selectedClientKeys, setSelectedClientKeys)}
+                      className="h-4 w-4 accent-amber-400"
+                      aria-label="Seleccionar clientes visibles"
+                    />
                     <span>DNI</span>
                     <span>Cliente</span>
                     <span>Contacto</span>
@@ -927,7 +1128,17 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                     <span className="text-right">Detalles</span>
                   </div>
                   {visibleClients.map((client) => (
-                    <div key={client.key} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] xl:items-center">
+                    <div key={client.key} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[36px_0.8fr_1.15fr_0.9fr_0.75fr_0.85fr_0.9fr_110px] xl:items-center">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedClientKeys.includes(client.key)}
+                          onChange={() => toggleSelection(client.key, selectedClientKeys, setSelectedClientKeys)}
+                          className="h-4 w-4 accent-amber-400"
+                          aria-label={`Seleccionar cliente ${client.fullName}`}
+                        />
+                        <span className="text-xs text-zinc-500 xl:hidden">Seleccionar</span>
+                      </label>
                       <div>
                         <p className="font-mono font-bold text-amber-200">{client.dni}</p>
                         <p className="mt-1 text-xs text-zinc-500 xl:hidden">DNI</p>
@@ -1010,6 +1221,18 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               <SummaryBox label="Cartones vendidos" value={String(totalCards)} />
               <SummaryBox label="Monto ingresado estimado" value={formatARS(totalEstimatedIncome)} />
             </div>
+            {selectedWalletKeys.length > 0 && (
+              <BulkActionBar
+                label={`${selectedWalletKeys.length} billetera${selectedWalletKeys.length !== 1 ? 's' : ''} seleccionada${selectedWalletKeys.length !== 1 ? 's' : ''} · ${selectedWalletCards.length} carton${selectedWalletCards.length !== 1 ? 'es' : ''}`}
+                disabled={isBulkUpdating}
+                onClear={() => setSelectedWalletKeys([])}
+                actions={[
+                  { label: 'Aprobar pagos', onClick: () => applyBulkPaymentStatus(selectedWalletCards, 'approved') },
+                  { label: 'Pendiente', onClick: () => applyBulkPaymentStatus(selectedWalletCards, 'pending') },
+                  { label: 'Rechazar', danger: true, onClick: () => applyBulkPaymentStatus(selectedWalletCards, 'rejected') },
+                ]}
+              />
+            )}
             <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
               {visibleWalletSales.length === 0 ? (
                 <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
@@ -1017,7 +1240,14 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
-                  <div className="hidden grid-cols-[1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                  <div className="hidden grid-cols-[36px_1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <input
+                      type="checkbox"
+                      checked={visibleWalletSales.length > 0 && visibleWalletSales.every((sale) => selectedWalletKeys.includes(sale.key))}
+                      onChange={() => toggleVisibleSelection(visibleWalletSales.map((sale) => sale.key), selectedWalletKeys, setSelectedWalletKeys)}
+                      className="h-4 w-4 accent-amber-400"
+                      aria-label="Seleccionar billeteras visibles"
+                    />
                     <span>Billetera</span>
                     <span>Alias / titular</span>
                     <span>Cartones</span>
@@ -1026,7 +1256,17 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                     <span>Ultima venta</span>
                   </div>
                   {visibleWalletSales.map((sale) => (
-                    <div key={sale.accountId ?? 'unassigned'} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] xl:items-center">
+                    <div key={sale.key} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[36px_1fr_1fr_0.7fr_0.85fr_1fr_0.85fr] xl:items-center">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedWalletKeys.includes(sale.key)}
+                          onChange={() => toggleSelection(sale.key, selectedWalletKeys, setSelectedWalletKeys)}
+                          className="h-4 w-4 accent-amber-400"
+                          aria-label={`Seleccionar ${sale.name}`}
+                        />
+                        <span className="text-xs text-zinc-500 xl:hidden">Seleccionar</span>
+                      </label>
                       <div>
                         <p className="font-bold text-white">{sale.name}</p>
                         <p className="mt-1 text-xs text-zinc-500">{Array.from(sale.methods).join(', ') || 'Sin metodo informado'}</p>
@@ -1133,6 +1373,19 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               ))}
             </div>
 
+            {selectedPaymentIds.length > 0 && (
+              <BulkActionBar
+                label={`${selectedPaymentIds.length} pago${selectedPaymentIds.length !== 1 ? 's' : ''} seleccionado${selectedPaymentIds.length !== 1 ? 's' : ''}`}
+                disabled={isBulkUpdating}
+                onClear={() => setSelectedPaymentIds([])}
+                actions={[
+                  { label: 'Aprobar', onClick: () => applyBulkPaymentStatus(selectedPaymentCards.map((card) => card.id), 'approved') },
+                  { label: 'Pendiente', onClick: () => applyBulkPaymentStatus(selectedPaymentCards.map((card) => card.id), 'pending') },
+                  { label: 'Rechazar', danger: true, onClick: () => applyBulkPaymentStatus(selectedPaymentCards.map((card) => card.id), 'rejected') },
+                ]}
+              />
+            )}
+
             <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
               {visiblePaymentReviews.length === 0 ? (
                 <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
@@ -1140,7 +1393,14 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                 </div>
               ) : (
                 <div className="divide-y divide-white/10">
-                  <div className="hidden grid-cols-[0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                  <div className="hidden grid-cols-[36px_0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <input
+                      type="checkbox"
+                      checked={visiblePaymentReviews.length > 0 && visiblePaymentReviews.every((card) => selectedPaymentIds.includes(card.id))}
+                      onChange={() => toggleVisibleSelection(visiblePaymentReviews.map((card) => card.id), selectedPaymentIds, setSelectedPaymentIds)}
+                      className="h-4 w-4 accent-amber-400"
+                      aria-label="Seleccionar pagos visibles"
+                    />
                     <span>Estado</span>
                     <span>Cliente</span>
                     <span>Sorteo</span>
@@ -1153,14 +1413,24 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                     const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
 
                     return (
-                      <div key={card.id} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] xl:items-center">
+                      <div key={card.id} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[36px_0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] xl:items-center">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPaymentIds.includes(card.id)}
+                            onChange={() => toggleSelection(card.id, selectedPaymentIds, setSelectedPaymentIds)}
+                            className="h-4 w-4 accent-amber-400"
+                            aria-label={`Seleccionar pago de ${card.full_name}`}
+                          />
+                          <span className="text-xs text-zinc-500 xl:hidden">Seleccionar</span>
+                        </label>
                         <div>
                           <PaymentStatusBadge status={card.payment_status} />
                           <p className="mt-1 text-xs text-zinc-500 xl:hidden">Estado</p>
                         </div>
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-white">{card.full_name}</p>
-                          <p className="mt-1 truncate text-xs text-zinc-500">{card.dni} · {card.phone}</p>
+                          <p className="mt-1 truncate text-xs text-zinc-500">{card.dni} · {formatPhoneInput(card.phone)}</p>
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-zinc-300">{raffle?.name ?? 'Sorteo eliminado'}</p>
@@ -1305,12 +1575,25 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               <h2 className="text-xl font-semibold tracking-tight text-white">
                 Mis Sorteos
               </h2>
-              <Button 
-                onClick={() => setShowForm(true)}
-                className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200"
-              >
-                Nuevo Sorteo
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {selectedRaffleIds.length > 0 && (
+                  <Button
+                    type="button"
+                    onClick={pauseSelectedRaffles}
+                    disabled={isBulkUpdating}
+                    variant="outline"
+                    className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+                  >
+                    Pausar seleccionados
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200"
+                >
+                  Nuevo Sorteo
+                </Button>
+              </div>
             </div>
 
             {/* Raffles List */}
@@ -1325,7 +1608,14 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                 </Card>
               ) : (
                 <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/80">
-                  <div className="hidden grid-cols-[0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                  <div className="hidden grid-cols-[36px_0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <input
+                      type="checkbox"
+                      checked={visibleRaffles.length > 0 && visibleRaffles.every((raffle) => selectedRaffleIds.includes(raffle.id))}
+                      onChange={() => toggleVisibleSelection(visibleRaffles.map((raffle) => raffle.id), selectedRaffleIds, setSelectedRaffleIds)}
+                      className="h-4 w-4 accent-amber-400"
+                      aria-label="Seleccionar sorteos visibles"
+                    />
                     <span>Estado</span>
                     <span>Sorteo</span>
                     <span>Fecha</span>
@@ -1351,10 +1641,20 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                               setSelectedRaffle(raffle)
                             }
                           }}
-                          className={`grid w-full cursor-pointer gap-3 px-4 py-4 text-left text-sm transition hover:bg-amber-400/5 xl:grid-cols-[0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] xl:items-center ${
+                          className={`grid w-full cursor-pointer gap-3 px-4 py-4 text-left text-sm transition hover:bg-amber-400/5 xl:grid-cols-[36px_0.85fr_minmax(150px,1.2fr)_1fr_0.8fr_0.85fr_0.75fr_118px] xl:items-center ${
                             selectedRaffle?.id === raffle.id ? 'bg-amber-400/10 ring-1 ring-inset ring-amber-400/50' : ''
                           }`}
                         >
+                          <label className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedRaffleIds.includes(raffle.id)}
+                              onChange={() => toggleSelection(raffle.id, selectedRaffleIds, setSelectedRaffleIds)}
+                              className="h-4 w-4 accent-amber-400"
+                              aria-label={`Seleccionar sorteo ${raffle.name}`}
+                            />
+                            <span className="text-xs text-zinc-500 xl:hidden">Seleccionar</span>
+                          </label>
                           <div>
                             <Badge className={badge.className}>{badge.label}</Badge>
                             <p className="mt-1 text-xs text-zinc-500 xl:hidden">Estado</p>
@@ -1617,7 +1917,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <InfoPanel label="Cliente" value={selectedPaymentCard.full_name} />
-                    <InfoPanel label="DNI / telefono" value={`${selectedPaymentCard.dni} · ${selectedPaymentCard.phone}`} />
+                    <InfoPanel label="DNI / telefono" value={`${selectedPaymentCard.dni} · ${formatPhoneInput(selectedPaymentCard.phone)}`} />
                     <InfoPanel label="Sorteo" value={(raffleById.get(selectedPaymentCard.raffle_id) ?? selectedPaymentCard.raffle)?.name ?? 'Sorteo eliminado'} />
                     <InfoPanel label="Operacion informada" value={selectedPaymentCard.payment_reference ?? 'Sin registrar'} />
                   </div>
@@ -1743,6 +2043,25 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
             </DialogHeader>
             {selectedClient && (
               <div className="space-y-5">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => openClientEditor(selectedClient)}
+                    className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+                  >
+                    Editar datos
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => applyBulkPaymentStatus(selectedClient.cards.map((card) => card.id), 'approved')}
+                    disabled={isBulkUpdating}
+                    className="border-emerald-400/40 bg-transparent text-emerald-200 hover:bg-emerald-400/10"
+                  >
+                    Aprobar pagos
+                  </Button>
+                </div>
                 <div className="grid gap-3 md:grid-cols-4">
                   <SummaryBox label="DNI" value={selectedClient.dni} />
                   <SummaryBox label="Cartones" value={String(selectedClient.cards.length)} />
@@ -1811,6 +2130,100 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isClientEditOpen} onOpenChange={setIsClientEditOpen}>
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(96vw,900px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
+            <DialogHeader>
+              <DialogTitle className="text-white">Editar cliente</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={saveClientEdit} className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">Nombre completo</span>
+                <Input
+                  value={clientEditForm.full_name}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, full_name: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                  required
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">DNI</span>
+                <Input
+                  value={clientEditForm.dni}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, dni: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                  required
+                />
+              </label>
+              <label className="space-y-1 text-sm sm:col-span-2">
+                <span className="text-zinc-300">Direccion</span>
+                <Input
+                  value={clientEditForm.address}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, address: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                  required
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">Telefono</span>
+                <Input
+                  type="tel"
+                  value={clientEditForm.phone}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, phone: event.target.value }))}
+                  onBlur={() => setClientEditForm((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
+                  placeholder="+54 9 11 1234-5678"
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                  required
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">Email</span>
+                <Input
+                  type="email"
+                  value={clientEditForm.email}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, email: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                  required
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">Tipo cuenta premio</span>
+                <select
+                  value={clientEditForm.payout_account_kind}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, payout_account_kind: event.target.value }))}
+                  className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                >
+                  <option value="">Sin definir</option>
+                  <option value="Alias">Alias</option>
+                  <option value="CBU">CBU</option>
+                  <option value="CVU">CVU</option>
+                </select>
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-zinc-300">Cuenta premio</span>
+                <Input
+                  value={clientEditForm.payout_account}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, payout_account: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                />
+              </label>
+              <label className="space-y-1 text-sm sm:col-span-2">
+                <span className="text-zinc-300">Titular cuenta premio</span>
+                <Input
+                  value={clientEditForm.payout_holder_name}
+                  onChange={(event) => setClientEditForm((current) => ({ ...current, payout_holder_name: event.target.value }))}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                />
+              </label>
+              <p className="rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-50 sm:col-span-2">
+                Esta accion actualiza todos los cartones agrupados en este cliente.
+              </p>
+              <Button type="submit" disabled={isBulkUpdating} className="bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 sm:col-span-2">
+                {isBulkUpdating ? 'Guardando' : 'Guardar cliente'}
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </main>
@@ -1945,6 +2358,53 @@ function QuickActionButton({
       </span>
       <span className="mt-2 block truncate text-sm text-zinc-400">{detail}</span>
     </button>
+  )
+}
+
+function BulkActionBar({
+  label,
+  actions,
+  disabled,
+  onClear,
+}: {
+  label: string
+  actions: Array<{ label: string; danger?: boolean; onClick: () => void }>
+  disabled?: boolean
+  onClear: () => void
+}) {
+  return (
+    <div className="mb-4 flex flex-col gap-3 rounded-md border border-amber-400/25 bg-amber-400/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-amber-50">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {actions.map((action) => (
+          <Button
+            key={action.label}
+            type="button"
+            size="sm"
+            onClick={action.onClick}
+            disabled={disabled}
+            variant={action.danger ? 'outline' : 'default'}
+            className={
+              action.danger
+                ? 'border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10'
+                : 'bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200'
+            }
+          >
+            {action.label}
+          </Button>
+        ))}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onClear}
+          disabled={disabled}
+          className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+        >
+          Limpiar
+        </Button>
+      </div>
+    </div>
   )
 }
 
