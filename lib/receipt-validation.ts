@@ -68,10 +68,11 @@ export function validateParsedReceipt(parsed: ParsedReceiptData, context: Receip
 
   const hardMismatch = [amountMatches, operationMatches, destinationMatches].some((value) => value === false)
   const hasCoreData = parsed.amount !== null && Boolean(parsed.operationNumber)
+  const hasRequiredDestination = !expectedDestination || Boolean(parsedDestination)
 
   return {
     warnings: [...new Set(warnings)],
-    suggestedStatus: hardMismatch || !hasCoreData ? 'pending' as const : 'approved' as const,
+    suggestedStatus: hardMismatch || !hasCoreData || !hasRequiredDestination ? 'pending' as const : 'approved' as const,
     amountMatches,
     operationMatches,
     destinationMatches,
@@ -93,4 +94,3 @@ export function coerceParsedReceiptData(value: unknown): ParsedReceiptData {
     warnings: Array.isArray(record.warnings) ? record.warnings.map(String).filter(Boolean) : [],
   }
 }
-

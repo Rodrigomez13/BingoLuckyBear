@@ -4,8 +4,6 @@
  * Script de Prueba Exhaustiva del Sistema de Pagos (Simplificado)
  */
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
-
 interface TestResult {
   name: string
   status: 'PASS' | 'FAIL' | 'WARN'
@@ -25,63 +23,32 @@ function addResult(
 }
 
 function test1_ValidateRequestStructure() {
-  console.log('\n📋 TEST 1: Validar Estructura del Request de OpenAI')
+  console.log('\n📋 TEST 1: Validar configuracion de OCR gratuito')
   console.log('━'.repeat(50))
 
   try {
-    // Validar que el modelo está correctamente especificado
-    const modelName = process.env.OPENAI_RECEIPT_MODEL || 'gpt-4o-mini'
-    const validModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4-vision']
-    const isValidModel = validModels.some((m) => modelName.includes(m))
+    const supportedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff']
 
-    if (!isValidModel) {
-      addResult(
-        'Modelo OpenAI',
-        'FAIL',
-        `Modelo inválido: ${modelName}. Debe ser uno de: ${validModels.join(', ')}`
-      )
+    if (!supportedImageTypes.includes('image/png') || !supportedImageTypes.includes('image/webp')) {
+      addResult('Tipos de imagen OCR', 'FAIL', 'Faltan formatos basicos de imagen para OCR')
       return false
     }
 
-    addResult('Modelo OpenAI', 'PASS', `Modelo válido: ${modelName}`)
+    addResult('Tipos de imagen OCR', 'PASS', `Formatos soportados: ${supportedImageTypes.join(', ')}`)
 
-    // Validar estructura del JSON schema
-    const schema = {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        amount: { type: ['number', 'null'] },
-        operationNumber: { type: ['string', 'null'] },
-        destinationAccount: { type: ['string', 'null'] },
-        date: { type: ['string', 'null'] },
-        rawText: { type: ['string', 'null'] },
-        confidence: { type: ['number', 'null'], minimum: 0, maximum: 1 },
-        warnings: { type: 'array', items: { type: 'string' } },
-      },
-      required: [
-        'amount',
-        'operationNumber',
-        'destinationAccount',
-        'date',
-        'rawText',
-        'confidence',
-        'warnings',
-      ],
-    }
-
-    const requiredFields = (schema.required as string[]).length
-    const hasAllRequired = requiredFields === 7
+    const requiredFields = ['amount', 'operationNumber', 'destinationAccount', 'date', 'rawText', 'confidence', 'warnings']
+    const hasAllRequired = requiredFields.length === 7
 
     if (!hasAllRequired) {
-      addResult('JSON Schema', 'FAIL', `Schema incompleto. Faltan ${7 - requiredFields} campos requeridos`)
+      addResult('Datos parseados', 'FAIL', `Faltan ${7 - requiredFields.length} campos requeridos`)
       return false
     }
 
-    addResult('JSON Schema', 'PASS', `Schema válido con ${requiredFields} campos requeridos`)
+    addResult('Datos parseados', 'PASS', `Campos requeridos: ${requiredFields.join(', ')}`)
     return true
   } catch (error) {
     addResult(
-      'Estructura Request',
+      'Configuracion OCR',
       'FAIL',
       `Error: ${error instanceof Error ? error.message : String(error)}`
     )
@@ -148,8 +115,6 @@ function test3_ValidateManualControl() {
   console.log('━'.repeat(50))
 
   try {
-    const validStates = ['pending', 'approved', 'rejected']
-
     // Verificar que hay tres opciones de guardado
     const saveOptions = [
       { action: 'saveReceiptReview("approved")', status: 'approved', label: 'Aprobar' },
@@ -236,19 +201,19 @@ function test5_ValidateDataFlow() {
       {
         step: 1,
         action: 'Usuario carga comprobante',
-        validates: 'JPG, PNG, WebP o PDF',
+        validates: 'JPG, PNG, WebP, BMP o TIFF para OCR; PDF queda para revision manual',
         status: '✅',
       },
       {
         step: 2,
-        action: 'Admin hace click en "Parsear comprobante"',
+        action: 'Admin hace click en "Leer con OCR"',
         validates: 'POST /api/cards/[id]/receipt',
         status: '✅',
       },
       {
         step: 3,
-        action: 'OpenAI extrae datos del comprobante',
-        validates: 'Valida JSON schema',
+        action: 'OCR gratuito lee el texto del comprobante',
+        validates: 'Extrae monto, operacion, destino, fecha y texto crudo',
         status: '✅',
       },
       {

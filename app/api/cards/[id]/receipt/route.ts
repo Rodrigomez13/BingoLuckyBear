@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { get } from '@vercel/blob'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { coerceParsedReceiptData, validateParsedReceipt, type PaymentStatus } from '@/lib/receipt-validation'
+import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
+import { validateParsedReceipt, type PaymentStatus } from '@/lib/receipt-validation'
 
 interface PaymentAccountRecord {
   alias?: string | null
@@ -22,7 +23,8 @@ interface BingoCardRecord {
   payment_reference?: string | null
 }
 
-const OPENAI_RECEIPT_MODEL = process.env.OPENAI_RECEIPT_MODEL || 'gpt-4o-mini'
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 async function ensureAdminOwnsCard(cardId: string, userId: string) {
   const supabase = await createServiceClient()
@@ -69,7 +71,7 @@ async function getAuthenticatedUser() {
   return user
 }
 
-async function blobToBase64(pathname: string) {
+async function blobToFile(pathname: string) {
   const result = await get(pathname, { access: 'private' })
 
   if (!result) {
@@ -82,126 +84,8 @@ async function blobToBase64(pathname: string) {
   return {
     contentType: result.blob.contentType || (pathname.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
     filename: pathname.split('/').pop() || 'comprobante',
-    base64: bytes.toString('base64'),
+    bytes,
   }
-}
-
-function extractOutputText(response: unknown) {
-  const record = response as { output_text?: string; output?: unknown[] }
-  if (typeof record.output_text === 'string') return record.output_text
-
-  for (const item of record.output ?? []) {
-    const content = (item as { content?: unknown[] }).content ?? []
-    for (const part of content) {
-      const text = (part as { text?: string }).text
-      if (typeof text === 'string') return text
-    }
-  }
-
-  return ''
-}
-
-async function parseReceiptWithOpenAI({
-  base64,
-  contentType,
-  filename,
-  expectedAmount,
-  expectedOperationNumber,
-  expectedDestinationAccount,
-}: {
-  base64: string
-  contentType: string
-  filename: string
-  expectedAmount?: string | null
-  expectedOperationNumber?: string | null
-  expectedDestinationAccount?: string | null
-}) {
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    return { configured: false as const }
-  }
-
-  const isPdf = contentType === 'application/pdf'
-  const filePart = isPdf
-    ? {
-        type: 'input_file',
-        filename,
-        file_data: `data:${contentType};base64,${base64}`,
-      }
-    : {
-        type: 'input_image',
-        image_url: `data:${contentType};base64,${base64}`,
-        detail: 'high',
-      }
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: OPENAI_RECEIPT_MODEL,
-      input: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: [
-                'Extrae datos de este comprobante de transferencia argentino.',
-                'Devuelve solo JSON valido con las claves del schema.',
-                'Si no ves un dato con claridad, usa null y agrega una advertencia.',
-                `Monto esperado del carton: ${expectedAmount || 'desconocido'}.`,
-                `Numero de operacion informado por el comprador: ${expectedOperationNumber || 'desconocido'}.`,
-                `Cuenta destino esperada: ${expectedDestinationAccount || 'desconocida'}.`,
-              ].join('\n'),
-            },
-            filePart,
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'receipt_parse',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              amount: { type: ['number', 'null'] },
-              operationNumber: { type: ['string', 'null'] },
-              destinationAccount: { type: ['string', 'null'] },
-              date: { type: ['string', 'null'], description: 'Fecha ISO si es visible o null.' },
-              rawText: { type: ['string', 'null'] },
-              confidence: { type: ['number', 'null'], minimum: 0, maximum: 1 },
-              warnings: { type: 'array', items: { type: 'string' } },
-            },
-            required: ['amount', 'operationNumber', 'destinationAccount', 'date', 'rawText', 'confidence', 'warnings'],
-          },
-        },
-      },
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    const message = response.status === 429
-      ? 'OpenAI no puede parsear el comprobante porque el proyecto no tiene cuota o billing disponible.'
-      : data?.error?.message || 'OpenAI no pudo procesar el comprobante'
-    throw new Error(message)
-  }
-
-  const outputText = extractOutputText(data)
-
-  if (!outputText) {
-    throw new Error('OpenAI no devolvio una respuesta valida')
-  }
-
-  return { configured: true as const, parsed: coerceParsedReceiptData(JSON.parse(outputText)) }
 }
 
 export async function PATCH(
@@ -267,31 +151,13 @@ export async function POST(
   const expectedDestinationAccount = access.paymentAccount?.alias || access.paymentAccount?.cbu || null
 
   try {
-    const file = await blobToBase64(access.card.payment_receipt_url)
-    const result = await parseReceiptWithOpenAI({
+    const file = await blobToFile(access.card.payment_receipt_url)
+    const parsed = await parseReceiptWithFreeOcr({
       ...file,
-      expectedAmount: access.raffle.amount,
-      expectedOperationNumber: access.card.payment_reference,
       expectedDestinationAccount,
     })
 
-    if (!result.configured) {
-      const { data, error } = await access.supabase
-        .from('bingo_cards')
-        .update({
-          receipt_parse_status: 'not_configured',
-          receipt_parse_error: 'Falta configurar OPENAI_API_KEY para parsear comprobantes automaticamente.',
-          receipt_parsed_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select('*')
-        .single()
-
-      if (error) throw error
-      return NextResponse.json({ card: data, configured: false })
-    }
-
-    const validation = validateParsedReceipt(result.parsed, {
+    const validation = validateParsedReceipt(parsed, {
       expectedAmount: access.raffle.amount,
       expectedOperationNumber: access.card.payment_reference,
       expectedDestinationAccount,
@@ -301,11 +167,11 @@ export async function POST(
       .from('bingo_cards')
       .update({
         payment_status: validation.suggestedStatus,
-        receipt_amount: result.parsed.amount,
-        receipt_operation_number: result.parsed.operationNumber,
-        receipt_destination_account: result.parsed.destinationAccount,
-        receipt_date: result.parsed.date,
-        receipt_raw_text: result.parsed.rawText,
+        receipt_amount: parsed.amount,
+        receipt_operation_number: parsed.operationNumber,
+        receipt_destination_account: parsed.destinationAccount,
+        receipt_date: parsed.date,
+        receipt_raw_text: parsed.rawText,
         receipt_parse_status: 'parsed',
         receipt_parse_error: null,
         receipt_validation_notes: validation.warnings.join('\n') || null,
@@ -316,7 +182,7 @@ export async function POST(
       .single()
 
     if (error) throw error
-    return NextResponse.json({ card: data, configured: true, validation })
+    return NextResponse.json({ card: data, validation })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'No se pudo parsear el comprobante'
     const { data } = await access.supabase

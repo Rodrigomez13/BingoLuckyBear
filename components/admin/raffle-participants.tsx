@@ -448,18 +448,13 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'No se pudo parsear el comprobante')
+        if (data.card) updateCardInState(data.card as BingoCard)
+        throw new Error(data.error || 'No se pudo leer el comprobante')
       }
 
       updateCardInState(data.card as BingoCard)
-      if (data.configured === false) {
-        alert('El parseo automatico quedo preparado, pero falta configurar OPENAI_API_KEY.')
-      }
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'No se pudo parsear el comprobante.')
-      if ((error as { card?: BingoCard }).card) {
-        updateCardInState((error as { card: BingoCard }).card)
-      }
+      alert(error instanceof Error ? error.message : 'No se pudo leer el comprobante.')
     } finally {
       setIsParsingReceipt(false)
     }
@@ -973,7 +968,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                         <PaymentStatusBadge status={selectedCard.payment_status} />
                       </p>
                       <p className="mt-1 text-sm text-zinc-400">
-                        Parseo: {getReceiptParseStatusLabel(selectedCard.receipt_parse_status)}
+                        OCR: {getReceiptParseStatusLabel(selectedCard.receipt_parse_status)}
                         {selectedCard.receipt_parsed_at ? ` - ${formatArgentinaDateTime(selectedCard.receipt_parsed_at)}` : ''}
                       </p>
                     </div>
@@ -985,7 +980,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                       className="border-sky-300/40 bg-transparent text-sky-100 hover:bg-sky-400/10"
                     >
                       <Bot className="mr-2 h-4 w-4" />
-                      {isParsingReceipt ? 'Parseando' : 'Parsear comprobante'}
+                      {isParsingReceipt ? 'Leyendo' : 'Leer con OCR'}
                     </Button>
                   </div>
                   {selectedCard.receipt_parse_error && (
@@ -1164,10 +1159,10 @@ function getPaymentStatusLabel(status?: BingoCard['payment_status']) {
 }
 
 function getReceiptParseStatusLabel(status?: BingoCard['receipt_parse_status']) {
-  if (status === 'parsed') return 'Parseado'
-  if (status === 'failed') return 'Parseo fallido'
-  if (status === 'not_configured') return 'IA sin configurar'
-  return 'Sin parsear'
+  if (status === 'parsed') return 'Leido'
+  if (status === 'failed') return 'Lectura fallida'
+  if (status === 'not_configured') return 'OCR no configurado'
+  return 'Sin leer'
 }
 
 function PaymentStatusBadge({ status }: { status?: BingoCard['payment_status'] }) {
