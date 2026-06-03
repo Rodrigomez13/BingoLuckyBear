@@ -1,11 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, ExternalLink, Landmark, Plus, Save, Search, Ticket, Trash2, Trophy, Users, WalletCards } from 'lucide-react'
+import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, ExternalLink, FileText, Landmark, Plus, Save, Search, Ticket, Trash2, Users, WalletCards, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -108,8 +108,8 @@ const emptyPaymentForm = {
 export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, initialCards }: AdminDashboardProps) {
   const [raffles, setRaffles] = useState<Raffle[]>(initialRaffles)
   const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(initialPaymentAccounts)
-  const [cards] = useState<AdminBingoCard[]>(initialCards)
-  const [activeSection, setActiveSection] = useState<'overview' | 'clients' | 'sales' | 'raffles' | 'payments'>('overview')
+  const [cards, setCards] = useState<AdminBingoCard[]>(initialCards)
+  const [activeSection, setActiveSection] = useState<'overview' | 'clients' | 'sales' | 'paymentReviews' | 'raffles' | 'payments'>('overview')
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -130,11 +130,24 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const [paymentsPage, setPaymentsPage] = useState(1)
   const [clientsPage, setClientsPage] = useState(1)
   const [salesPage, setSalesPage] = useState(1)
+  const [paymentReviewsPage, setPaymentReviewsPage] = useState(1)
   const [clientSearch, setClientSearch] = useState('')
+  const [paymentReviewSearch, setPaymentReviewSearch] = useState('')
+  const [paymentReviewFilter, setPaymentReviewFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
+  const [selectedPaymentCardId, setSelectedPaymentCardId] = useState<string | null>(null)
+  const [paymentReviewForm, setPaymentReviewForm] = useState({
+    payment_status: 'pending' as 'pending' | 'approved' | 'rejected',
+    receipt_amount: '',
+    receipt_operation_number: '',
+    receipt_destination_account: '',
+    receipt_date: '',
+    receipt_validation_notes: '',
+  })
+  const [isSavingReview, setIsSavingReview] = useState(false)
+  const [isReadingReceipt, setIsReadingReceipt] = useState(false)
   const [selectedClientDni, setSelectedClientDni] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
-  const finishedCount = raffles.filter((raffle) => raffle.draw_status === 'finished').length
   const totalCards = cards.length || raffles.reduce((total, raffle) => total + (raffle.bingo_cards?.[0]?.count ?? 0), 0)
   const raffleById = useMemo(() => new Map(raffles.map((raffle) => [raffle.id, raffle])), [raffles])
   const defaultPaymentAccountId = paymentAccounts.find((account) => account.is_default)?.id ?? null
@@ -261,6 +274,42 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
     const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
     return total + (card.receipt_amount ?? parseMoneyAmount(raffle?.amount))
   }, 0)
+  const paymentReviewCounts = useMemo(() => ({
+    pending: cards.filter((card) => (card.payment_status ?? 'pending') === 'pending').length,
+    approved: cards.filter((card) => card.payment_status === 'approved').length,
+    rejected: cards.filter((card) => card.payment_status === 'rejected').length,
+    failedOcr: cards.filter((card) => card.receipt_parse_status === 'failed').length,
+  }), [cards])
+  const approvedIncome = cards.reduce((total, card) => {
+    if (card.payment_status !== 'approved') return total
+    const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+    return total + (card.receipt_amount ?? parseMoneyAmount(raffle?.amount))
+  }, 0)
+  const filteredPaymentReviews = useMemo(() => {
+    const normalized = paymentReviewSearch.trim().toLowerCase()
+
+    return cards.filter((card) => {
+      const status = card.payment_status ?? 'pending'
+      const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+      const matchesStatus = paymentReviewFilter === 'all' || status === paymentReviewFilter
+      const matchesSearch = !normalized || [
+        card.card_number,
+        card.full_name,
+        card.dni,
+        card.phone,
+        card.email,
+        card.payment_reference ?? '',
+        card.receipt_operation_number ?? '',
+        card.receipt_destination_account ?? '',
+        raffle?.name ?? '',
+      ].some((value) => value.toLowerCase().includes(normalized))
+
+      return matchesStatus && matchesSearch
+    })
+  }, [cards, paymentReviewFilter, paymentReviewSearch, raffleById])
+  const selectedPaymentCard = selectedPaymentCardId
+    ? cards.find((card) => card.id === selectedPaymentCardId) ?? null
+    : null
   const selectedClient = selectedClientDni ? clientSummaries.find((client) => client.key === selectedClientDni) ?? null : null
   const sortedRaffles = [...raffles].sort((a, b) => {
     const statusWeight = (raffle: Raffle) => {
@@ -285,14 +334,38 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const paymentsPerPage = 8
   const clientsPerPage = 10
   const salesPerPage = 8
+  const paymentReviewsPerPage = 9
   const rafflesPageCount = Math.max(1, Math.ceil(sortedRaffles.length / rafflesPerPage))
   const paymentsPageCount = Math.max(1, Math.ceil(paymentAccounts.length / paymentsPerPage))
   const clientsPageCount = Math.max(1, Math.ceil(filteredClientSummaries.length / clientsPerPage))
   const salesPageCount = Math.max(1, Math.ceil(walletSalesSummaries.length / salesPerPage))
+  const paymentReviewsPageCount = Math.max(1, Math.ceil(filteredPaymentReviews.length / paymentReviewsPerPage))
   const visibleRaffles = sortedRaffles.slice((rafflesPage - 1) * rafflesPerPage, rafflesPage * rafflesPerPage)
   const visiblePaymentAccounts = paymentAccounts.slice((paymentsPage - 1) * paymentsPerPage, paymentsPage * paymentsPerPage)
   const visibleClients = filteredClientSummaries.slice((clientsPage - 1) * clientsPerPage, clientsPage * clientsPerPage)
   const visibleWalletSales = walletSalesSummaries.slice((salesPage - 1) * salesPerPage, salesPage * salesPerPage)
+  const visiblePaymentReviews = filteredPaymentReviews.slice((paymentReviewsPage - 1) * paymentReviewsPerPage, paymentReviewsPage * paymentReviewsPerPage)
+
+  useEffect(() => {
+    setPaymentReviewsPage(1)
+  }, [paymentReviewFilter, paymentReviewSearch])
+
+  useEffect(() => {
+    if (paymentReviewsPage > paymentReviewsPageCount) {
+      setPaymentReviewsPage(paymentReviewsPageCount)
+    }
+  }, [paymentReviewsPage, paymentReviewsPageCount])
+
+  useEffect(() => {
+    setPaymentReviewForm({
+      payment_status: selectedPaymentCard?.payment_status ?? 'pending',
+      receipt_amount: selectedPaymentCard?.receipt_amount?.toString() ?? '',
+      receipt_operation_number: selectedPaymentCard?.receipt_operation_number ?? '',
+      receipt_destination_account: selectedPaymentCard?.receipt_destination_account ?? '',
+      receipt_date: selectedPaymentCard?.receipt_date ? selectedPaymentCard.receipt_date.slice(0, 16) : '',
+      receipt_validation_notes: selectedPaymentCard?.receipt_validation_notes ?? '',
+    })
+  }, [selectedPaymentCard])
 
   const updatePrizeInput = (index: number, value: string) => {
     if (index === 0) {
@@ -553,6 +626,95 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
     )
   }
 
+  const exportPaymentReviewsCsv = () => {
+    downloadCsv(
+      'pagos_lucky_bingo_bear.csv',
+      ['Estado', 'OCR', 'Sorteo', 'Carton', 'Cliente', 'DNI', 'Telefono', 'Monto', 'Operacion informada', 'Operacion detectada', 'Destino detectado', 'Notas', 'Fecha compra'],
+      filteredPaymentReviews.map((card) => {
+        const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+
+        return [
+          getPaymentStatusLabel(card.payment_status),
+          getReceiptParseStatusLabel(card.receipt_parse_status),
+          raffle?.name ?? 'Sin sorteo',
+          card.card_number,
+          card.full_name,
+          card.dni,
+          card.phone,
+          card.receipt_amount ?? parseMoneyAmount(raffle?.amount),
+          card.payment_reference ?? '',
+          card.receipt_operation_number ?? '',
+          card.receipt_destination_account ?? '',
+          card.receipt_validation_notes ?? card.receipt_parse_error ?? '',
+          formatDateTime(card.created_at),
+        ]
+      })
+    )
+  }
+
+  const updateCardInDashboard = (updatedCard: AdminBingoCard) => {
+    setCards((current) =>
+      current.map((card) =>
+        card.id === updatedCard.id
+          ? { ...card, ...updatedCard, raffle: card.raffle ?? raffleById.get(updatedCard.raffle_id) ?? updatedCard.raffle ?? null }
+          : card
+      )
+    )
+    setSelectedPaymentCardId(updatedCard.id)
+  }
+
+  const savePaymentReview = async (status?: 'pending' | 'approved' | 'rejected') => {
+    if (!selectedPaymentCard) return
+
+    setIsSavingReview(true)
+
+    try {
+      const response = await fetch(`/api/cards/${selectedPaymentCard.id}/receipt`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...paymentReviewForm,
+          payment_status: status ?? paymentReviewForm.payment_status,
+          receipt_amount: paymentReviewForm.receipt_amount.trim() || null,
+          receipt_date: paymentReviewForm.receipt_date ? new Date(paymentReviewForm.receipt_date).toISOString() : null,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo guardar la revision')
+      }
+
+      updateCardInDashboard(data.card as AdminBingoCard)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo guardar la revision del pago.')
+    } finally {
+      setIsSavingReview(false)
+    }
+  }
+
+  const readPaymentReceipt = async () => {
+    if (!selectedPaymentCard) return
+
+    setIsReadingReceipt(true)
+
+    try {
+      const response = await fetch(`/api/cards/${selectedPaymentCard.id}/receipt`, { method: 'POST' })
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.card) updateCardInDashboard(data.card as AdminBingoCard)
+        throw new Error(data.error || 'No se pudo leer el comprobante')
+      }
+
+      updateCardInDashboard(data.card as AdminBingoCard)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo leer el comprobante.')
+    } finally {
+      setIsReadingReceipt(false)
+    }
+  }
+
   const deletePaymentAccount = async (accountId: string) => {
     if (!confirm('Eliminar esta cuenta de cobro? Los sorteos que la usaban quedaran sin cuenta asignada.')) {
       return
@@ -610,6 +772,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
             <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
             <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Clientes" />
             <AdminNavButton active={activeSection === 'sales'} onClick={() => setActiveSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
+            <AdminNavButton active={activeSection === 'paymentReviews'} onClick={() => setActiveSection('paymentReviews')} icon={<FileText className="h-4 w-4" />} label="Pagos" />
             <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
             <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
           </nav>
@@ -633,15 +796,42 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           />
           <AdminMetric
             icon={<WalletCards className="h-5 w-5" />}
-            label="Ingresos estimados"
-            value={formatARS(totalEstimatedIncome)}
-            detail="Segun monto por carton"
+            label="Ingreso aprobado"
+            value={formatARS(approvedIncome)}
+            detail={`${paymentReviewCounts.approved} pago${paymentReviewCounts.approved !== 1 ? 's' : ''} aprobado${paymentReviewCounts.approved !== 1 ? 's' : ''}`}
           />
           <AdminMetric
-            icon={<Trophy className="h-5 w-5" />}
-            label="Finalizados"
-            value={String(finishedCount)}
-            detail="Con resultados"
+            icon={<Clock3 className="h-5 w-5" />}
+            label="Pagos pendientes"
+            value={String(paymentReviewCounts.pending)}
+            detail={`${paymentReviewCounts.failedOcr} con OCR fallido`}
+          />
+        </div>
+
+        <div className="mb-8 grid gap-3 md:grid-cols-4">
+          <QuickActionButton
+            icon={<FileText className="h-4 w-4" />}
+            label="Revisar pagos"
+            detail={`${paymentReviewCounts.pending} pendiente${paymentReviewCounts.pending !== 1 ? 's' : ''}`}
+            onClick={() => setActiveSection('paymentReviews')}
+          />
+          <QuickActionButton
+            icon={<Ticket className="h-4 w-4" />}
+            label="Gestionar sorteos"
+            detail={`${raffles.length} sorteo${raffles.length !== 1 ? 's' : ''}`}
+            onClick={() => setActiveSection('raffles')}
+          />
+          <QuickActionButton
+            icon={<Users className="h-4 w-4" />}
+            label="Ver clientes"
+            detail={`${clientSummaries.length} DNI agrupado${clientSummaries.length !== 1 ? 's' : ''}`}
+            onClick={() => setActiveSection('clients')}
+          />
+          <QuickActionButton
+            icon={<WalletCards className="h-4 w-4" />}
+            label="Ventas"
+            detail={formatARS(totalEstimatedIncome)}
+            onClick={() => setActiveSection('sales')}
           />
         </div>
 
@@ -878,6 +1068,142 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
             <p className="mt-4 rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-50">
               El monto es estimado porque el sistema todavia no guarda el importe real detectado en cada comprobante. Para promos, conviene agregar una columna de importe pagado o extraerlo del comprobante.
             </p>
+          </CardContent>
+        </Card>
+        )}
+
+        {activeSection === 'paymentReviews' && (
+        <Card className="lbb-premium-panel mb-8 rounded-[1.35rem] border-white/10 text-zinc-100">
+          <CardHeader>
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <FileText className="h-5 w-5 text-amber-300" />
+                  Pagos
+                </CardTitle>
+                <p className="mt-1 text-sm text-zinc-400">Bandeja de revision para leer comprobantes, aprobar, rechazar o dejar pagos pendientes.</p>
+              </div>
+              <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:max-w-2xl">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  <Input
+                    value={paymentReviewSearch}
+                    onChange={(event) => setPaymentReviewSearch(event.target.value)}
+                    placeholder="Buscar por cliente, DNI, carton, sorteo u operacion"
+                    className="border-zinc-700 bg-zinc-900 pl-9 text-white focus:border-amber-400"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={exportPaymentReviewsCsv}
+                  disabled={filteredPaymentReviews.length === 0}
+                  className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+                >
+                  Exportar CSV
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-5 grid gap-3 md:grid-cols-5">
+              <SummaryBox label="Pendientes" value={String(paymentReviewCounts.pending)} />
+              <SummaryBox label="Aprobados" value={String(paymentReviewCounts.approved)} />
+              <SummaryBox label="Rechazados" value={String(paymentReviewCounts.rejected)} />
+              <SummaryBox label="OCR fallido" value={String(paymentReviewCounts.failedOcr)} />
+              <SummaryBox label="Ingresado aprobado" value={formatARS(approvedIncome)} />
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(['pending', 'approved', 'rejected', 'all'] as const).map((status) => (
+                <Button
+                  key={status}
+                  type="button"
+                  size="sm"
+                  variant={paymentReviewFilter === status ? 'default' : 'outline'}
+                  onClick={() => setPaymentReviewFilter(status)}
+                  className={
+                    paymentReviewFilter === status
+                      ? 'bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200'
+                      : 'border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10'
+                  }
+                >
+                  {status === 'all' ? 'Todos' : getPaymentStatusLabel(status)}
+                </Button>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-md border border-white/10 bg-black/20">
+              {visiblePaymentReviews.length === 0 ? (
+                <div className="rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-400">
+                  No hay pagos que coincidan con los filtros.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/10">
+                  <div className="hidden grid-cols-[0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] gap-3 bg-white/[0.04] px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 xl:grid">
+                    <span>Estado</span>
+                    <span>Cliente</span>
+                    <span>Sorteo</span>
+                    <span>Monto</span>
+                    <span>Operacion</span>
+                    <span>OCR</span>
+                    <span className="text-right">Accion</span>
+                  </div>
+                  {visiblePaymentReviews.map((card) => {
+                    const raffle = raffleById.get(card.raffle_id) ?? card.raffle ?? null
+
+                    return (
+                      <div key={card.id} className="grid gap-3 px-4 py-4 text-sm xl:grid-cols-[0.85fr_1.1fr_0.95fr_0.75fr_0.8fr_0.85fr_104px] xl:items-center">
+                        <div>
+                          <PaymentStatusBadge status={card.payment_status} />
+                          <p className="mt-1 text-xs text-zinc-500 xl:hidden">Estado</p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{card.full_name}</p>
+                          <p className="mt-1 truncate text-xs text-zinc-500">{card.dni} · {card.phone}</p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-zinc-300">{raffle?.name ?? 'Sorteo eliminado'}</p>
+                          <p className="mt-1 break-all font-mono text-xs text-amber-200">{card.card_number}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-emerald-200">{formatARS(card.receipt_amount ?? parseMoneyAmount(raffle?.amount))}</p>
+                          <p className="mt-1 text-xs text-zinc-500">{formatDateTime(card.created_at)}</p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-zinc-300">{card.receipt_operation_number ?? card.payment_reference ?? 'Sin operacion'}</p>
+                          <p className="mt-1 truncate text-xs text-zinc-500">{card.receipt_destination_account ?? 'Sin destino'}</p>
+                        </div>
+                        <div>
+                          <ReceiptParseBadge status={card.receipt_parse_status} />
+                          {card.receipt_parse_error && <p className="mt-1 line-clamp-1 text-xs text-red-200">{card.receipt_parse_error}</p>}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedPaymentCardId(card.id)}
+                          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10 xl:justify-self-end"
+                        >
+                          Revisar
+                        </Button>
+                      </div>
+                    )
+                  })}
+                  {filteredPaymentReviews.length > paymentReviewsPerPage && (
+                    <div className="px-4 py-3">
+                      <AdminPagination
+                        page={paymentReviewsPage}
+                        pageCount={paymentReviewsPageCount}
+                        total={filteredPaymentReviews.length}
+                        onPrevious={() => setPaymentReviewsPage((page) => Math.max(1, page - 1))}
+                        onNext={() => setPaymentReviewsPage((page) => Math.min(paymentReviewsPageCount, page + 1))}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
         )}
@@ -1272,6 +1598,144 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           </DialogContent>
         </Dialog>
 
+        <Dialog open={!!selectedPaymentCard} onOpenChange={(open) => !open && setSelectedPaymentCardId(null)}>
+          <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1500px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
+            <DialogHeader>
+              <DialogTitle className="text-white">Revision de pago</DialogTitle>
+            </DialogHeader>
+            {selectedPaymentCard && (
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]">
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <SummaryBox label="Estado" value={getPaymentStatusLabel(selectedPaymentCard.payment_status)} />
+                    <SummaryBox label="OCR" value={getReceiptParseStatusLabel(selectedPaymentCard.receipt_parse_status)} />
+                    <SummaryBox
+                      label="Monto"
+                      value={formatARS(selectedPaymentCard.receipt_amount ?? parseMoneyAmount((raffleById.get(selectedPaymentCard.raffle_id) ?? selectedPaymentCard.raffle)?.amount))}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InfoPanel label="Cliente" value={selectedPaymentCard.full_name} />
+                    <InfoPanel label="DNI / telefono" value={`${selectedPaymentCard.dni} · ${selectedPaymentCard.phone}`} />
+                    <InfoPanel label="Sorteo" value={(raffleById.get(selectedPaymentCard.raffle_id) ?? selectedPaymentCard.raffle)?.name ?? 'Sorteo eliminado'} />
+                    <InfoPanel label="Operacion informada" value={selectedPaymentCard.payment_reference ?? 'Sin registrar'} />
+                  </div>
+
+                  <div className="rounded-md border border-sky-300/25 bg-sky-400/10 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="flex items-center gap-2 font-semibold text-white">
+                          Lectura del comprobante
+                          <ReceiptParseBadge status={selectedPaymentCard.receipt_parse_status} />
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Usa OCR gratuito para completar campos y revisalos antes de aprobar.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={readPaymentReceipt}
+                        disabled={isReadingReceipt}
+                        variant="outline"
+                        className="border-sky-300/40 bg-transparent text-sky-100 hover:bg-sky-400/10"
+                      >
+                        <Bot className="mr-2 h-4 w-4" />
+                        {isReadingReceipt ? 'Leyendo' : 'Leer con OCR'}
+                      </Button>
+                    </div>
+                    {selectedPaymentCard.receipt_parse_error && (
+                      <p className="mt-3 rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">
+                        {selectedPaymentCard.receipt_parse_error}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Estado</span>
+                      <select
+                        value={paymentReviewForm.payment_status}
+                        onChange={(event) => setPaymentReviewForm((current) => ({ ...current, payment_status: event.target.value as typeof paymentReviewForm.payment_status }))}
+                        className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                      >
+                        <option value="pending">Pendiente</option>
+                        <option value="approved">Aprobado</option>
+                        <option value="rejected">Rechazado</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Monto detectado</span>
+                      <Input
+                        value={paymentReviewForm.receipt_amount}
+                        onChange={(event) => setPaymentReviewForm((current) => ({ ...current, receipt_amount: event.target.value }))}
+                        placeholder="Ej: 2000"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Operacion detectada</span>
+                      <Input
+                        value={paymentReviewForm.receipt_operation_number}
+                        onChange={(event) => setPaymentReviewForm((current) => ({ ...current, receipt_operation_number: event.target.value }))}
+                        placeholder={selectedPaymentCard.payment_reference ?? 'Numero de operacion'}
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-zinc-300">Destino detectado</span>
+                      <Input
+                        value={paymentReviewForm.receipt_destination_account}
+                        onChange={(event) => setPaymentReviewForm((current) => ({ ...current, receipt_destination_account: event.target.value }))}
+                        placeholder="Alias / CBU / CVU destino"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm sm:col-span-2">
+                      <span className="text-zinc-300">Notas</span>
+                      <Input
+                        value={paymentReviewForm.receipt_validation_notes}
+                        onChange={(event) => setPaymentReviewForm((current) => ({ ...current, receipt_validation_notes: event.target.value }))}
+                        placeholder="Motivo de rechazo, observaciones o validacion manual"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </label>
+                  </div>
+
+                  {selectedPaymentCard.receipt_raw_text && (
+                    <details className="rounded-md border border-white/10 bg-black/20 p-3 text-sm">
+                      <summary className="cursor-pointer font-semibold text-zinc-200">Texto detectado</summary>
+                      <p className="mt-2 whitespace-pre-wrap text-zinc-400">{selectedPaymentCard.receipt_raw_text}</p>
+                    </details>
+                  )}
+
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <Button type="button" onClick={() => savePaymentReview('approved')} disabled={isSavingReview} className="bg-emerald-500 font-bold text-white hover:bg-emerald-600">
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Aprobar
+                    </Button>
+                    <Button type="button" onClick={() => savePaymentReview('rejected')} disabled={isSavingReview} variant="outline" className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Rechazar
+                    </Button>
+                    <Button type="button" onClick={() => savePaymentReview()} disabled={isSavingReview} variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+                      <Save className="mr-2 h-4 w-4" />
+                      Guardar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <p className="mb-3 text-sm font-medium text-zinc-300">Comprobante</p>
+                    <ReceiptPreview pathname={selectedPaymentCard.payment_receipt_url} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClientDni(null)}>
           <DialogContent className="lbb-scrollbar lbb-premium-panel max-h-[calc(100dvh-1.5rem)] w-[min(98vw,1280px)] max-w-none overflow-y-auto rounded-[1.5rem] border-white/10 text-zinc-100">
             <DialogHeader>
@@ -1354,6 +1818,34 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   )
 }
 
+function ReceiptPreview({ pathname }: { pathname: string }) {
+  const fileUrl = `/api/file?pathname=${encodeURIComponent(pathname)}`
+  const isPdf = pathname.toLowerCase().endsWith('.pdf')
+
+  return (
+    <div className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
+      {isPdf ? (
+        <div className="space-y-3 p-4 text-sm text-zinc-300">
+          <p>El comprobante es un PDF.</p>
+          <Button asChild variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
+            <a href={fileUrl} target="_blank" rel="noreferrer">
+              Abrir PDF
+            </a>
+          </Button>
+        </div>
+      ) : (
+        <a href={fileUrl} target="_blank" rel="noreferrer" className="block">
+          <img
+            src={fileUrl}
+            alt="Comprobante de pago"
+            className="max-h-[560px] w-full bg-black object-contain"
+          />
+        </a>
+      )}
+    </div>
+  )
+}
+
 function normalizeDni(value?: string | null) {
   return (value ?? '').replace(/\D/g, '')
 }
@@ -1384,12 +1876,75 @@ function maxIsoDate(current: string, candidate: string) {
   return new Date(candidate).getTime() > new Date(current).getTime() ? candidate : current
 }
 
+function getPaymentStatusLabel(status?: AdminBingoCard['payment_status']) {
+  if (status === 'approved') return 'Aprobado'
+  if (status === 'rejected') return 'Rechazado'
+  return 'Pendiente'
+}
+
+function getReceiptParseStatusLabel(status?: AdminBingoCard['receipt_parse_status']) {
+  if (status === 'parsed') return 'Leido'
+  if (status === 'failed') return 'Lectura fallida'
+  if (status === 'not_configured') return 'OCR no configurado'
+  return 'Sin leer'
+}
+
+function PaymentStatusBadge({ status }: { status?: AdminBingoCard['payment_status'] }) {
+  if (status === 'approved') {
+    return <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Aprobado</Badge>
+  }
+
+  if (status === 'rejected') {
+    return <Badge className="bg-red-500 text-white hover:bg-red-500">Rechazado</Badge>
+  }
+
+  return <Badge className="bg-amber-400 text-zinc-950 hover:bg-amber-400">Pendiente</Badge>
+}
+
+function ReceiptParseBadge({ status }: { status?: AdminBingoCard['receipt_parse_status'] }) {
+  if (status === 'parsed') {
+    return <Badge className="bg-sky-500 text-white hover:bg-sky-500">Leido</Badge>
+  }
+
+  if (status === 'failed') {
+    return <Badge className="bg-red-500 text-white hover:bg-red-500">OCR fallido</Badge>
+  }
+
+  return <Badge className="bg-zinc-700 text-zinc-100 hover:bg-zinc-700">Sin leer</Badge>
+}
+
 function SummaryBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] p-4">
       <p className="text-xs font-bold uppercase tracking-wide text-amber-200">{label}</p>
       <p className="mt-2 break-words text-xl font-bold text-white">{value}</p>
     </div>
+  )
+}
+
+function QuickActionButton({
+  icon,
+  label,
+  detail,
+  onClick,
+}: {
+  icon: ReactNode
+  label: string
+  detail: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-w-0 rounded-md border border-white/10 bg-white/[0.045] p-4 text-left transition hover:border-amber-300/40 hover:bg-amber-300/10"
+    >
+      <span className="flex items-center gap-2 font-bold text-white">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-amber-300 text-zinc-950">{icon}</span>
+        {label}
+      </span>
+      <span className="mt-2 block truncate text-sm text-zinc-400">{detail}</span>
+    </button>
   )
 }
 

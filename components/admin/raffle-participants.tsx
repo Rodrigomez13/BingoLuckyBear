@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Bot, CalendarDays, CheckCircle2, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users, XCircle } from 'lucide-react'
+import { CalendarDays, CheckCircle2, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users, XCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -184,16 +184,6 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [participantsPage, setParticipantsPage] = useState(1)
-  const [receiptForm, setReceiptForm] = useState({
-    payment_status: 'pending' as 'pending' | 'approved' | 'rejected',
-    receipt_amount: '',
-    receipt_operation_number: '',
-    receipt_destination_account: '',
-    receipt_date: '',
-    receipt_validation_notes: '',
-  })
-  const [isSavingReceipt, setIsSavingReceipt] = useState(false)
-  const [isParsingReceipt, setIsParsingReceipt] = useState(false)
   const [details, setDetails] = useState({
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
@@ -288,14 +278,6 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   useEffect(() => {
     setWinnerPhotoFile(null)
     setWinnerTestimonial(selectedCard?.winner_testimonial ?? '')
-    setReceiptForm({
-      payment_status: selectedCard?.payment_status ?? 'pending',
-      receipt_amount: selectedCard?.receipt_amount?.toString() ?? '',
-      receipt_operation_number: selectedCard?.receipt_operation_number ?? '',
-      receipt_destination_account: selectedCard?.receipt_destination_account ?? '',
-      receipt_date: selectedCard?.receipt_date ? selectedCard.receipt_date.slice(0, 16) : '',
-      receipt_validation_notes: selectedCard?.receipt_validation_notes ?? '',
-    })
   }, [selectedCard])
 
   const statusLabel =
@@ -401,63 +383,6 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     link.href = URL.createObjectURL(blob)
     link.download = `${raffle.name.replace(/\s+/g, '_')}_participantes.csv`
     link.click()
-  }
-
-  const updateCardInState = (updatedCard: BingoCard) => {
-    setCards((current) => current.map((card) => (card.id === updatedCard.id ? updatedCard : card)))
-    setSelectedCard(updatedCard)
-  }
-
-  const saveReceiptReview = async (status?: 'pending' | 'approved' | 'rejected') => {
-    if (!selectedCard) return
-
-    setIsSavingReceipt(true)
-
-    try {
-      const response = await fetch(`/api/cards/${selectedCard.id}/receipt`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...receiptForm,
-          payment_status: status ?? receiptForm.payment_status,
-          receipt_amount: receiptForm.receipt_amount.trim() || null,
-          receipt_date: receiptForm.receipt_date ? new Date(receiptForm.receipt_date).toISOString() : null,
-        }),
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'No se pudo guardar la revision')
-      }
-
-      updateCardInState(data.card as BingoCard)
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'No se pudo guardar la revision del comprobante.')
-    } finally {
-      setIsSavingReceipt(false)
-    }
-  }
-
-  const parseReceipt = async () => {
-    if (!selectedCard) return
-
-    setIsParsingReceipt(true)
-
-    try {
-      const response = await fetch(`/api/cards/${selectedCard.id}/receipt`, { method: 'POST' })
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (data.card) updateCardInState(data.card as BingoCard)
-        throw new Error(data.error || 'No se pudo leer el comprobante')
-      }
-
-      updateCardInState(data.card as BingoCard)
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'No se pudo leer el comprobante.')
-    } finally {
-      setIsParsingReceipt(false)
-    }
   }
 
   const saveWinnerShowcase = async () => {
@@ -961,102 +886,17 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
                 </div>
 
                 <div className="rounded-md border border-sky-300/25 bg-sky-400/10 p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="flex items-center gap-2 font-semibold text-white">
-                        Validacion del comprobante
-                        <PaymentStatusBadge status={selectedCard.payment_status} />
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        OCR: {getReceiptParseStatusLabel(selectedCard.receipt_parse_status)}
-                        {selectedCard.receipt_parsed_at ? ` - ${formatArgentinaDateTime(selectedCard.receipt_parsed_at)}` : ''}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={parseReceipt}
-                      disabled={isParsingReceipt}
-                      variant="outline"
-                      className="border-sky-300/40 bg-transparent text-sky-100 hover:bg-sky-400/10"
-                    >
-                      <Bot className="mr-2 h-4 w-4" />
-                      {isParsingReceipt ? 'Leyendo' : 'Leer con OCR'}
-                    </Button>
-                  </div>
-                  {selectedCard.receipt_parse_error && (
-                    <p className="mt-3 rounded-md border border-red-400/30 bg-red-500/10 p-2 text-sm text-red-100">
-                      {selectedCard.receipt_parse_error}
-                    </p>
-                  )}
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm">
-                      <span className="text-zinc-300">Estado</span>
-                      <select
-                        value={receiptForm.payment_status}
-                        onChange={(event) => setReceiptForm((current) => ({ ...current, payment_status: event.target.value as typeof receiptForm.payment_status }))}
-                        className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
-                      >
-                        <option value="pending">Pendiente</option>
-                        <option value="approved">Aprobado</option>
-                        <option value="rejected">Rechazado</option>
-                      </select>
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="text-zinc-300">Monto detectado</span>
-                      <Input
-                        value={receiptForm.receipt_amount}
-                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_amount: event.target.value }))}
-                        placeholder="Ej: 2000"
-                        className="border-zinc-700 bg-zinc-900 text-white"
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="text-zinc-300">Operacion detectada</span>
-                      <Input
-                        value={receiptForm.receipt_operation_number}
-                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_operation_number: event.target.value }))}
-                        placeholder={selectedCard.payment_reference ?? 'Numero de operacion'}
-                        className="border-zinc-700 bg-zinc-900 text-white"
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="text-zinc-300">Destino detectado</span>
-                      <Input
-                        value={receiptForm.receipt_destination_account}
-                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_destination_account: event.target.value }))}
-                        placeholder="Alias / CBU / CVU destino"
-                        className="border-zinc-700 bg-zinc-900 text-white"
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm sm:col-span-2">
-                      <span className="text-zinc-300">Notas</span>
-                      <Input
-                        value={receiptForm.receipt_validation_notes}
-                        onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_validation_notes: event.target.value }))}
-                        placeholder="Motivo de rechazo, observaciones o validacion manual"
-                        className="border-zinc-700 bg-zinc-900 text-white"
-                      />
-                    </label>
-                  </div>
-                  {selectedCard.receipt_raw_text && (
-                    <details className="mt-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm">
-                      <summary className="cursor-pointer font-semibold text-zinc-200">Texto detectado</summary>
-                      <p className="mt-2 whitespace-pre-wrap text-zinc-400">{selectedCard.receipt_raw_text}</p>
-                    </details>
-                  )}
+                  <p className="flex items-center gap-2 font-semibold text-white">
+                    Estado del pago
+                    <PaymentStatusBadge status={selectedCard.payment_status} />
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    La lectura OCR, aprobacion y rechazo de comprobantes se gestionan desde la seccion Pagos del panel.
+                  </p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                    <Button type="button" onClick={() => saveReceiptReview('approved')} disabled={isSavingReceipt} className="bg-emerald-500 font-bold text-white hover:bg-emerald-600">
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Aprobar
-                    </Button>
-                    <Button type="button" onClick={() => saveReceiptReview('rejected')} disabled={isSavingReceipt} variant="outline" className="border-red-400/40 bg-transparent text-red-300 hover:bg-red-500/10">
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Rechazar
-                    </Button>
-                    <Button type="button" onClick={() => saveReceiptReview()} disabled={isSavingReceipt} variant="outline" className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10">
-                      <Save className="mr-2 h-4 w-4" />
-                      Guardar
-                    </Button>
+                    <InfoChip label="OCR" value={getReceiptParseStatusLabel(selectedCard.receipt_parse_status)} />
+                    <InfoChip label="Monto detectado" value={selectedCard.receipt_amount ? String(selectedCard.receipt_amount) : 'Sin detectar'} />
+                    <InfoChip label="Operacion" value={selectedCard.receipt_operation_number ?? selectedCard.payment_reference ?? 'Sin registrar'} />
                   </div>
                 </div>
 
@@ -1163,6 +1003,15 @@ function getReceiptParseStatusLabel(status?: BingoCard['receipt_parse_status']) 
   if (status === 'failed') return 'Lectura fallida'
   if (status === 'not_configured') return 'OCR no configurado'
   return 'Sin leer'
+}
+
+function InfoChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-white/10 bg-black/20 p-2">
+      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-white">{value}</p>
+    </div>
+  )
 }
 
 function PaymentStatusBadge({ status }: { status?: BingoCard['payment_status'] }) {
