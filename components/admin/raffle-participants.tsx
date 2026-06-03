@@ -436,7 +436,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
   }
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 overflow-hidden">
       <DrawControls raffle={raffle} cards={cards} onRaffleUpdated={onRaffleUpdated} />
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">

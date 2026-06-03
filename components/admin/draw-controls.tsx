@@ -158,7 +158,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
   ])
 
   return (
-    <Card className="border-amber-400/25 bg-zinc-950/85 text-white shadow-xl shadow-black/20">
+    <Card className="min-w-0 overflow-hidden border-amber-400/25 bg-zinc-950/85 text-white shadow-xl shadow-black/20">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-white">
@@ -174,7 +174,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-5 p-4 sm:p-6">
+      <CardContent className="min-w-0 space-y-5 overflow-hidden p-4 sm:p-6">
         <div className="grid auto-rows-fr gap-3 md:grid-cols-3">
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cuenta</p>
@@ -316,9 +316,9 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </Button>
         </div>
 
-        <div className="rounded-md border border-white/10 bg-black/20 p-3">
+        <div className="min-w-0 overflow-hidden rounded-md border border-white/10 bg-black/20 p-3">
           <p className="mb-3 text-sm font-semibold text-zinc-200">Numeros que ya salieron</p>
-          <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1">
+          <div className="no-scrollbar flex w-full max-w-full snap-x gap-2 overflow-x-auto overscroll-x-contain pb-1">
             {drawnNumbers.length === 0 ? (
               <div className="w-full flex-none rounded-md border border-dashed border-white/10 p-4 text-center text-sm text-zinc-500">
                 Todavia no se canto ningun numero.
