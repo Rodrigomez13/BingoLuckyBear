@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { getAuthCallbackUrl } from '@/lib/site-url'
 import { SiteHeader } from '@/components/site-header'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
 import { Button } from '@/components/ui/button'
@@ -127,11 +128,10 @@ export default function MyAccountPage() {
     setMessage(null)
 
     try {
-      const redirectTo = `${window.location.origin}/auth/callback?next=/mi-cuenta`
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectTo,
+          emailRedirectTo: getAuthCallbackUrl('/mi-cuenta'),
           shouldCreateUser: true,
         },
       })
@@ -308,7 +308,7 @@ export default function MyAccountPage() {
               <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="text-xl font-bold text-white">Mis cartones</h2>
-                  <p className="text-sm text-zinc-400">Los cartones aparecen aca cuando compras con la sesion iniciada.</p>
+                  <p className="text-sm text-zinc-400">Los cartones aparecen aca cuando compras con la sesion iniciada o con este correo.</p>
                 </div>
                 <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
                   <Link href="/participar">
@@ -324,7 +324,7 @@ export default function MyAccountPage() {
                     <Ticket className="mx-auto mb-3 h-10 w-10 text-amber-300" />
                     <h3 className="text-lg font-bold text-white">Todavia no hay cartones vinculados</h3>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
-                      La proxima vez que compres con esta sesion activa, tus cartones van a quedar guardados en esta cuenta.
+                      La proxima vez que compres con esta sesion activa o con este correo, tus cartones van a quedar guardados en esta cuenta.
                     </p>
                   </CardContent>
                 </Card>
