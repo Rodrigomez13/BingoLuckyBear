@@ -30,6 +30,7 @@ interface BingoCard {
   created_at: string
   bingo_numbers: number[][]
   raffle_id: string
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
   winner_photo_url?: string | null
   winner_testimonial?: string | null
 }
@@ -75,14 +76,16 @@ async function getWinnerRecords() {
   let cards: BingoCard[] | null = null
   const { data, error } = await supabase
     .from('bingo_cards')
-    .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id, winner_photo_url, winner_testimonial')
+    .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id, payment_status, winner_photo_url, winner_testimonial')
     .in('raffle_id', raffleIds)
+    .eq('payment_status', 'approved')
 
   if (error && /winner_photo_url|winner_testimonial|schema cache|column/i.test(error.message)) {
     const fallback = await supabase
       .from('bingo_cards')
-      .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
+      .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id, payment_status')
       .in('raffle_id', raffleIds)
+      .eq('payment_status', 'approved')
 
     cards = (fallback.data ?? []) as BingoCard[]
   } else {
@@ -127,7 +130,7 @@ function toWinnerDisplay(winner: WinnerRecord, index: number): WinnerDisplay {
     prizeLabel: getPrizeLabel(winner.prizeNumber as 1 | 2 | 3 | 4),
     amount: winner.amount || 'Monto a confirmar',
     photo,
-    quote: winner.card.winner_testimonial || 'Ganador validado con carton registrado, premio publicado y aviso enviado por WhatsApp.',
+    quote: winner.card.winner_testimonial || 'Ganador validado con carton registrado, pago aprobado y aviso enviado por WhatsApp.',
     drawnNumber: winner.drawnNumber,
     rowLabel: winner.rowIndex >= 0 ? `Fila ${winner.rowIndex + 1}` : 'Carton completo',
     isExample: false,
@@ -172,10 +175,10 @@ export default async function WinnersPage() {
               Comunidad Lucky
             </Badge>
             <h1 className="max-w-4xl font-mono text-4xl font-black leading-[0.92] tracking-normal text-white sm:text-6xl lg:text-7xl">
-              Lo que dicen nuestros jugadores
+              Ganadores verificados
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
-              Cada sorteo cerrado deja una referencia publica con ganador, premio y monto. Cuando se carga una foto del ganador, tambien queda visible para reforzar la confianza de la comunidad.
+              Cada sorteo cerrado deja una referencia publica con ganador, premio y monto. Solo se publican premios de cartones con pago aprobado.
             </p>
           </div>
 
@@ -183,7 +186,7 @@ export default async function WinnersPage() {
             <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
               <Metric value={String(raffles.length)} label="sorteos" />
               <Metric value={String(winners.length)} label="premios" />
-              <Metric value={String(cards.length)} label="cartones" />
+              <Metric value={String(cards.length)} label="cartones aprobados" />
               <Metric value={latestRaffle ? 'Activo' : 'Listo'} label="historial" />
             </CardContent>
           </Card>
@@ -191,7 +194,7 @@ export default async function WinnersPage() {
 
         {displays.length === 0 && (
           <div className="mt-8 rounded-[1.2rem] border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-50">
-            Esta es una vista de ejemplo con imagenes de referencia. Cuando finalices sorteos reales, los ganadores publicados reemplazaran automaticamente esta seccion.
+            Esta es una vista de ejemplo con imagenes de referencia. Cuando finalices sorteos reales con pagos aprobados, los ganadores publicados reemplazaran automaticamente esta seccion.
           </div>
         )}
 
@@ -212,7 +215,7 @@ export default async function WinnersPage() {
                 Fecha: {formatArgentinaDate(latestRaffle.draw_date ?? latestRaffle.created_at)}. Los resultados quedan disponibles como referencia para cualquier jugador.
               </p>
               <div className="mt-4 grid max-w-2xl gap-2 sm:grid-cols-3">
-                <Metric value={String(latestRaffleCards.length)} label="cartones vendidos" />
+                <Metric value={String(latestRaffleCards.length)} label="cartones aprobados" />
                 <Metric value={String(latestRaffleWinners.length)} label="premios adjudicados" />
                 <Metric value={String((latestRaffle.drawn_numbers ?? []).length)} label="bolillas cantadas" />
               </div>

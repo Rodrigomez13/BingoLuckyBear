@@ -25,26 +25,34 @@ export async function GET() {
       return NextResponse.json({ raffle: null, justClosedRaffle: syncedRaffle })
     }
 
-    const [{ count }, { data: cards }] = await Promise.all([
+    const [{ count: registeredCount }, { count: approvedCount }, { data: cards }] = await Promise.all([
       supabase
-      .from('bingo_cards')
-      .select('id', { count: 'exact', head: true })
+        .from('bingo_cards')
+        .select('id', { count: 'exact', head: true })
         .eq('raffle_id', syncedRaffle.id),
       supabase
         .from('bingo_cards')
-        .select('id, card_number, full_name, bingo_numbers')
-        .eq('raffle_id', syncedRaffle.id),
+        .select('id', { count: 'exact', head: true })
+        .eq('raffle_id', syncedRaffle.id)
+        .eq('payment_status', 'approved'),
+      supabase
+        .from('bingo_cards')
+        .select('id, card_number, full_name, bingo_numbers, payment_status')
+        .eq('raffle_id', syncedRaffle.id)
+        .eq('payment_status', 'approved'),
     ])
 
     const drawnNumbers = Array.isArray(syncedRaffle.drawn_numbers) ? syncedRaffle.drawn_numbers : []
     const prizeAmounts = getPrizeAmounts(syncedRaffle.prize, syncedRaffle.additional_prizes)
-    const prizeAwards = getPrizeAwards(cards ?? [], drawnNumbers, prizeAmounts)
-    const currentPrizeTarget = getCurrentPrizeTarget(cards ?? [], drawnNumbers, prizeAmounts)
+    const approvedCards = cards ?? []
+    const prizeAwards = getPrizeAwards(approvedCards, drawnNumbers, prizeAmounts)
+    const currentPrizeTarget = getCurrentPrizeTarget(approvedCards, drawnNumbers, prizeAmounts)
     const purchaseAvailability = getPurchaseAvailability(syncedRaffle)
 
     return NextResponse.json({
       raffle: syncedRaffle,
-      participantCount: count ?? 0,
+      participantCount: approvedCount ?? 0,
+      registeredCount: registeredCount ?? 0,
       prizeAwards,
       currentPrizeTarget,
       salesClosed: !purchaseAvailability.canPurchase,

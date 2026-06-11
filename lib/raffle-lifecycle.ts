@@ -42,6 +42,7 @@ interface CardForNotification {
   full_name: string
   phone: string
   bingo_numbers?: number[][] | null
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
 }
 
 interface NotificationRecord {
@@ -88,6 +89,19 @@ export function getPurchaseAvailability(raffle: Pick<RaffleForLifecycle, 'draw_d
   return { canPurchase: true, reason: null }
 }
 
+async function getApprovedRaffleCards(supabase: SupabaseLike, raffleId: string) {
+  const { data: cards, error } = await table(supabase, 'bingo_cards')
+    .select('id, card_number, full_name, phone, bingo_numbers, payment_status')
+    .eq('raffle_id', raffleId)
+    .eq('payment_status', 'approved')
+
+  if (error) {
+    throw error
+  }
+
+  return (cards ?? []) as CardForNotification[]
+}
+
 async function notifyNewWinnerAwards(
   supabase: SupabaseLike,
   raffle: RaffleForLifecycle,
@@ -95,15 +109,7 @@ async function notifyNewWinnerAwards(
   updatedDrawnNumbers: number[]
 ) {
   try {
-    const { data: cards, error: cardsError } = await table(supabase, 'bingo_cards')
-      .select('id, card_number, full_name, phone, bingo_numbers')
-      .eq('raffle_id', raffle.id)
-
-    if (cardsError) {
-      throw cardsError
-    }
-
-    const raffleCards = (cards ?? []) as CardForNotification[]
+    const raffleCards = await getApprovedRaffleCards(supabase, raffle.id)
     const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
     const previousAwards = getPrizeAwards(raffleCards, previousDrawnNumbers, prizeAmounts)
     const updatedAwards = getPrizeAwards(raffleCards, updatedDrawnNumbers, prizeAmounts)
@@ -179,16 +185,9 @@ async function shouldCloseRaffle(supabase: SupabaseLike, raffle: RaffleForLifecy
     return true
   }
 
-  const { data: cards, error } = await table(supabase, 'bingo_cards')
-    .select('id, card_number, full_name, bingo_numbers')
-    .eq('raffle_id', raffle.id)
-
-  if (error) {
-    throw error
-  }
-
+  const approvedCards = await getApprovedRaffleCards(supabase, raffle.id)
   const awards = getPrizeAwards(
-    (cards ?? []) as CardForNotification[],
+    approvedCards,
     drawnNumbers,
     getPrizeAmounts(raffle.prize, raffle.additional_prizes)
   )

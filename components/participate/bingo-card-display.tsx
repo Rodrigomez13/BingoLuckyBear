@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
-import { CheckCircle, Download, Eye, X, Hash, Trophy, Share2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Download, Eye, X, Hash, Trophy, Share2 } from 'lucide-react'
 import { getBingoColumnLabels, getBingoRows, getWinningLines, isMarked } from '@/lib/bingo'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,7 @@ interface BingoCard {
   full_name: string
   created_at: string
   bingo_numbers: number[][]
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
 }
 
 interface BingoCardDisplayProps {
@@ -30,6 +31,10 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   const [showModal, setShowModal] = useState(autoOpen)
   const cardPreviewRef = useRef<HTMLDivElement>(null)
   const modalCardRef = useRef<HTMLDivElement>(null)
+  const paymentStatus = card.payment_status ?? 'pending'
+  const isApproved = paymentStatus === 'approved'
+  const isPending = paymentStatus === 'pending'
+  const isRejected = paymentStatus === 'rejected'
 
   const formattedDate = new Date(card.created_at).toLocaleDateString('es-ES', {
     year: 'numeric',
@@ -39,7 +44,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
 
   const rows = getBingoRows(card.bingo_numbers)
   const columnLabels = getBingoColumnLabels(card.bingo_numbers)
-  const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
+  const winningLines = isApproved ? getWinningLines(card.bingo_numbers, drawnNumbers) : []
   const isWinner = winningLines.length > 0
   const hasPrizeColumn = columnLabels.length === 9
   const prizeColumnWidth = dense ? 'clamp(1.55rem, 6vw, 2.6rem)' : 'clamp(1.85rem, 7vw, 3.45rem)'
@@ -138,7 +143,9 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   }
 
   const shareCard = async () => {
-    const text = `Mi carton ${card.card_number} participa en ${raffleName}.`
+    const text = isApproved
+      ? `Mi carton ${card.card_number} participa en ${raffleName}.`
+      : `Mi solicitud de carton ${card.card_number} para ${raffleName} esta pendiente de aprobacion.`
     const url = `${window.location.origin}/participar`
 
     try {
@@ -157,19 +164,31 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
     }
   }
 
+  const statusBadge = isApproved
+    ? { label: 'Pago aprobado', className: 'bg-emerald-500 text-white hover:bg-emerald-500' }
+    : isRejected
+      ? { label: 'Pago rechazado', className: 'bg-red-500 text-white hover:bg-red-500' }
+      : { label: 'Pendiente de aprobacion', className: 'bg-amber-300 text-amber-950 hover:bg-amber-300' }
+
   const BingoCardVisual = ({ forDownload = false }: { forDownload?: boolean }) => (
     <div
       className={cn(
         'relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[clamp(1rem,4vw,1.5rem)] border border-amber-500/20 bg-gradient-to-b from-[#0a1410] via-[#08100c] to-[#060a08] shadow-2xl shadow-black/40',
-        dense && !forDownload && 'max-w-[560px] rounded-[clamp(0.85rem,3vw,1.25rem)]',
-        forDownload ? 'p-4 sm:p-6 md:p-8' : dense ? 'p-2.5 sm:p-3.5' : 'p-3 sm:p-5'
+        forDownload ? 'p-4 sm:p-6 md:p-8' : 'p-3 sm:p-5',
+        !isApproved && 'opacity-90'
       )}
     >
       <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full bg-amber-400/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
+      {!isApproved && (
+        <div className="absolute inset-x-3 top-3 z-10 rounded-full border border-amber-300/50 bg-black/80 px-3 py-1.5 text-center text-[11px] font-black uppercase tracking-wide text-amber-100 backdrop-blur">
+          No participa hasta aprobar pago
+        </div>
+      )}
+
       <div className="relative">
-        <div className="flex flex-col items-center gap-2.5 text-center sm:gap-3">
+        <div className={cn('flex flex-col items-center gap-2.5 text-center sm:gap-3', !isApproved && 'pt-9')}>
           <div className="flex max-w-full items-center justify-center gap-2">
             <BearLogo size={forDownload ? 44 : dense ? 28 : 34} className="shrink-0" />
             <h2
@@ -190,6 +209,9 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
           )}>
             <Hash className="mr-1 h-3.5 w-3.5 opacity-70" />
             <span className="min-w-0 truncate">{card.card_number}</span>
+          </Badge>
+          <Badge className={cn('max-w-full rounded-full px-3 py-1 text-xs font-bold', statusBadge.className)}>
+            {statusBadge.label}
           </Badge>
         </div>
 
@@ -224,7 +246,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
                 </div>
               )}
               {row.map((cell, colIndex) => {
-                const marked = isMarked(cell, drawnNumbers)
+                const marked = isApproved && isMarked(cell, drawnNumbers)
 
                 return (
                   <div
@@ -258,16 +280,18 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
     <div className="space-y-6">
       {!compact && (
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/15 mb-4">
-            <CheckCircle className="w-8 h-8 text-emerald-300" />
+          <div className={cn('mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full', isApproved ? 'bg-emerald-500/15' : 'bg-amber-400/15')}>
+            {isApproved ? <CheckCircle className="h-8 w-8 text-emerald-300" /> : <AlertTriangle className="h-8 w-8 text-amber-300" />}
           </div>
           <h1 className="mb-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            {isWinner ? 'Tenemos un ganador' : 'Ya estas participando'}
+            {isWinner ? 'Tenemos un ganador' : isApproved ? 'Ya estas participando' : 'Carton pendiente de aprobacion'}
           </h1>
           <p className="text-zinc-300">
             {isWinner
               ? `Fila premiada: ${winningLines.join(', ')}`
-              : 'Tu carton de bingo ha sido generado exitosamente'}
+              : isApproved
+                ? 'Tu carton de bingo fue aprobado y participa oficialmente.'
+                : 'Recibimos tu comprobante. El carton se habilita cuando el administrador apruebe el pago.'}
           </p>
         </div>
       )}
@@ -276,6 +300,15 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-emerald-100">
           <Trophy className="mx-auto mb-2 h-7 w-7 text-emerald-300" />
           Aviso automatico: este carton tiene una fila premiada con los numeros cantados.
+        </div>
+      )}
+
+      {!isApproved && (
+        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-center text-amber-100">
+          <AlertTriangle className="mx-auto mb-2 h-6 w-6" />
+          {isRejected
+            ? 'El pago de este carton fue rechazado. Contacta al administrador para regularizarlo.'
+            : 'Este carton esta registrado, pero todavia no participa del sorteo hasta que el pago sea aprobado.'}
         </div>
       )}
 
@@ -313,11 +346,12 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         </CardContent>
       </Card>
 
-      <div className={cn('rounded-lg border border-amber-400/25 bg-amber-400/10', dense ? 'p-3' : 'p-4')}>
-        <p className="text-amber-100 text-sm">
+      <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-50">
+        <p>
           <strong>Importante:</strong> Guarda tu numero de carton <strong>{card.card_number}</strong>.
-          Lo necesitaras para verificar si ganaste cuando se realice el sorteo.
-          Te recomendamos descargar la imagen de tu carton.
+          {isApproved
+            ? ' Este carton participa oficialmente del sorteo.'
+            : ' Este carton queda pendiente hasta aprobar el comprobante.'}
         </p>
       </div>
 
@@ -371,3 +405,5 @@ function HeaderCell({
     </div>
   )
 }
+        
+        
