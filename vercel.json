@@ -1,0 +1,17 @@
+{
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm run build",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "luckybingbear.com"
+        }
+      ],
+      "destination": "https://www.luckybingbear.com/:path*",
+      "permanent": true
+    }
+  ]
+}
