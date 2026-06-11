@@ -7,14 +7,14 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (!user?.email) {
     return NextResponse.json({ user: null, cards: [] })
   }
 
   const { data, error } = await supabase
     .from('bingo_cards')
-    .select('id, card_number, full_name, created_at, payment_status, receipt_amount, payment_method, payment_reference, bingo_numbers, raffle:raffles(id, name, draw_date, draw_status, drawn_numbers, prize, additional_prizes)')
-    .eq('customer_id', user.id)
+    .select('id, card_number, full_name, created_at, payment_status, bingo_numbers, raffle:raffles(id, name, draw_date, draw_status, drawn_numbers, prize, additional_prizes)')
+    .eq('email', user.email)
     .order('created_at', { ascending: false })
 
   if (error) {
