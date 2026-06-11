@@ -41,6 +41,12 @@ export function Footer() {
             <Link href="/ganadores" className="text-slate-400 transition-colors hover:text-white">
               Ganadores
             </Link>
+            <Link href="/terminos-y-condiciones" className="text-slate-400 transition-colors hover:text-white">
+              Terminos
+            </Link>
+            <Link href="/politicas-de-privacidad" className="text-slate-400 transition-colors hover:text-white">
+              Privacidad
+            </Link>
           </nav>
         </div>
         
