@@ -1,10 +1,10 @@
-const DEFAULT_SITE_URL = 'https://www.luckybingbear.com'
+const SITE_URL = 'https://www.luckybingbear.com'
 
 export function getSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/$/, '')
+  return SITE_URL
 }
 
 export function getAuthCallbackUrl(next = '/mi-cuenta') {
   const normalizedNext = next.startsWith('/') ? next : `/${next}`
-  return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(normalizedNext)}`
+  return `${SITE_URL}/auth/callback?next=${encodeURIComponent(normalizedNext)}`
 }
