@@ -1,0 +1,285 @@
+'use client'
+
+import { useRef, useState } from 'react'
+import { AlertTriangle, FileText, Image as ImageIcon, Loader2, ShieldCheck, WalletCards } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { PaymentInstructions } from '@/components/participate/payment-instructions'
+import { PurchaseConfirmation } from '@/components/participate/purchase-confirmation'
+import { PAYMENT_METHODS } from '@/lib/payment'
+import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
+
+const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
+const MIN_RECEIPT_SIZE = 10 * 1024
+const ALLOWED_RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+
+interface Raffle {
+  id: string
+  name: string
+  prize?: string | null
+  additional_prizes?: string[] | null
+  amount?: string | null
+  draw_date?: string | null
+  payment_account?: {
+    holder?: string | null
+    alias?: string | null
+    cbu?: string | null
+    bank?: string | null
+    concept?: string | null
+    note?: string | null
+  } | null
+}
+
+interface BingoCard {
+  id: string
+  card_number: string
+  full_name: string
+  created_at: string
+  bingo_numbers: number[][]
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
+}
+
+export function AccountPurchaseForm({
+  raffle,
+  sessionToken,
+  onCardsCreated,
+}: {
+  raffle: Raffle
+  sessionToken: string
+  onCardsCreated: (cards: BingoCard[]) => void
+}) {
+  const [quantity, setQuantity] = useState('1')
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [paymentReference, setPaymentReference] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [previewType, setPreviewType] = useState<'image' | 'pdf' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [confirmedCards, setConfirmedCards] = useState<BingoCard[]>([])
+  const [receiptUrl, setReceiptUrl] = useState('')
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
+  const prizeSchedule = getPrizeSchedule(prizeAmounts)
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
+  const cardAmount = formatMoneyAmount(raffle.amount, 'Ver datos de pago')
+
+  const validateReceiptFile = (selectedFile: File) => {
+    if (!ALLOWED_RECEIPT_TYPES.includes(selectedFile.type)) {
+      throw new Error('Solo se permiten comprobantes JPG, PNG, WebP o PDF')
+    }
+
+    if (selectedFile.size > MAX_RECEIPT_SIZE) {
+      throw new Error('El archivo no debe superar 8MB')
+    }
+
+    if (selectedFile.size < MIN_RECEIPT_SIZE) {
+      throw new Error('El comprobante parece estar vacio o incompleto')
+    }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0]
+    if (!selectedFile) return
+
+    try {
+      validateReceiptFile(selectedFile)
+      if (preview) URL.revokeObjectURL(preview)
+      setFile(selectedFile)
+      setPreview(URL.createObjectURL(selectedFile))
+      setPreviewType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image')
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'El comprobante no es valido')
+      event.target.value = ''
+    }
+  }
+
+  const submitPurchase = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const parsedQuantity = Number(quantity)
+      if (!Number.isInteger(parsedQuantity) || parsedQuantity < 1 || parsedQuantity > 10) {
+        throw new Error('La cantidad debe ser entre 1 y 10 cartones')
+      }
+
+      if (!paymentMethod || !paymentReference.trim()) {
+        throw new Error('Indica metodo de pago y numero de operacion')
+      }
+
+      if (!file) {
+        throw new Error('Debes subir el comprobante de pago')
+      }
+
+      const uploadForm = new FormData()
+      uploadForm.append('file', file)
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadForm,
+      })
+      const uploadData = await uploadResponse.json()
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || 'No se pudo subir el comprobante')
+      }
+
+      const purchaseResponse = await fetch('/api/customer/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raffle_id: raffle.id,
+          quantity: parsedQuantity,
+          payment_method: paymentMethod,
+          payment_reference: paymentReference,
+          payment_receipt_url: uploadData.pathname,
+          session_token: sessionToken,
+        }),
+      })
+      const purchaseData = await purchaseResponse.json()
+
+      if (!purchaseResponse.ok) {
+        throw new Error(purchaseData.error || 'No se pudo completar la compra')
+      }
+
+      setConfirmedCards(purchaseData.cards ?? [])
+      setReceiptUrl(uploadData.pathname)
+      setShowConfirmation(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const continueAfterConfirmation = () => {
+    setShowConfirmation(false)
+    onCardsCreated(confirmedCards)
+    setConfirmedCards([])
+    setReceiptUrl('')
+    setQuantity('1')
+    setPaymentMethod('')
+    setPaymentReference('')
+    setFile(null)
+    if (preview) URL.revokeObjectURL(preview)
+    setPreview(null)
+    setPreviewType(null)
+  }
+
+  return (
+    <div className="space-y-6">
+      {showConfirmation && (
+        <PurchaseConfirmation cards={confirmedCards} raffle={raffle} receiptUrl={receiptUrl} onContinue={continueAfterConfirmation} />
+      )}
+
+      <Card className="border-amber-300/25 bg-zinc-950/85 text-zinc-100 shadow-xl shadow-black/25">
+        <CardHeader className="border-b border-zinc-800 text-center">
+          <CardTitle className="text-2xl text-white">Comprar cartones</CardTitle>
+          <CardDescription className="text-zinc-400">
+            Tus datos personales salen de tu cuenta. Solo carga el comprobante y la operacion.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 p-5">
+          <div className="grid auto-rows-fr gap-3 sm:grid-cols-3">
+            <Summary label="Sorteo" value={raffle.name} />
+            <Summary label="Precio" value={cardAmount} />
+            <Summary label="Fecha" value={formatArgentinaDateTime(raffle.draw_date)} />
+          </div>
+
+          {jackpotPrize?.amount && (
+            <div className="rounded-xl border border-amber-300/30 bg-amber-300 p-4 text-center text-zinc-950">
+              <p className="text-xs font-bold uppercase tracking-wide">Premio mayor</p>
+              <p className="mt-1 text-2xl font-black">{jackpotPrize.amount}</p>
+            </div>
+          )}
+
+          <PaymentInstructions amount={raffle.amount} account={raffle.payment_account} />
+
+          <form onSubmit={submitPurchase} className="space-y-5">
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <WalletCards className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
+                <div>
+                  <h3 className="font-bold text-white">Cantidad de cartones</h3>
+                  <p className="text-sm text-zinc-300">Cada carton se genera con numeros distintos.</p>
+                </div>
+              </div>
+              <Label htmlFor="quantity">Cartones</Label>
+              <Input id="quantity" type="number" min="1" max="10" value={quantity} onChange={(event) => setQuantity(event.target.value)} className="mt-2 border-zinc-700 bg-zinc-900 text-white" />
+            </div>
+
+            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+                <div>
+                  <h3 className="font-bold text-white">Datos de pago</h3>
+                  <p className="text-sm text-zinc-300">Se usan para revisar el comprobante desde el admin.</p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method">Metodo de pago</Label>
+                  <select id="payment_method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400">
+                    <option value="">Selecciona una opcion</option>
+                    {PAYMENT_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment_reference">Numero de operacion</Label>
+                  <Input id="payment_reference" value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Ej: 1234567890" className="border-zinc-700 bg-zinc-900 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="receipt">Comprobante de transferencia</Label>
+              <div className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition ${preview ? 'border-emerald-400 bg-emerald-500/10' : 'border-amber-400/40 bg-white/[0.03] hover:border-amber-300'}`} onClick={() => fileInputRef.current?.click()}>
+                <input ref={fileInputRef} id="receipt" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleFileChange} className="hidden" />
+                {preview ? (
+                  <div className="space-y-3">
+                    {previewType === 'pdf' ? <FileText className="mx-auto h-10 w-10 text-emerald-300" /> : <img src={preview} alt="Vista previa" className="mx-auto max-h-48 rounded-lg" />}
+                    <p className="text-sm font-bold text-emerald-300">Comprobante cargado</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <ImageIcon className="mx-auto h-8 w-8 text-amber-300" />
+                    <p className="text-amber-100">Subir comprobante</p>
+                    <p className="text-xs text-zinc-500">JPG, PNG, WebP o PDF hasta 8MB</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-3 rounded-lg border border-red-500/50 bg-red-950/40 px-4 py-3 text-red-200">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                <p className="text-sm font-semibold">{error}</p>
+              </div>
+            )}
+
+            <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-full bg-amber-300 text-base font-black text-zinc-950 hover:bg-amber-200">
+              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+              {isLoading ? 'Registrando compra...' : 'Enviar compra para aprobacion'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function Summary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-200">{label}</p>
+      <p className="mt-1 break-words text-sm font-bold text-white">{value}</p>
+    </div>
+  )
+}
