@@ -36,17 +36,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
             )}
             <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" />
             <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
-            <HeaderLink href="/mi-cuenta" active={activePath === 'mi-cuenta'} icon={<UserCircle2 className="h-4 w-4" />} label="Ingresar" className="hidden sm:inline-flex" />
-            <Link
-              href="/participar"
-              className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-bold shadow-lg shadow-amber-500/20 transition ${
-                activePath === 'participar'
-                  ? 'bg-white text-zinc-950'
-                  : 'bg-amber-300 text-zinc-950 hover:bg-amber-200'
-              }`}
-            >
-              Participar
-            </Link>
+            <HeaderLink href="/mi-cuenta" active={activePath === 'mi-cuenta'} icon={<UserCircle2 className="h-4 w-4" />} label="Ingresar" className="inline-flex" />
           </nav>
         </div>
       </div>
