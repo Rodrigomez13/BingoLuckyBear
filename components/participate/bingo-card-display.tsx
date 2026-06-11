@@ -23,9 +23,10 @@ interface BingoCardDisplayProps {
   drawnNumbers?: number[]
   compact?: boolean
   autoOpen?: boolean
+  dense?: boolean
 }
 
-export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false, autoOpen = false }: BingoCardDisplayProps) {
+export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact = false, autoOpen = false, dense = false }: BingoCardDisplayProps) {
   const [showModal, setShowModal] = useState(autoOpen)
   const cardPreviewRef = useRef<HTMLDivElement>(null)
   const modalCardRef = useRef<HTMLDivElement>(null)
@@ -41,7 +42,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
   const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
   const isWinner = winningLines.length > 0
   const hasPrizeColumn = columnLabels.length === 9
-  const gridTemplateColumns = `${hasPrizeColumn ? 'clamp(1.85rem, 7vw, 3.45rem) ' : ''}repeat(${columnLabels.length}, minmax(0, 1fr))`
+  const prizeColumnWidth = dense ? 'clamp(1.55rem, 6vw, 2.6rem)' : 'clamp(1.85rem, 7vw, 3.45rem)'
+  const gridTemplateColumns = `${hasPrizeColumn ? `${prizeColumnWidth} ` : ''}repeat(${columnLabels.length}, minmax(0, 1fr))`
 
   const downloadCard = async () => {
     let downloadBtn: HTMLButtonElement | null = null
@@ -159,7 +161,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
     <div
       className={cn(
         'relative mx-auto w-full max-w-[720px] overflow-hidden rounded-[clamp(1rem,4vw,1.5rem)] border border-amber-500/20 bg-gradient-to-b from-[#0a1410] via-[#08100c] to-[#060a08] shadow-2xl shadow-black/40',
-        forDownload ? 'p-4 sm:p-6 md:p-8' : 'p-3 sm:p-5'
+        dense && !forDownload && 'max-w-[560px] rounded-[clamp(0.85rem,3vw,1.25rem)]',
+        forDownload ? 'p-4 sm:p-6 md:p-8' : dense ? 'p-2.5 sm:p-3.5' : 'p-3 sm:p-5'
       )}
     >
       <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full bg-amber-400/10 blur-3xl" />
@@ -168,26 +171,32 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       <div className="relative">
         <div className="flex flex-col items-center gap-2.5 text-center sm:gap-3">
           <div className="flex max-w-full items-center justify-center gap-2">
-            <BearLogo size={forDownload ? 44 : 34} className="shrink-0" />
+            <BearLogo size={forDownload ? 44 : dense ? 28 : 34} className="shrink-0" />
             <h2
               className={cn(
                 'min-w-0 text-balance font-extrabold tracking-tight text-amber-50',
-                forDownload ? 'text-xl sm:text-2xl md:text-3xl' : 'text-lg sm:text-xl md:text-2xl'
+                forDownload ? 'text-xl sm:text-2xl md:text-3xl' : dense ? 'text-base sm:text-lg' : 'text-lg sm:text-xl md:text-2xl'
               )}
             >
               Lucky Bingo Bear
             </h2>
           </div>
-          <p className={cn('max-w-full text-balance font-semibold leading-snug text-amber-300', forDownload ? 'text-sm sm:text-base md:text-lg' : 'text-sm sm:text-base')}>
+          <p className={cn('max-w-full text-balance font-semibold leading-snug text-amber-300', forDownload ? 'text-sm sm:text-base md:text-lg' : dense ? 'text-xs sm:text-sm' : 'text-sm sm:text-base')}>
             {raffleName}
           </p>
-          <Badge className="max-w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-amber-950 shadow-lg shadow-orange-900/40 hover:from-amber-500 hover:to-orange-500 sm:px-4 sm:text-sm">
+          <Badge className={cn(
+            'max-w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-amber-950 shadow-lg shadow-orange-900/40 hover:from-amber-500 hover:to-orange-500',
+            dense && !forDownload ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs sm:px-4 sm:text-sm'
+          )}>
             <Hash className="mr-1 h-3.5 w-3.5 opacity-70" />
             <span className="min-w-0 truncate">{card.card_number}</span>
           </Badge>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-[clamp(0.75rem,3vw,1rem)] border-2 border-amber-500/60 bg-black p-[clamp(0.2rem,0.9vw,0.375rem)] shadow-inner sm:mt-6">
+        <div className={cn(
+          'overflow-hidden rounded-[clamp(0.75rem,3vw,1rem)] border-2 border-amber-500/60 bg-black p-[clamp(0.2rem,0.9vw,0.375rem)] shadow-inner',
+          dense && !forDownload ? 'mt-3 sm:mt-4' : 'mt-4 sm:mt-6'
+        )}>
           <div className="grid gap-[clamp(0.125rem,0.8vw,0.25rem)]" style={{ gridTemplateColumns }}>
             {hasPrizeColumn && (
               <HeaderCell className="bg-gradient-to-b from-amber-400 to-amber-500 text-amber-950">
@@ -207,7 +216,8 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
                 <div
                   className={cn(
                     'flex aspect-[0.72/1] min-h-8 items-center justify-center rounded-[clamp(0.45rem,2vw,0.75rem)] bg-gradient-to-b from-amber-400 to-amber-500 font-extrabold leading-none text-amber-950',
-                    forDownload ? 'text-sm sm:text-base' : 'text-xs sm:text-sm md:text-base'
+                    forDownload ? 'text-sm sm:text-base' : dense ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm md:text-base',
+                    dense && !forDownload && 'min-h-6'
                   )}
                 >
                   P{rowIndex + 1}
@@ -221,9 +231,10 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
                     key={`${rowIndex}-${colIndex}`}
                     className={cn(
                       'flex aspect-[0.72/1] min-h-8 items-center justify-center rounded-[clamp(0.45rem,2vw,0.75rem)] bg-[#0a0a0a] font-extrabold leading-none tabular-nums text-white',
-                      forDownload ? 'text-lg sm:text-xl md:text-2xl' : 'text-base sm:text-xl md:text-2xl',
+                      forDownload ? 'text-lg sm:text-xl md:text-2xl' : dense ? 'text-sm sm:text-base md:text-lg' : 'text-base sm:text-xl md:text-2xl',
+                      dense && !forDownload && 'min-h-6',
                       cell === null && 'text-transparent',
-                      cell === 'FREE' && 'bg-gradient-to-b from-amber-400 to-amber-500 text-sm text-amber-950 sm:text-base',
+                      cell === 'FREE' && (dense && !forDownload ? 'bg-gradient-to-b from-amber-400 to-amber-500 text-[10px] text-amber-950 sm:text-xs' : 'bg-gradient-to-b from-amber-400 to-amber-500 text-sm text-amber-950 sm:text-base'),
                       marked && cell !== null && 'bg-emerald-600 text-white ring-2 ring-inset ring-amber-300/60 shadow-inner'
                     )}
                   >
@@ -235,9 +246,9 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
           ))}
         </div>
 
-        <div className="mt-4 text-center sm:mt-5">
-          <p className="break-words text-sm font-bold text-amber-50 sm:text-base">{card.full_name}</p>
-          <p className="text-xs font-semibold text-amber-300 sm:text-sm">{formattedDate}</p>
+        <div className={cn('text-center', dense && !forDownload ? 'mt-3' : 'mt-4 sm:mt-5')}>
+          <p className={cn('break-words font-bold text-amber-50', dense && !forDownload ? 'text-xs sm:text-sm' : 'text-sm sm:text-base')}>{card.full_name}</p>
+          <p className={cn('font-semibold text-amber-300', dense && !forDownload ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm')}>{formattedDate}</p>
         </div>
       </div>
     </div>
@@ -269,16 +280,16 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
       )}
 
       <Card className="overflow-hidden border-zinc-800 bg-zinc-950/85 shadow-xl backdrop-blur-sm">
-        <CardContent className="p-2 sm:p-4">
+        <CardContent className={cn(dense ? 'p-2 sm:p-3' : 'p-2 sm:p-4')}>
           <div ref={cardPreviewRef}>
             <BingoCardVisual />
           </div>
 
-          <div className="mt-4 grid gap-3 min-[560px]:grid-cols-3">
+          <div className={cn('grid gap-3 min-[560px]:grid-cols-3', dense ? 'mt-3' : 'mt-4')}>
             <Button
               onClick={() => setShowModal(true)}
               variant="outline"
-              className="h-auto min-h-11 w-full whitespace-normal border-amber-400/40 bg-transparent px-3 py-2.5 text-sm font-semibold leading-tight text-amber-200 hover:bg-amber-400/10"
+              className={cn('h-auto w-full whitespace-normal border-amber-400/40 bg-transparent px-3 font-semibold leading-tight text-amber-200 hover:bg-amber-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
               <Eye className="mr-2 h-4 w-4 shrink-0" />
               Ver Carton Completo
@@ -286,14 +297,14 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             <Button
               onClick={shareCard}
               variant="outline"
-              className="h-auto min-h-11 w-full whitespace-normal border-sky-300/40 bg-transparent px-3 py-2.5 text-sm font-semibold leading-tight text-sky-100 hover:bg-sky-400/10"
+              className={cn('h-auto w-full whitespace-normal border-sky-300/40 bg-transparent px-3 font-semibold leading-tight text-sky-100 hover:bg-sky-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
               <Share2 className="mr-2 h-4 w-4 shrink-0" />
               Compartir
             </Button>
             <Button
               onClick={downloadCard}
-              className="h-auto min-h-11 w-full whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-2.5 text-sm font-semibold leading-tight text-white hover:from-amber-600 hover:to-orange-600"
+              className={cn('h-auto w-full whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 px-3 font-semibold leading-tight text-white hover:from-amber-600 hover:to-orange-600', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
               <Download className="mr-2 h-4 w-4 shrink-0" />
               Descargar
@@ -302,7 +313,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         </CardContent>
       </Card>
 
-      <div className="bg-amber-400/10 border border-amber-400/25 rounded-lg p-4">
+      <div className={cn('rounded-lg border border-amber-400/25 bg-amber-400/10', dense ? 'p-3' : 'p-4')}>
         <p className="text-amber-100 text-sm">
           <strong>Importante:</strong> Guarda tu numero de carton <strong>{card.card_number}</strong>.
           Lo necesitaras para verificar si ganaste cuando se realice el sorteo.

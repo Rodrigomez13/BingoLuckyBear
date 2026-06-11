@@ -9,9 +9,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LiveDrawCard } from '@/components/live/live-draw-card'
 import { Card, CardContent } from '@/components/ui/card'
-import { Clock, MessageCircle, Radio, Trophy } from 'lucide-react'
+import { ChevronDown, Clock, Eye, Hash, MessageCircle, Radio, Trophy } from 'lucide-react'
 import { CONTACT_LINKS } from '@/lib/contact'
 import { SiteHeader } from '@/components/site-header'
+import { getWinningLines } from '@/lib/bingo'
 
 interface Raffle {
   id: string
@@ -52,7 +53,7 @@ export default function ParticipatePage() {
   const [salesClosedReason, setSalesClosedReason] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [sessionToken, setSessionToken] = useState<string>('')
-  const [autoOpenCardId, setAutoOpenCardId] = useState<string | null>(null)
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     // Get or create session token from localStorage
@@ -102,7 +103,25 @@ export default function ParticipatePage() {
 
   const handleCardsCreated = (cards: BingoCard[]) => {
     setExistingCards((current) => [...current, ...cards])
-    setAutoOpenCardId(cards[0]?.id ?? null)
+    setExpandedCardIds((current) => {
+      const next = new Set(current)
+      for (const card of cards) {
+        next.add(card.id)
+      }
+      return next
+    })
+  }
+
+  const toggleCard = (cardId: string) => {
+    setExpandedCardIds((current) => {
+      const next = new Set(current)
+      if (next.has(cardId)) {
+        next.delete(cardId)
+      } else {
+        next.add(cardId)
+      }
+      return next
+    })
   }
 
   if (isLoading) {
@@ -145,15 +164,15 @@ export default function ParticipatePage() {
                 </div>
               )}
             </div>
-            <div className="grid items-start gap-6 xl:grid-cols-2">
+            <div className="space-y-3">
               {existingCards.map((card) => (
-                <BingoCardDisplay
+                <BingoCardListItem
                   key={card.id}
                   card={card}
                   raffleName={activeRaffle.name}
                   drawnNumbers={activeRaffle.drawn_numbers ?? []}
-                  compact
-                  autoOpen={card.id === autoOpenCardId}
+                  expanded={expandedCardIds.has(card.id)}
+                  onToggle={() => toggleCard(card.id)}
                 />
               ))}
             </div>
@@ -182,6 +201,81 @@ export default function ParticipatePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+function BingoCardListItem({
+  card,
+  raffleName,
+  drawnNumbers,
+  expanded,
+  onToggle,
+}: {
+  card: BingoCard
+  raffleName: string
+  drawnNumbers: number[]
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const formattedDate = new Date(card.created_at).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+  const winningLines = getWinningLines(card.bingo_numbers, drawnNumbers)
+  const isWinner = winningLines.length > 0
+
+  return (
+    <Card className="overflow-hidden border-zinc-800 bg-zinc-950/85 text-zinc-100 shadow-xl shadow-black/20 backdrop-blur-sm">
+      <CardContent className="p-0">
+        <div className="grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-amber-400/15 px-3 py-1 text-sm font-bold text-amber-200">
+                <Hash className="mr-1 h-3.5 w-3.5" />
+                {card.card_number}
+              </span>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${isWinner ? 'bg-emerald-500/15 text-emerald-200' : 'bg-white/[0.06] text-zinc-300'}`}>
+                {isWinner ? 'Ganador' : 'Participando'}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-1 text-sm text-zinc-300 sm:grid-cols-2">
+              <p className="min-w-0 truncate">
+                <span className="font-semibold text-white">{card.full_name}</span>
+              </p>
+              <p className="text-zinc-400 sm:text-right">{formattedDate}</p>
+            </div>
+            {isWinner && (
+              <p className="mt-2 text-xs font-semibold text-emerald-200">
+                {winningLines.join(', ')}
+              </p>
+            )}
+          </div>
+
+          <Button
+            onClick={onToggle}
+            variant="outline"
+            className="h-11 w-full border-amber-400/40 bg-transparent font-semibold text-amber-200 hover:bg-amber-400/10 sm:w-auto"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            {expanded ? 'Ocultar' : 'Ver Carton'}
+            <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </Button>
+        </div>
+
+        {expanded && (
+          <div className="border-t border-zinc-800 p-2 sm:p-4">
+            <BingoCardDisplay
+              card={card}
+              raffleName={raffleName}
+              drawnNumbers={drawnNumbers}
+              compact
+              dense
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
