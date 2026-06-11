@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { Radio, Trophy, UserCircle2 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 
@@ -54,7 +55,7 @@ function HeaderLink({
   href: string
   active: boolean
   label: string
-  icon?: React.ReactNode
+  icon?: ReactNode
   className?: string
 }) {
   return (
