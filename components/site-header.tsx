@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { Radio, Trophy } from 'lucide-react'
+import { Radio, Trophy, UserCircle2 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 
 interface SiteHeaderProps {
   kicker?: string
   jackpotPrize?: string | null
-  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores'
+  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta'
   compact?: boolean
 }
 
@@ -36,6 +36,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
             )}
             <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" />
             <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
+            <HeaderLink href="/mi-cuenta" active={activePath === 'mi-cuenta'} icon={<UserCircle2 className="h-4 w-4" />} label="Mi cuenta" className="hidden sm:inline-flex" />
             <Link
               href="/participar"
               className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-bold shadow-lg shadow-amber-500/20 transition ${
