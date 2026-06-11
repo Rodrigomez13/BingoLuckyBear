@@ -45,6 +45,7 @@ export default async function CustomerPrizesPage() {
 
   const prizes = ((cards ?? []) as CustomerCard[])
     .flatMap((card) => {
+      if (!card.bingo_numbers) return []
       const lines = getWinningLines(card.bingo_numbers, card.raffle?.drawn_numbers ?? [])
       return lines.map((line) => ({ card, line }))
     })
