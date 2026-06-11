@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isReasonablePhone, normalizePhoneNumber } from '@/lib/phone'
 
 function isValidEmail(value: string) {
@@ -89,6 +89,25 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) throw error
+
+    const syncEmail = user.email?.toLowerCase() ?? profile.email
+    if (syncEmail) {
+      const serviceClient = await createServiceClient()
+      await serviceClient
+        .from('bingo_cards')
+        .update({
+          customer_id: user.id,
+          full_name: profile.full_name,
+          dni: profile.dni,
+          address: profile.address,
+          phone: profile.phone,
+          email: profile.email ?? syncEmail,
+          payout_account_kind: profile.payout_account_kind,
+          payout_account: profile.payout_account,
+          payout_holder_name: profile.payout_holder_name,
+        })
+        .eq('email', syncEmail)
+    }
 
     return NextResponse.json({ profile: data })
   } catch (error) {
