@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { AlertTriangle, FileText, Image as ImageIcon, Loader2, ShieldCheck, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,6 +55,7 @@ export function AccountPurchaseForm({
   const [quantity, setQuantity] = useState('1')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [paymentReference, setPaymentReference] = useState('')
+  const [acceptedLegal, setAcceptedLegal] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [previewType, setPreviewType] = useState<'image' | 'pdf' | null>(null)
@@ -118,6 +120,10 @@ export function AccountPurchaseForm({
         throw new Error('Debes subir el comprobante de pago')
       }
 
+      if (!acceptedLegal) {
+        throw new Error('Debes aceptar Terminos y Politica de Privacidad para continuar')
+      }
+
       const uploadForm = new FormData()
       uploadForm.append('file', file)
 
@@ -167,6 +173,7 @@ export function AccountPurchaseForm({
     setQuantity('1')
     setPaymentMethod('')
     setPaymentReference('')
+    setAcceptedLegal(false)
     setFile(null)
     if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
@@ -256,6 +263,13 @@ export function AccountPurchaseForm({
                 )}
               </div>
             </div>
+
+            <label className="flex cursor-pointer gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-6 text-zinc-300">
+              <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-amber-300" />
+              <span>
+                Declaro que leí y acepto los <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-amber-200 underline">Términos y Condiciones</Link> y la <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-amber-200 underline">Política de Privacidad</Link>. Entiendo que el cartón participa cuando el pago sea aprobado.
+              </span>
+            </label>
 
             {error && (
               <div className="flex items-start gap-3 rounded-lg border border-red-500/50 bg-red-950/40 px-4 py-3 text-red-200">
