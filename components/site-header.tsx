@@ -6,7 +6,7 @@ import { BearLogo } from '@/components/bear-logo'
 interface SiteHeaderProps {
   kicker?: string
   jackpotPrize?: string | null
-  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta'
+  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta' | 'truco'
   compact?: boolean
 }
 
@@ -36,7 +36,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
               </span>
             )}
             <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" />
-            <HeaderLink href="/truco" active={false} icon={<Spade className="h-4 w-4" />} label="Truco" className="inline-flex" />
+            <HeaderLink href="/truco" active={activePath === 'truco'} icon={<Spade className="h-4 w-4" />} label="Truco" className="inline-flex" />
             <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
             <HeaderLink href="/mi-cuenta" active={activePath === 'mi-cuenta'} icon={<UserCircle2 className="h-4 w-4" />} label="Ingresar" className="inline-flex" />
           </nav>
@@ -63,7 +63,7 @@ function HeaderLink({
     <Link
       href={href}
       className={`${className} items-center gap-1 rounded-full px-2 py-2 font-semibold transition-colors ${
-        active ? 'text-amber-200' : 'text-slate-300 hover:text-amber-200'
+        active ? 'bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/25' : 'text-slate-300 hover:text-amber-200'
       }`}
     >
       {icon}
