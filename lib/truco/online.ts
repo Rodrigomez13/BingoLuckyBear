@@ -8,6 +8,7 @@ export type OnlineRole = Player
 export type OnlineAction =
   | { type: 'play-card'; cardId: string }
   | { type: 'call-envido'; call: EnvidoCall }
+  | { type: 'call-flor' }
   | { type: 'call-truco' }
   | { type: 'respond'; accept: boolean }
   | { type: 'go-maze' }
