@@ -2,16 +2,22 @@
 
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
-import { Bot, Users, LogIn, Copy, Check, Clover, Link2 } from 'lucide-react'
+import { Bot, Users, LogIn, Copy, Check, Clover, Link2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { generateRoomCode, normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
+import {
+  createAuthoritativeRoom,
+  joinAuthoritativeRoom,
+  readRoomSecret,
+  saveRoomSecret,
+} from '@/lib/truco/server-client'
 import { RulesModal } from './rules-modal'
 
 interface RoomLobbyProps {
   initialRoomCode?: string | null
   onPlayBot: (target: 15 | 30) => void
-  onPlayOnline: (config: { target: 15 | 30; roomCode: string; role: OnlineRole }) => void
+  onPlayOnline: (config: { target: 15 | 30; roomCode: string; role: OnlineRole; secret: string }) => void
 }
 
 export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobbyProps) {
@@ -20,6 +26,8 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   const [roomCode, setRoomCode] = useState(() => generateRoomCode())
   const [joinCode, setJoinCode] = useState('')
   const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const normalized = normalizeRoomCode(initialRoomCode ?? '')
@@ -40,14 +48,47 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const createRoom = () => {
-    onPlayOnline({ target, roomCode, role: 'player' })
+  const createRoom = async () => {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await createAuthoritativeRoom(target, roomCode)
+      if (!result.ok || !result.room || !result.secret || !result.room.role) {
+        setError(result.error ?? 'No se pudo crear la mesa')
+        return
+      }
+      saveRoomSecret(result.room.roomCode, result.secret)
+      setRoomCode(result.room.roomCode)
+      onPlayOnline({ target: result.room.target, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo crear la mesa')
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const joinRoom = () => {
+  const joinRoom = async () => {
+    if (busy) return
     const normalized = normalizeRoomCode(joinCode)
     if (normalized.length !== 5) return
-    onPlayOnline({ target, roomCode: normalized, role: 'opponent' })
+
+    setBusy(true)
+    setError(null)
+    try {
+      const storedSecret = readRoomSecret(normalized)
+      const result = await joinAuthoritativeRoom(normalized, storedSecret)
+      if (!result.ok || !result.room || !result.secret || !result.room.role) {
+        setError(result.error ?? 'No se pudo entrar a la mesa')
+        return
+      }
+      saveRoomSecret(result.room.roomCode, result.secret)
+      onPlayOnline({ target: result.room.target, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo entrar a la mesa')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -75,7 +116,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
         Truco <span className="text-amber-300">Lucky Bear</span>
       </h1>
       <p className="mt-3 max-w-md text-pretty text-sm leading-relaxed text-emerald-100/70">
-        Jugá contra el oso o creá una mesa online por código. El anfitrión mantiene la partida abierta y el rival entra con el enlace.
+        Jugá contra el oso o creá una mesa online validada por servidor. Cada jugada se confirma antes de modificar la partida.
       </p>
 
       <div className="mt-7 inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/30 p-1">
@@ -92,6 +133,12 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
         ))}
       </div>
 
+      {error && (
+        <div className="mt-4 max-w-md rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-100">
+          {error}
+        </div>
+      )}
+
       {mode === 'home' && (
         <div className="mt-8 grid w-full gap-4 sm:grid-cols-3">
           <LobbyCard
@@ -104,8 +151,9 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
           <LobbyCard
             icon={<Users className="h-7 w-7" />}
             title="Crear mesa online"
-            desc="Generá un código y compartí el enlace."
+            desc="Generá una mesa segura en Supabase."
             onClick={() => {
+              setError(null)
               setRoomCode(generateRoomCode())
               setMode('create')
             }}
@@ -114,16 +162,19 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
             icon={<LogIn className="h-7 w-7" />}
             title="Unirse a mesa"
             desc="Ingresá el código de 5 caracteres."
-            onClick={() => setMode('join')}
+            onClick={() => {
+              setError(null)
+              setMode('join')
+            }}
           />
         </div>
       )}
 
       {mode === 'create' && (
         <div className="mt-8 w-full max-w-lg rounded-2xl border border-amber-300/20 bg-[#06140e]/80 p-6">
-          <h2 className="text-lg font-bold text-white">Mesa online creada</h2>
+          <h2 className="text-lg font-bold text-white">Mesa online segura</h2>
           <p className="mt-1 text-sm text-emerald-100/60">
-            Compartí este código o enlace. Cuando tu rival entre, la partida se sincroniza en tiempo real.
+            Este código se registra en el servidor. Las jugadas se validan antes de guardarse.
           </p>
           <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <span className="rounded-xl border border-amber-300/30 bg-black/40 px-6 py-3 font-mono text-3xl font-black tracking-[0.3em] text-amber-300">
@@ -151,16 +202,14 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <Button onClick={createRoom} className="flex-1 bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
-              Abrir mesa y esperar rival
+            <Button disabled={busy} onClick={createRoom} className="flex-1 bg-amber-300 font-bold text-amber-950 hover:bg-amber-200 disabled:opacity-50">
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Crear y abrir mesa
             </Button>
-            <Button onClick={() => setMode('home')} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
+            <Button disabled={busy} onClick={() => setMode('home')} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
               Volver
             </Button>
           </div>
-          <p className="mt-3 text-[11px] text-emerald-100/45">
-            Nota: la mesa online funciona mientras el anfitrión mantiene abierta la partida.
-          </p>
         </div>
       )}
 
@@ -172,20 +221,21 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
             value={joinCode}
             onChange={(e) => setJoinCode(normalizeRoomCode(e.target.value))}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') joinRoom()
+              if (e.key === 'Enter') void joinRoom()
             }}
             placeholder="ABCDE"
             className="mt-4 border-amber-300/30 bg-black/40 text-center font-mono text-2xl font-black tracking-[0.3em] text-amber-300"
           />
           <div className="mt-5 flex gap-3">
             <Button
-              disabled={normalizeRoomCode(joinCode).length < 5}
+              disabled={busy || normalizeRoomCode(joinCode).length < 5}
               onClick={joinRoom}
               className="flex-1 bg-amber-300 font-bold text-amber-950 hover:bg-amber-200 disabled:opacity-40"
             >
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Entrar a la mesa
             </Button>
-            <Button onClick={() => setMode('home')} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
+            <Button disabled={busy} onClick={() => setMode('home')} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
               Volver
             </Button>
           </div>
