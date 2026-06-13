@@ -8,6 +8,7 @@ import {
   type GameState,
   type Player,
   callEnvido,
+  callFlor,
   callTruco,
   createGame,
   goToMazo,
@@ -230,6 +231,7 @@ export function GameTable({
     commitAction({ type: 'play-card', cardId })
   }
 
+  const handleFlor = () => commitAction({ type: 'call-flor' })
   const handleEnvido = (call: EnvidoCall) => commitAction({ type: 'call-envido', call })
   const handleTruco = () => commitAction({ type: 'call-truco' })
   const handleMazo = () => commitAction({ type: 'go-maze' })
@@ -319,6 +321,7 @@ export function GameTable({
           <ActionButtons
             state={state}
             player={actor}
+            onFlor={handleFlor}
             onEnvido={handleEnvido}
             onTruco={handleTruco}
             onRespond={handleRespond}
@@ -332,6 +335,7 @@ export function GameTable({
           state={state}
           player={actor}
           compact
+          onFlor={handleFlor}
           onEnvido={handleEnvido}
           onTruco={handleTruco}
           onRespond={handleRespond}
@@ -384,13 +388,15 @@ function applyOnlineAction(state: GameState, actor: Player, action: OnlineAction
   switch (action.type) {
     case 'play-card':
       return playCard(state, actor, action.cardId)
+    case 'call-flor':
+      return callFlor(state, actor)
     case 'call-envido':
       return callEnvido(state, actor, action.call)
     case 'call-truco':
       return callTruco(state, actor)
     case 'respond':
-      if (state.trucoPending && state.trucoPending.by !== actor) return respondTruco(state, actor, action.accept)
       if (state.envidoPending && state.envidoPending.by !== actor) return respondEnvido(state, actor, action.accept)
+      if (state.trucoPending && state.trucoPending.by !== actor) return respondTruco(state, actor, action.accept)
       return state
     case 'go-maze':
       return goToMazo(state, actor)
