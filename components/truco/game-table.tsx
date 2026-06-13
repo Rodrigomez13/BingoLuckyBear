@@ -39,6 +39,8 @@ import { OpponentHand } from './opponent-hand'
 import { PlayedCards } from './played-cards'
 import { ScoreBoard } from './score-board'
 import { ActionButtons } from './action-buttons'
+import { RulesModal } from './rules-modal'
+import { TrickHistory } from './trick-history'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'connecting' | 'waiting' | 'connected' | 'offline'
@@ -275,6 +277,7 @@ export function GameTable({
           {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
         <div className="flex gap-1.5">
+          <RulesModal compact />
           <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
@@ -308,8 +311,11 @@ export function GameTable({
               </div>
             )}
 
-            <div className="my-0 w-full rounded-xl border border-amber-300/10 bg-black/20 py-1 sm:rounded-2xl sm:py-3">
-              <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
+            <div className="w-full space-y-2 sm:space-y-3">
+              <TrickHistory winners={state.trickWinners} hand={state.hand} rivalLabel={rivalLabel} />
+              <div className="w-full rounded-xl border border-amber-300/10 bg-black/20 py-1 sm:rounded-2xl sm:py-3">
+                <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
+              </div>
             </div>
 
             <PlayerHand cards={state.hands[actor]} canPlay={playerTurn} onPlay={handlePlay} />
