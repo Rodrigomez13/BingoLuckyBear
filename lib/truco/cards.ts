@@ -105,3 +105,8 @@ export function dealHands(): { player: TrucoCard[]; opponent: TrucoCard[] } {
 export function cardImagePath(card: TrucoCard): string {
   return `/truco/cards/${card.rank}-${card.suit}.png`
 }
+
+/** Image path for the Lucky Bingo Bear card back. */
+export function cardBackPath(): string {
+  return '/truco/cards/back.png'
+}

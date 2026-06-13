@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { type TrucoCard, cardImagePath } from '@/lib/truco/cards'
+import { type TrucoCard, cardImagePath, cardBackPath } from '@/lib/truco/cards'
 
 const SUIT_GLYPH: Record<string, string> = {
   espada: '\u2694', // crossed swords
@@ -42,19 +42,33 @@ export function PlayingCard({
   className?: string
 }) {
   const [imgError, setImgError] = useState(false)
+  const [backError, setBackError] = useState(false)
 
   if (faceDown || !card) {
     return (
       <div
         className={`${SIZE[size]} relative shrink-0 overflow-hidden rounded-xl border border-amber-300/30 bg-[#0e2a1f] shadow-lg shadow-black/40 ${className}`}
       >
-        <div className="absolute inset-1 rounded-lg border border-amber-300/25" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-300/40 bg-[#06140e] text-amber-300/80">
-            <span className="text-xs font-black tracking-tight">LBB</span>
-          </div>
-        </div>
-        <div className="absolute inset-0 opacity-30 [background-image:repeating-linear-gradient(45deg,rgba(251,191,36,0.18)_0,rgba(251,191,36,0.18)_2px,transparent_2px,transparent_8px)]" />
+        {!backError ? (
+          <Image
+            src={cardBackPath() || '/placeholder.svg'}
+            alt="Dorso de la carta"
+            fill
+            sizes="120px"
+            className="object-cover"
+            onError={() => setBackError(true)}
+          />
+        ) : (
+          <>
+            <div className="absolute inset-1 rounded-lg border border-amber-300/25" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-300/40 bg-[#06140e] text-amber-300/80">
+                <span className="text-xs font-black tracking-tight">LBB</span>
+              </div>
+            </div>
+            <div className="absolute inset-0 opacity-30 [background-image:repeating-linear-gradient(45deg,rgba(251,191,36,0.18)_0,rgba(251,191,36,0.18)_2px,transparent_2px,transparent_8px)]" />
+          </>
+        )}
       </div>
     )
   }
