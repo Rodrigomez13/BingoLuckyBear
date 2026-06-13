@@ -5,10 +5,10 @@ import Image from 'next/image'
 import { type TrucoCard, cardImagePath } from '@/lib/truco/cards'
 
 const SUIT_GLYPH: Record<string, string> = {
-  espada: '\u2694', // crossed swords
-  basto: '\u2663', // club
-  oro: '\u25C9', // coin-like
-  copa: '\u2666', // cup-like diamond
+  espada: '\u2694',
+  basto: '\u2663',
+  oro: '\u25C9',
+  copa: '\u2666',
 }
 
 const SUIT_COLOR: Record<string, string> = {
@@ -19,9 +19,9 @@ const SUIT_COLOR: Record<string, string> = {
 }
 
 const SIZE = {
-  sm: 'h-20 w-14 text-sm',
-  md: 'h-28 w-20 text-base',
-  lg: 'h-36 w-24 text-lg',
+  sm: 'h-24 w-16 text-sm sm:h-28 sm:w-20',
+  md: 'h-28 w-20 text-base sm:h-36 sm:w-24',
+  lg: 'h-40 w-28 text-lg sm:h-48 sm:w-32',
 }
 
 export function PlayingCard({
@@ -42,49 +42,52 @@ export function PlayingCard({
   className?: string
 }) {
   const [imgError, setImgError] = useState(false)
+  const Wrapper = selectable ? 'button' : 'div'
+  const interactive = selectable ? 'cursor-pointer hover:-translate-y-3 hover:scale-[1.02] hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
+  const selectedClass = selected ? '-translate-y-3 scale-[1.02] drop-shadow-[0_0_20px_rgba(251,191,36,0.45)]' : ''
 
   if (faceDown || !card) {
     return (
-      <div
-        className={`${SIZE[size]} relative shrink-0 overflow-hidden rounded-xl border border-amber-300/30 bg-[#0e2a1f] shadow-lg shadow-black/40 ${className}`}
-      >
-        <div className="absolute inset-1 rounded-lg border border-amber-300/25" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-300/40 bg-[#06140e] text-amber-300/80">
-            <span className="text-xs font-black tracking-tight">LBB</span>
+      <div className={`${SIZE[size]} relative shrink-0 overflow-visible rounded-md ${className}`}>
+        <Image
+          src="/truco/cards/back.png"
+          alt="Reverso de carta Lucky Bingo Bear"
+          fill
+          sizes="160px"
+          className="object-contain drop-shadow-xl"
+          onError={() => setImgError(true)}
+        />
+        {imgError && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg border border-amber-300/30 bg-[#0e2a1f] text-xs font-black text-amber-300">
+            LBB
           </div>
-        </div>
-        <div className="absolute inset-0 opacity-30 [background-image:repeating-linear-gradient(45deg,rgba(251,191,36,0.18)_0,rgba(251,191,36,0.18)_2px,transparent_2px,transparent_8px)]" />
+        )}
       </div>
     )
   }
-
-  const Wrapper = selectable ? 'button' : 'div'
 
   return (
     <Wrapper
       type={selectable ? 'button' : undefined}
       onClick={onClick}
       aria-label={`${card.rank} de ${card.suit}`}
-      className={`${SIZE[size]} group relative shrink-0 overflow-hidden rounded-xl border bg-[#fdf6e3] shadow-lg shadow-black/40 transition-all ${
-        selectable ? 'cursor-pointer hover:-translate-y-3 hover:shadow-amber-400/30' : ''
-      } ${selected ? '-translate-y-3 border-amber-400 ring-2 ring-amber-400' : 'border-amber-200/60'} ${className}`}
+      className={`${SIZE[size]} group relative shrink-0 overflow-visible rounded-md bg-transparent p-0 transition-all ${interactive} ${selectedClass} ${className}`}
     >
       {!imgError ? (
         <Image
           src={cardImagePath(card) || '/placeholder.svg'}
           alt={`${card.rank} de ${card.suit}`}
           fill
-          sizes="120px"
-          className="object-cover"
+          sizes="180px"
+          className="object-contain drop-shadow-xl"
           onError={() => setImgError(true)}
         />
       ) : (
-        <span className="flex h-full w-full flex-col justify-between p-1.5 text-[#1a2e22]">
+        <span className="flex h-full w-full flex-col justify-between rounded-lg border border-amber-200/60 bg-[#fdf6e3] p-2 text-[#1a2e22] shadow-lg shadow-black/40">
           <span className={`text-left font-black leading-none ${SUIT_COLOR[card.suit]} [text-shadow:0_1px_0_rgba(0,0,0,0.15)]`}>
             {card.rank}
           </span>
-          <span className={`text-center text-2xl leading-none ${SUIT_COLOR[card.suit]}`}>
+          <span className={`text-center text-3xl leading-none ${SUIT_COLOR[card.suit]}`}>
             {SUIT_GLYPH[card.suit]}
           </span>
           <span className={`rotate-180 text-left font-black leading-none ${SUIT_COLOR[card.suit]}`}>
