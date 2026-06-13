@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { cardImagePath } from '@/lib/truco/cards'
 import { PlayerHand } from './player-hand'
 import { OpponentHand } from './opponent-hand'
 import { PlayedCards } from './played-cards'
@@ -65,6 +66,7 @@ export function GameTable({
   const channelRef = useRef<RealtimeChannel | null>(null)
   const stateRef = useRef<GameState>(state)
   const gameShellRef = useRef<HTMLDivElement | null>(null)
+  const preloadedRef = useRef<Set<string>>(new Set())
   const clientId = useMemo(() => Math.random().toString(36).slice(2, 10), [])
 
   const isOnline = mode === 'online' && Boolean(roomCode)
@@ -74,21 +76,42 @@ export function GameTable({
   const rivalLabel = mode === 'bot' ? 'Oso' : 'Rival'
   const waitingForHost = isOnline && actor === 'opponent' && onlineStatus !== 'connected'
 
+  const warmImage = useCallback((src: string) => {
+    if (preloadedRef.current.has(src)) return
+    preloadedRef.current.add(src)
+    const img = new window.Image()
+    img.decoding = 'async'
+    img.src = src
+  }, [])
+
   useEffect(() => {
     stateRef.current = state
   }, [state])
 
   useEffect(() => {
-    const preload = ['/truco/cards/back.png']
-    for (const suit of PRELOAD_SUITS) {
-      for (const rank of PRELOAD_RANKS) preload.push(`/truco/cards/${rank}-${suit}.png`)
+    warmImage('/truco/cards/back.png')
+    state.hands[actor].forEach((card) => warmImage(cardImagePath(card)))
+    state.played.forEach((played) => warmImage(cardImagePath(played.card)))
+  }, [actor, state.hands, state.played, warmImage])
+
+  useEffect(() => {
+    const preloadRest = () => {
+      for (const suit of PRELOAD_SUITS) {
+        for (const rank of PRELOAD_RANKS) warmImage(`/truco/cards/${rank}-${suit}.png`)
+      }
     }
 
-    preload.forEach((src) => {
-      const img = new window.Image()
-      img.src = src
-    })
-  }, [])
+    const requestIdle = window.requestIdleCallback
+    const cancelIdle = window.cancelIdleCallback
+
+    if (requestIdle) {
+      const id = requestIdle(preloadRest, { timeout: 3500 })
+      return () => cancelIdle?.(id)
+    }
+
+    const timeout = window.setTimeout(preloadRest, 2200)
+    return () => window.clearTimeout(timeout)
+  }, [warmImage])
 
   useEffect(() => {
     const onFullscreenChange = () => {
