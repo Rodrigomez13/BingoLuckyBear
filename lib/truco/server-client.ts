@@ -1,10 +1,12 @@
-import type { GameState } from './engine'
+import type { GameState, Player } from './engine'
 import type { OnlineAction, OnlineRole } from './online'
+import type { PublicRoomSummary, RoomVisibility } from './server-authority'
 
 export interface AuthoritativeRoomView {
   roomCode: string
   target: 15 | 30
   status: 'waiting' | 'playing' | 'finished' | 'abandoned'
+  visibility?: RoomVisibility
   state: GameState
   version: number
   role: OnlineRole | null
@@ -14,6 +16,12 @@ export interface AuthoritativeResponse {
   ok: boolean
   room?: AuthoritativeRoomView
   secret?: string
+  error?: string
+}
+
+export interface PublicRoomsResponse {
+  ok: boolean
+  rooms?: PublicRoomSummary[]
   error?: string
 }
 
@@ -39,11 +47,22 @@ async function readApiResponse(response: Response): Promise<AuthoritativeRespons
   return { ok: false, error: response.ok ? 'Respuesta inválida' : 'Error de servidor' }
 }
 
-export async function createAuthoritativeRoom(target: 15 | 30, roomCode?: string) {
+async function readPublicRoomsResponse(response: Response): Promise<PublicRoomsResponse> {
+  const payload = await response.json().catch(() => null)
+  if (payload && typeof payload === 'object') return payload as PublicRoomsResponse
+  return { ok: false, error: response.ok ? 'Respuesta inválida' : 'Error de servidor' }
+}
+
+export async function listPublicTrucoRooms() {
+  const response = await fetch('/api/truco/rooms', { cache: 'no-store' })
+  return readPublicRoomsResponse(response)
+}
+
+export async function createAuthoritativeRoom(target: 15 | 30, roomCode?: string, visibility: RoomVisibility = 'private') {
   const response = await fetch('/api/truco/rooms', {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ target, roomCode }),
+    body: JSON.stringify({ target, roomCode, visibility }),
   })
   return readApiResponse(response)
 }
@@ -81,4 +100,8 @@ export async function sendAuthoritativeAction({
     body: JSON.stringify({ actor, secret, action }),
   })
   return readApiResponse(response)
+}
+
+export function formatPublicRoomScore(scores: Record<Player, number>) {
+  return `${scores.player} - ${scores.opponent}`
 }
