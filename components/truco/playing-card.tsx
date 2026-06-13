@@ -1,27 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
-import { type TrucoCard, cardImagePath } from '@/lib/truco/cards'
-
-const SUIT_GLYPH: Record<string, string> = {
-  espada: '\u2694',
-  basto: '\u2663',
-  oro: '\u25C9',
-  copa: '\u2666',
-}
-
-const SUIT_COLOR: Record<string, string> = {
-  espada: 'text-sky-300',
-  basto: 'text-emerald-300',
-  oro: 'text-amber-300',
-  copa: 'text-rose-300',
-}
+import { type TrucoCard, CARD_SPRITE_COLUMNS, CARD_SPRITE_ROWS, CARD_SPRITE_SRC, cardSpritePosition } from '@/lib/truco/cards'
 
 const SIZE = {
-  sm: 'h-20 w-14 text-sm sm:h-28 sm:w-20',
-  md: 'h-24 w-16 text-base sm:h-36 sm:w-24',
-  lg: 'h-36 w-24 text-lg sm:h-48 sm:w-32',
+  sm: 'w-14 text-sm sm:w-20',
+  md: 'w-16 text-base sm:w-24',
+  lg: 'w-24 text-lg sm:w-32',
 }
 
 export function PlayingCard({
@@ -43,62 +27,27 @@ export function PlayingCard({
   onClick?: () => void
   className?: string
 }) {
-  const [imgError, setImgError] = useState(false)
   const Wrapper = selectable ? 'button' : 'div'
   const interactive = selectable ? 'cursor-pointer active:-translate-y-2 active:scale-[1.02] sm:hover:-translate-y-3 sm:hover:scale-[1.02] sm:hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
   const selectedClass = selected ? '-translate-y-3 scale-[1.02] drop-shadow-[0_0_20px_rgba(251,191,36,0.45)]' : ''
-
-  if (faceDown || !card) {
-    return (
-      <div className={`${SIZE[size]} relative shrink-0 overflow-visible rounded-md ${className}`}>
-        <Image
-          src="/truco/cards/back.png"
-          alt="Reverso de carta Lucky Bingo Bear"
-          fill
-          sizes="(max-width: 640px) 96px, 160px"
-          className="object-contain drop-shadow-xl"
-          priority={eager}
-          onError={() => setImgError(true)}
-        />
-        {imgError && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-lg border border-amber-300/30 bg-[#0e2a1f] text-xs font-black text-amber-300">
-            LBB
-          </div>
-        )}
-      </div>
-    )
-  }
+  const backgroundPosition = faceDown || !card ? '0% 100%' : cardSpritePosition(card)
 
   return (
     <Wrapper
       type={selectable ? 'button' : undefined}
       onClick={onClick}
-      aria-label={`${card.rank} de ${card.suit}`}
-      className={`${SIZE[size]} group relative shrink-0 overflow-visible rounded-md bg-transparent p-0 transition-all ${interactive} ${selectedClass} ${className}`}
+      aria-label={faceDown || !card ? 'Carta boca abajo' : `${card.rank} de ${card.suit}`}
+      className={`${SIZE[size]} aspect-[5/7] group relative shrink-0 overflow-visible rounded-md bg-transparent p-0 transition-all ${interactive} ${selectedClass} ${className}`}
+      data-eager={eager ? 'true' : undefined}
     >
-      {!imgError ? (
-        <Image
-          src={cardImagePath(card) || '/placeholder.svg'}
-          alt={`${card.rank} de ${card.suit}`}
-          fill
-          sizes="(max-width: 640px) 112px, 180px"
-          className="object-contain drop-shadow-xl"
-          priority={eager}
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <span className="flex h-full w-full flex-col justify-between rounded-lg border border-amber-200/60 bg-[#fdf6e3] p-2 text-[#1a2e22] shadow-lg shadow-black/40">
-          <span className={`text-left font-black leading-none ${SUIT_COLOR[card.suit]} [text-shadow:0_1px_0_rgba(0,0,0,0.15)]`}>
-            {card.rank}
-          </span>
-          <span className={`text-center text-3xl leading-none ${SUIT_COLOR[card.suit]}`}>
-            {SUIT_GLYPH[card.suit]}
-          </span>
-          <span className={`rotate-180 text-left font-black leading-none ${SUIT_COLOR[card.suit]}`}>
-            {card.rank}
-          </span>
-        </span>
-      )}
+      <span
+        className="block h-full w-full bg-no-repeat drop-shadow-xl"
+        style={{
+          backgroundImage: `url(${CARD_SPRITE_SRC})`,
+          backgroundSize: `${CARD_SPRITE_COLUMNS * 100}% ${CARD_SPRITE_ROWS * 100}%`,
+          backgroundPosition,
+        }}
+      />
     </Wrapper>
   )
 }
