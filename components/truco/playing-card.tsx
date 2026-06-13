@@ -19,9 +19,9 @@ const SUIT_COLOR: Record<string, string> = {
 }
 
 const SIZE = {
-  sm: 'h-24 w-16 text-sm sm:h-28 sm:w-20',
-  md: 'h-28 w-20 text-base sm:h-36 sm:w-24',
-  lg: 'h-40 w-28 text-lg sm:h-48 sm:w-32',
+  sm: 'h-20 w-14 text-sm sm:h-28 sm:w-20',
+  md: 'h-24 w-16 text-base sm:h-36 sm:w-24',
+  lg: 'h-36 w-24 text-lg sm:h-48 sm:w-32',
 }
 
 export function PlayingCard({
@@ -30,6 +30,7 @@ export function PlayingCard({
   faceDown = false,
   selectable = false,
   selected = false,
+  eager = false,
   onClick,
   className = '',
 }: {
@@ -38,12 +39,13 @@ export function PlayingCard({
   faceDown?: boolean
   selectable?: boolean
   selected?: boolean
+  eager?: boolean
   onClick?: () => void
   className?: string
 }) {
   const [imgError, setImgError] = useState(false)
   const Wrapper = selectable ? 'button' : 'div'
-  const interactive = selectable ? 'cursor-pointer hover:-translate-y-3 hover:scale-[1.02] hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
+  const interactive = selectable ? 'cursor-pointer active:-translate-y-2 active:scale-[1.02] sm:hover:-translate-y-3 sm:hover:scale-[1.02] sm:hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
   const selectedClass = selected ? '-translate-y-3 scale-[1.02] drop-shadow-[0_0_20px_rgba(251,191,36,0.45)]' : ''
 
   if (faceDown || !card) {
@@ -53,8 +55,11 @@ export function PlayingCard({
           src="/truco/cards/back.png"
           alt="Reverso de carta Lucky Bingo Bear"
           fill
-          sizes="160px"
+          sizes="(max-width: 640px) 96px, 160px"
           className="object-contain drop-shadow-xl"
+          priority={eager}
+          loading={eager ? 'eager' : 'lazy'}
+          unoptimized
           onError={() => setImgError(true)}
         />
         {imgError && (
@@ -78,8 +83,11 @@ export function PlayingCard({
           src={cardImagePath(card) || '/placeholder.svg'}
           alt={`${card.rank} de ${card.suit}`}
           fill
-          sizes="180px"
+          sizes="(max-width: 640px) 112px, 180px"
           className="object-contain drop-shadow-xl"
+          priority={eager}
+          loading={eager ? 'eager' : 'lazy'}
+          unoptimized
           onError={() => setImgError(true)}
         />
       ) : (
