@@ -24,6 +24,7 @@ import {
   createTrucoRealtimeClient,
   trucoRoomChannelName,
 } from '@/lib/truco/online'
+import { CARD_SPRITE_SRC } from '@/lib/truco/cards'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -32,7 +33,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { cardImagePath } from '@/lib/truco/cards'
 import { PlayerHand } from './player-hand'
 import { OpponentHand } from './opponent-hand'
 import { PlayedCards } from './played-cards'
@@ -41,9 +41,6 @@ import { ActionButtons } from './action-buttons'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'connecting' | 'waiting' | 'connected' | 'offline'
-
-const PRELOAD_RANKS = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
-const PRELOAD_SUITS = ['espada', 'basto', 'oro', 'copa']
 
 export function GameTable({
   target,
@@ -62,11 +59,12 @@ export function GameTable({
   const [botPhrase, setBotPhrase] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState<OnlineStatus>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
+
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const channelRef = useRef<RealtimeChannel | null>(null)
   const stateRef = useRef<GameState>(state)
   const gameShellRef = useRef<HTMLDivElement | null>(null)
-  const preloadedRef = useRef<Set<string>>(new Set())
+  const spriteWarmedRef = useRef(false)
   const clientId = useMemo(() => Math.random().toString(36).slice(2, 10), [])
 
   const isOnline = mode === 'online' && Boolean(roomCode)
@@ -76,42 +74,17 @@ export function GameTable({
   const rivalLabel = mode === 'bot' ? 'Oso' : 'Rival'
   const waitingForHost = isOnline && actor === 'opponent' && onlineStatus !== 'connected'
 
-  const warmImage = useCallback((src: string) => {
-    if (preloadedRef.current.has(src)) return
-    preloadedRef.current.add(src)
-    const img = new window.Image()
-    img.decoding = 'async'
-    img.src = src
-  }, [])
-
   useEffect(() => {
     stateRef.current = state
   }, [state])
 
   useEffect(() => {
-    warmImage('/truco/cards/back.png')
-    state.hands[actor].forEach((card) => warmImage(cardImagePath(card)))
-    state.played.forEach((played) => warmImage(cardImagePath(played.card)))
-  }, [actor, state.hands, state.played, warmImage])
-
-  useEffect(() => {
-    const preloadRest = () => {
-      for (const suit of PRELOAD_SUITS) {
-        for (const rank of PRELOAD_RANKS) warmImage(`/truco/cards/${rank}-${suit}.png`)
-      }
-    }
-
-    const requestIdle = window.requestIdleCallback
-    const cancelIdle = window.cancelIdleCallback
-
-    if (requestIdle) {
-      const id = requestIdle(preloadRest, { timeout: 3500 })
-      return () => cancelIdle?.(id)
-    }
-
-    const timeout = window.setTimeout(preloadRest, 2200)
-    return () => window.clearTimeout(timeout)
-  }, [warmImage])
+    if (spriteWarmedRef.current) return
+    spriteWarmedRef.current = true
+    const img = new window.Image()
+    img.decoding = 'async'
+    img.src = CARD_SPRITE_SRC
+  }, [])
 
   useEffect(() => {
     const onFullscreenChange = () => {
