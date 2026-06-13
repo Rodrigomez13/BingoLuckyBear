@@ -58,7 +58,6 @@ export function PlayingCard({
           sizes="(max-width: 640px) 96px, 160px"
           className="object-contain drop-shadow-xl"
           priority={eager}
-          unoptimized
           onError={() => setImgError(true)}
         />
         {imgError && (
@@ -85,7 +84,6 @@ export function PlayingCard({
           sizes="(max-width: 640px) 112px, 180px"
           className="object-contain drop-shadow-xl"
           priority={eager}
-          unoptimized
           onError={() => setImgError(true)}
         />
       ) : (
