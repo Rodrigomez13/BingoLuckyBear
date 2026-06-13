@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   type EnvidoCall,
@@ -41,6 +41,9 @@ import { ActionButtons } from './action-buttons'
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'connecting' | 'waiting' | 'connected' | 'offline'
 
+const PRELOAD_RANKS = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
+const PRELOAD_SUITS = ['espada', 'basto', 'oro', 'copa']
+
 export function GameTable({
   target,
   onExit,
@@ -57,9 +60,11 @@ export function GameTable({
   const [state, setState] = useState<GameState>(() => createGame(target))
   const [botPhrase, setBotPhrase] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState<OnlineStatus>('idle')
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const channelRef = useRef<RealtimeChannel | null>(null)
   const stateRef = useRef<GameState>(state)
+  const gameShellRef = useRef<HTMLDivElement | null>(null)
   const clientId = useMemo(() => Math.random().toString(36).slice(2, 10), [])
 
   const isOnline = mode === 'online' && Boolean(roomCode)
@@ -74,12 +79,46 @@ export function GameTable({
   }, [state])
 
   useEffect(() => {
+    const preload = ['/truco/cards/back.png']
+    for (const suit of PRELOAD_SUITS) {
+      for (const rank of PRELOAD_RANKS) preload.push(`/truco/cards/${rank}-${suit}.png`)
+    }
+
+    preload.forEach((src) => {
+      const img = new window.Image()
+      img.src = src
+    })
+  }, [])
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === gameShellRef.current)
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
+
+  useEffect(() => {
     return () => {
       timers.current.forEach(clearTimeout)
       channelRef.current?.unsubscribe()
       channelRef.current = null
     }
   }, [])
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else if (gameShellRef.current?.requestFullscreen) {
+        await gameShellRef.current.requestFullscreen()
+      } else {
+        setIsFullscreen((value) => !value)
+      }
+    } catch {
+      setIsFullscreen((value) => !value)
+    }
+  }
 
   const broadcastState = useCallback(
     (nextState: GameState) => {
@@ -163,12 +202,12 @@ export function GameTable({
         const { state: nextState, phrase } = botAct(prev)
         if (phrase) {
           setBotPhrase(phrase)
-          const clearPhrase = setTimeout(() => setBotPhrase(null), 2200)
+          const clearPhrase = setTimeout(() => setBotPhrase(null), 1800)
           timers.current.push(clearPhrase)
         }
         return nextState
       })
-    }, 900)
+    }, 650)
     timers.current.push(t)
     return () => clearTimeout(t)
   }, [mode, state])
@@ -204,59 +243,72 @@ export function GameTable({
   }
 
   const turnLabel = state.trucoPending || state.envidoPending
-    ? 'Esperando respuesta'
+    ? 'Responder canto'
     : state.turn === actor
       ? 'Tu turno'
       : mode === 'bot'
         ? 'Turno del oso'
-        : 'Turno del rival'
+        : 'Turno rival'
 
   const statusLabel = getOnlineStatusLabel(onlineStatus, isHost, roomCode)
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
 
+  const shellClass = isFullscreen
+    ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
+    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-6xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
+
+  const tableHeightClass = isFullscreen
+    ? 'h-[calc(100svh-10.25rem)] min-h-[350px]'
+    : 'h-[calc(100svh-17rem)] min-h-[350px]'
+
   return (
-    <div className="relative mx-auto max-w-6xl px-3 pb-40 sm:px-4 lg:pb-10">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <Button onClick={onExit} variant="outline" size="sm" className="border-white/15 bg-transparent text-emerald-100 hover:bg-white/5">
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Salir
+    <div ref={gameShellRef} className={shellClass}>
+      <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4">
+        <Button onClick={onExit} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+          <ArrowLeft className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Salir</span>
         </Button>
-        <div className="flex min-w-0 flex-col items-center gap-1">
-          <div className="flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 sm:px-4">
-            <span className={`h-2 w-2 rounded-full ${state.turn === actor ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+          <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 sm:px-4 sm:py-1.5">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${state.turn === actor ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
             <span className="truncate text-xs font-bold text-amber-100 sm:text-sm">{turnLabel}</span>
           </div>
-          {isOnline && <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-100/45">{statusLabel}</span>}
+          {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
-        <Button onClick={handleRestart} variant="outline" size="sm" className="border-white/15 bg-transparent text-emerald-100 hover:bg-white/5">
-          <RotateCcw className="mr-1.5 h-4 w-4" /> Reiniciar
-        </Button>
+        <div className="flex gap-1.5">
+          <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+          <Button onClick={handleRestart} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+            <RotateCcw className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Reiniciar</span>
+          </Button>
+        </div>
       </div>
 
       {waitingForHost && (
-        <div className="mb-4 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-center text-sm font-semibold text-amber-100">
-          Buscando la mesa {roomCode}. Asegurate de que el anfitrión tenga la partida abierta.
+        <div className="mb-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-center text-xs font-semibold text-amber-100 sm:mb-4 sm:text-sm">
+          Buscando mesa {roomCode}. El anfitrión debe tener la partida abierta.
         </div>
       )}
 
-      <div className="mb-4 lg:hidden">
+      <div className="mb-2 lg:hidden">
         <ScoreBoard scores={state.scores} target={state.targetScore} perspective={actor} rivalLabel={rivalLabel} compact />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="relative overflow-hidden rounded-[2rem] border-4 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-3 shadow-2xl shadow-black/50 sm:p-6 lg:p-8">
-          <div className="pointer-events-none absolute inset-3 rounded-[1.5rem] border border-amber-300/15" />
+      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className={`relative overflow-hidden rounded-[1.5rem] border-2 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-2 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:border-4 sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
+          <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
 
-          <div className="relative flex flex-col items-center gap-4 sm:gap-5">
+          <div className="relative flex h-full flex-col items-center justify-between gap-1.5 sm:gap-5">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
 
             {botPhrase && mode === 'bot' && (
-              <div className="rounded-2xl border border-sky-300/30 bg-sky-400/10 px-4 py-1.5 text-sm font-semibold text-sky-100">
+              <div className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-100 sm:rounded-2xl sm:px-4 sm:py-1.5 sm:text-sm">
                 {botPhrase}
               </div>
             )}
 
-            <div className="my-1 w-full rounded-2xl border border-amber-300/10 bg-black/20 py-3">
+            <div className="my-0 w-full rounded-xl border border-amber-300/10 bg-black/20 py-1 sm:rounded-2xl sm:py-3">
               <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
             </div>
 
@@ -264,7 +316,7 @@ export function GameTable({
           </div>
         </div>
 
-        <aside className="hidden flex-col gap-4 lg:flex">
+        <aside className="hidden flex-col gap-4 overflow-hidden lg:flex">
           <ScoreBoard scores={state.scores} target={state.targetScore} perspective={actor} rivalLabel={rivalLabel} />
           <ActionButtons
             state={state}
@@ -277,7 +329,7 @@ export function GameTable({
         </aside>
       </div>
 
-      <div className="fixed inset-x-2 bottom-3 z-[70] lg:hidden">
+      <div className="fixed inset-x-2 bottom-2 z-[70] lg:hidden">
         <ActionButtons
           state={state}
           player={actor}
