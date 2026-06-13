@@ -2,7 +2,7 @@
 
 import { PlayingCard } from './playing-card'
 
-export function OpponentHand({ count, name = 'Oso Dorado' }: { count: number; name?: string }) {
+export function OpponentHand({ count, name = 'Rival' }: { count: number; name?: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300/80">{name}</p>
