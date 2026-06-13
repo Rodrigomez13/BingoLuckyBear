@@ -1,0 +1,47 @@
+import { randomUUID } from 'node:crypto'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { createInitialRoomState, makeRoomCode, sanitizeRoom, type StoredTrucoRoom } from '@/lib/truco/server-authority'
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}))
+    const target: 15 | 30 = body?.target === 15 ? 15 : 30
+    const supabase = await createServiceClient()
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const roomCode = makeRoomCode(attempt === 0 ? body?.roomCode : undefined)
+      const hostSecret = randomUUID()
+      const state = createInitialRoomState(target)
+
+      const { data, error } = await supabase
+        .from('truco_rooms')
+        .insert({
+          room_code: roomCode,
+          target_score: target,
+          status: 'waiting',
+          state,
+          host_secret: hostSecret,
+          host_connected_at: new Date().toISOString(),
+        })
+        .select('*')
+        .single()
+
+      if (!error && data) {
+        return NextResponse.json({
+          ok: true,
+          room: sanitizeRoom(data as StoredTrucoRoom, hostSecret),
+          secret: hostSecret,
+        })
+      }
+
+      if (!String(error?.message ?? '').toLowerCase().includes('duplicate')) {
+        return NextResponse.json({ ok: false, error: error?.message ?? 'No se pudo crear la mesa' }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ ok: false, error: 'No se pudo generar un código de mesa disponible' }, { status: 409 })
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Error inesperado' }, { status: 500 })
+  }
+}
