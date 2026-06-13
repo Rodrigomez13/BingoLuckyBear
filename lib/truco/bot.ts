@@ -1,4 +1,15 @@
-import { type GameState, type Player, playCard, respondTruco, respondEnvido, callTruco, callEnvido, goToMazo } from './engine'
+import {
+  type GameState,
+  type Player,
+  callEnvido,
+  callFlor,
+  callTruco,
+  canCallFlor,
+  goToMazo,
+  playCard,
+  respondEnvido,
+  respondTruco,
+} from './engine'
 import { cardPower, computeEnvido } from './cards'
 
 const OPP: Player = 'opponent'
@@ -8,12 +19,21 @@ const OPP: Player = 'opponent'
  * optional chat phrase the bot "says".
  */
 export function botAct(state: GameState): { state: GameState; phrase?: string } {
+  // Resolve Envido before pending Truco. "El tanto está primero".
+  if (state.envidoPending && state.envidoPending.by !== OPP) {
+    const env = computeEnvido(state.hands[OPP])
+    const accept = env >= 26
+    return {
+      state: respondEnvido(state, OPP, accept),
+      phrase: accept ? 'Quiero. Son buenas.' : 'No quiero.',
+    }
+  }
+
   // Respond to a pending Truco call from the player.
   if (state.trucoPending && state.trucoPending.by !== OPP) {
     const strength = handStrength(state.hands[OPP])
     const accept = strength >= 0.42 + state.trucoLevel * 0.04
     if (accept && strength > 0.7 && state.trucoLevel < 3) {
-      // Raise instead of just accepting.
       return { state: callTruco(respondToAcceptThenRaise(state), OPP), phrase: '¡Te subo la apuesta!' }
     }
     return {
@@ -22,18 +42,13 @@ export function botAct(state: GameState): { state: GameState; phrase?: string } 
     }
   }
 
-  // Respond to a pending Envido call from the player.
-  if (state.envidoPending && state.envidoPending.by !== OPP) {
-    const env = computeEnvido(state.hands[OPP])
-    const accept = env >= 26
-    return {
-      state: respondEnvido(state, OPP, accept),
-      phrase: accept ? '¡Son buenas!' : 'No quiero.',
-    }
-  }
-
   if (state.phase !== 'playing' || state.turn !== OPP) {
     return { state }
+  }
+
+  // Flor must be announced before playing the first card.
+  if (canCallFlor(state, OPP)) {
+    return { state: callFlor(state, OPP), phrase: '¡Flor!' }
   }
 
   // Optionally call Envido at the very start of the round.
@@ -58,7 +73,6 @@ export function botAct(state: GameState): { state: GameState; phrase?: string } 
     return { state: goToMazo(state, OPP), phrase: 'Me voy al mazo...' }
   }
 
-  // Play a card.
   return { state: chooseCard(state) }
 }
 
@@ -86,18 +100,15 @@ function chooseCard(state: GameState): GameState {
   let chosenId: string
 
   if (playerCardThisTrick) {
-    // Responding: try to win with the lowest card that beats the player.
     const beating = hand
       .filter((c) => cardPower(c) > cardPower(playerCardThisTrick.card))
       .sort((a, b) => cardPower(a) - cardPower(b))
     if (beating.length > 0) {
       chosenId = beating[0].id
     } else {
-      // Can't win: throw the weakest.
       chosenId = [...hand].sort((a, b) => cardPower(a) - cardPower(b))[0].id
     }
   } else {
-    // Leading. On first trick lead with a mid/strong card; later lead strongest.
     const sorted = [...hand].sort((a, b) => cardPower(b) - cardPower(a))
     chosenId = state.currentTrick === 0 ? sorted[Math.min(1, sorted.length - 1)].id : sorted[0].id
   }
