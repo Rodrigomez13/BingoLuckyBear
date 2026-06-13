@@ -3,6 +3,7 @@ import {
   cardPower,
   computeEnvido,
   dealHands,
+  envidoCardValue,
 } from './cards'
 
 export type Player = 'player' | 'opponent'
@@ -32,7 +33,7 @@ export interface GameState {
   trickWinners: (Player | 'tie' | null)[]
   currentTrick: number
   turn: Player
-  hand: Player // who is "mano" (deals advantage)
+  hand: Player // who is "mano" (tie advantage)
   log: LogEntry[]
   // Truco state
   trucoLevel: TrucoLevel
@@ -42,6 +43,8 @@ export interface GameState {
   envidoResolved: boolean
   envidoPending: { calls: EnvidoCall[]; by: Player } | null
   envidoValue: number
+  // Flor state
+  florResolved: boolean
   // Round result modal
   lastResult: string | null
 }
@@ -76,6 +79,7 @@ export function createGame(targetScore: 15 | 30): GameState {
     envidoResolved: false,
     envidoPending: null,
     envidoValue: 0,
+    florResolved: false,
     lastResult: null,
   }
   return startRound(state, 'player')
@@ -98,10 +102,11 @@ export function startRound(prev: GameState, mano: Player): GameState {
     envidoResolved: false,
     envidoPending: null,
     envidoValue: 0,
+    florResolved: false,
     lastResult: null,
     log: [
       ...prev.log.slice(-30),
-      { id: uid(), by: 'system', text: `Nueva mano. Reparte ${mano === 'player' ? 'vos' : 'el oso'}.` },
+      { id: uid(), by: 'system', text: `Nueva mano. Es mano ${mano === 'player' ? 'vos' : 'el oso'}.` },
     ],
   }
 }
@@ -112,6 +117,38 @@ function other(p: Player): Player {
 
 function pushLog(state: GameState, by: Player | 'system', text: string): GameState {
   return { ...state, log: [...state.log.slice(-40), { id: uid(), by, text }] }
+}
+
+function cardsForPlayer(state: GameState, player: Player): TrucoCard[] {
+  return state.hands[player].concat(state.played.filter((p) => p.by === player).map((p) => p.card))
+}
+
+export function hasFlor(cards: TrucoCard[]): boolean {
+  if (cards.length < 3) return false
+  return cards.slice(0, 3).every((card) => card.suit === cards[0].suit)
+}
+
+export function computeFlor(cards: TrucoCard[]): number {
+  if (!hasFlor(cards)) return 0
+  return 20 + cards.slice(0, 3).reduce((sum, card) => sum + envidoCardValue(card.rank), 0)
+}
+
+export function canCallFlor(state: GameState, by: Player): boolean {
+  if (state.phase !== 'playing' || state.florResolved || state.currentTrick !== 0) return false
+  if (state.played.some((played) => played.by === by)) return false
+  return hasFlor(cardsForPlayer(state, by))
+}
+
+function firstTrickComplete(state: GameState): boolean {
+  return state.played.filter((played) => played.trick === 0).length >= 2
+}
+
+export function canCallEnvido(state: GameState, by: Player): boolean {
+  if (state.phase !== 'playing' || state.envidoResolved || state.envidoPending || state.currentTrick !== 0) return false
+  if (state.trucoLevel > 0) return false
+  if (state.trucoPending && state.trucoPending.by === by) return false
+  if (state.trucoPending && state.trucoPending.by !== by) return !firstTrickComplete(state)
+  return !state.played.some((played) => played.by === by)
 }
 
 /** Returns winner of a completed trick, or null if not complete. */
@@ -127,30 +164,24 @@ function resolveTrick(state: GameState, trick: number): Player | 'tie' | null {
 
 /** Determines round winner based on tricks won. Returns null if undecided. */
 function roundWinner(state: GameState): Player | null {
-  const w = state.trickWinners
-  const wins = (p: Player) => w.filter((x) => x === p).length
-  const playerWins = wins('player')
-  const oppWins = wins('opponent')
+  const [first, second, third] = state.trickWinners
 
-  // First decided?
-  if (w[0] && w[0] !== 'tie') {
-    if (playerWins >= 2) return 'player'
-    if (oppWins >= 2) return 'opponent'
+  if (first && first !== 'tie') {
+    if (second === null) return null
+    if (second === 'tie' || second === first) return first
+    if (third === null) return null
+    if (third === 'tie') return first
+    return third
   }
 
-  // Tie handling
-  if (w[0] === 'tie' && w[1] && w[1] !== 'tie') return w[1]
-  if (w[1] === 'tie' && w[0] && w[0] !== 'tie') return w[0]
-  if (w[0] && w[0] !== 'tie' && w[1] === 'tie') return w[0]
-  if (w[0] === 'tie' && w[1] === 'tie' && w[2] && w[2] !== 'tie') return w[2]
-  if (w[0] === 'tie' && w[1] === 'tie' && w[2] === 'tie') return state.hand
-
-  // All three played with no clear winner
-  if (w[2]) {
-    if (playerWins > oppWins) return 'player'
-    if (oppWins > playerWins) return 'opponent'
+  if (first === 'tie') {
+    if (second === null) return null
+    if (second !== 'tie') return second
+    if (third === null) return null
+    if (third !== 'tie') return third
     return state.hand
   }
+
   return null
 }
 
@@ -167,15 +198,13 @@ export function playCard(state: GameState, by: Player, cardId: string): GameStat
     hands: { ...state.hands, [by]: hand.filter((c) => c.id !== cardId) },
     played: [...state.played, { card, by, trick: state.currentTrick }],
   }
-  next = pushLog(next, by, `${by === 'player' ? 'Jugas' : 'Juega'} ${card.rank} de ${card.suit}`)
+  next = pushLog(next, by, `${by === 'player' ? 'Jugás' : 'Juega'} ${card.rank} de ${card.suit}`)
 
   const cardsInTrick = next.played.filter((p) => p.trick === next.currentTrick)
   if (cardsInTrick.length < 2) {
-    // Pass turn to the other player to complete the trick.
     return { ...next, turn: other(by) }
   }
 
-  // Trick complete.
   const winner = resolveTrick(next, next.currentTrick)
   const trickWinners = [...next.trickWinners]
   trickWinners[next.currentTrick] = winner
@@ -183,7 +212,7 @@ export function playCard(state: GameState, by: Player, cardId: string): GameStat
   next = pushLog(
     next,
     'system',
-    winner === 'tie' ? 'Parda (empate).' : `Gana la mano ${winner === 'player' ? 'vos' : 'el oso'}.`,
+    winner === 'tie' ? 'Parda.' : `Gana la baza ${winner === 'player' ? 'vos' : 'el oso'}.`,
   )
 
   const rWinner = roundWinner(next)
@@ -191,7 +220,6 @@ export function playCard(state: GameState, by: Player, cardId: string): GameStat
     return finishRound(next, rWinner ?? next.hand)
   }
 
-  // Next trick: winner leads, tie -> mano leads.
   const leader = winner === 'tie' ? next.hand : (winner as Player)
   return { ...next, currentTrick: next.currentTrick + 1, turn: leader }
 }
@@ -218,7 +246,6 @@ function finishRound(state: GameState, winner: Player): GameState {
 export function goToMazo(state: GameState, by: Player): GameState {
   if (state.phase !== 'playing') return state
   const winner = other(by)
-  // Folding gives opponent the current truco points (min 1).
   const points = Math.max(1, trucoPoints(state.trucoLevel))
   const scores = { ...state.scores, [winner]: state.scores[winner] + points }
   let next: GameState = {
@@ -234,12 +261,49 @@ export function goToMazo(state: GameState, by: Player): GameState {
   return next
 }
 
+// ---------- Flor calls ----------
+
+export function callFlor(state: GameState, by: Player): GameState {
+  if (!canCallFlor(state, by)) return state
+
+  const playerFlor = computeFlor(cardsForPlayer(state, 'player'))
+  const opponentFlor = computeFlor(cardsForPlayer(state, 'opponent'))
+  const opponent = other(by)
+  const opponentHasFlor = opponent === 'player' ? playerFlor > 0 : opponentFlor > 0
+
+  let winner: Player = by
+  if (opponentHasFlor) {
+    if (playerFlor === opponentFlor) winner = state.hand
+    else winner = playerFlor > opponentFlor ? 'player' : 'opponent'
+  }
+
+  const points = 3
+  const scores = { ...state.scores, [winner]: state.scores[winner] + points }
+  let next = pushLog(state, by, 'Flor')
+  const detail = opponentHasFlor
+    ? `Flor: vos ${playerFlor} - oso ${opponentFlor}. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}`
+    : `${by === 'player' ? 'Tenés' : 'El oso tiene'} Flor. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}`
+  next = pushLog(next, 'system', detail)
+  next = {
+    ...next,
+    scores,
+    florResolved: true,
+    envidoResolved: true,
+    envidoPending: null,
+  }
+
+  if (scores[winner] >= state.targetScore) {
+    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
+  }
+  return next
+}
+
 // ---------- Truco calls ----------
 
 export function callTruco(state: GameState, by: Player): GameState {
   if (state.phase !== 'playing' || state.trucoPending || state.envidoPending) return state
   if (state.trucoLevel >= 3) return state
-  if (state.trucoOwner === by) return state // can't raise your own pending call
+  if (state.trucoOwner === by) return state
   const newLevel = (state.trucoLevel + 1) as TrucoLevel
   let next = pushLog(state, by, nextTrucoLabel(state.trucoLevel))
   next = { ...next, trucoPending: { level: newLevel, by } }
@@ -247,7 +311,7 @@ export function callTruco(state: GameState, by: Player): GameState {
 }
 
 export function respondTruco(state: GameState, by: Player, accept: boolean): GameState {
-  if (!state.trucoPending || state.trucoPending.by === by) return state
+  if (!state.trucoPending || state.trucoPending.by === by || state.envidoPending) return state
   const pending = state.trucoPending
   if (accept) {
     let next = pushLog(state, by, 'Quiero')
@@ -259,7 +323,6 @@ export function respondTruco(state: GameState, by: Player, accept: boolean): Gam
     }
     return next
   }
-  // Rejected: caller wins previous level points.
   const winner = pending.by
   const points = Math.max(1, trucoPoints((pending.level - 1) as TrucoLevel))
   const scores = { ...state.scores, [winner]: state.scores[winner] + points }
@@ -286,9 +349,7 @@ const ENVIDO_LABELS: Record<EnvidoCall, string> = {
 }
 
 export function callEnvido(state: GameState, by: Player, call: EnvidoCall): GameState {
-  // Envido only allowed during first trick before it's resolved, and once.
-  if (state.phase !== 'playing' || state.envidoResolved || state.trucoLevel > 0 || state.trucoPending) return state
-  if (state.currentTrick !== 0) return state
+  if (!canCallEnvido(state, by) && !state.envidoPending) return state
   if (state.envidoPending) {
     if (state.envidoPending.by === by) return state
     const calls = [...state.envidoPending.calls, call]
@@ -297,46 +358,57 @@ export function callEnvido(state: GameState, by: Player, call: EnvidoCall): Game
   return { ...pushLog(state, by, ENVIDO_LABELS[call]), envidoPending: { calls: [call], by } }
 }
 
-function envidoPoints(calls: EnvidoCall[], state: GameState): { want: number } {
+function envidoPoints(calls: EnvidoCall[], state: GameState): { want: number; declined: number } {
   let want = 0
   for (const c of calls) {
     if (c === 'envido') want += 2
     else if (c === 'real-envido') want += 3
     else if (c === 'falta-envido') {
-      // Falta: points to reach target for the leader.
       const leaderScore = Math.max(state.scores.player, state.scores.opponent)
       want = state.targetScore - leaderScore
     }
   }
-  return { want: Math.max(1, want) }
+
+  const last = calls[calls.length - 1]
+  let declined = 1
+  if (calls.length > 1) {
+    declined = 0
+    for (const c of calls.slice(0, -1)) {
+      if (c === 'envido') declined += 2
+      else if (c === 'real-envido') declined += 3
+      else if (c === 'falta-envido') declined += 1
+    }
+  } else if (last === 'real-envido' || last === 'falta-envido') {
+    declined = 1
+  }
+
+  return { want: Math.max(1, want), declined: Math.max(1, declined) }
 }
 
 export function respondEnvido(state: GameState, by: Player, accept: boolean): GameState {
   if (!state.envidoPending || state.envidoPending.by === by) return state
   const pending = state.envidoPending
+  const { want, declined } = envidoPoints(pending.calls, state)
+
   if (!accept) {
-    // Rejecter gives 1 point (or accumulated minus last) to caller. Simplified: 1 point per prior call, min 1.
-    const declinedValue = Math.max(1, pending.calls.length - 1 + 1)
     const winner = pending.by
-    const scores = { ...state.scores, [winner]: state.scores[winner] + 1 }
+    const scores = { ...state.scores, [winner]: state.scores[winner] + declined }
     let next = pushLog(state, by, 'No quiero el envido')
     next = {
       ...next,
       scores,
       envidoPending: null,
       envidoResolved: true,
-      envidoValue: declinedValue,
+      envidoValue: declined,
     }
     if (scores[winner] >= state.targetScore) {
       next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
     }
     return next
   }
-  // Accepted: compare envido values.
-  const playerEnv = computeEnvido(state.hands.player.concat(state.played.filter((p) => p.by === 'player').map((p) => p.card)))
-  const oppEnv = computeEnvido(state.hands.opponent.concat(state.played.filter((p) => p.by === 'opponent').map((p) => p.card)))
-  const { want } = envidoPoints(pending.calls, state)
-  // Mano wins ties.
+
+  const playerEnv = computeEnvido(cardsForPlayer(state, 'player'))
+  const oppEnv = computeEnvido(cardsForPlayer(state, 'opponent'))
   let winner: Player
   if (playerEnv === oppEnv) winner = state.hand
   else winner = playerEnv > oppEnv ? 'player' : 'opponent'
