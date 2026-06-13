@@ -55,6 +55,10 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, error: 'Acción no autorizada' }, { status: 403 })
   }
 
+  if (room.status === 'waiting') {
+    return NextResponse.json({ ok: false, error: 'La mesa todavía está esperando rival' }, { status: 409 })
+  }
+
   if (room.status === 'finished' || room.status === 'abandoned') {
     return NextResponse.json({ ok: false, error: 'La mesa ya no está activa' }, { status: 409 })
   }
