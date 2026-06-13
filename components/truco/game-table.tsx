@@ -110,10 +110,12 @@ export function GameTable({
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen()
+      } else if (isFullscreen) {
+        setIsFullscreen(false)
       } else if (gameShellRef.current?.requestFullscreen) {
         await gameShellRef.current.requestFullscreen()
       } else {
-        setIsFullscreen((value) => !value)
+        setIsFullscreen(true)
       }
     } catch {
       setIsFullscreen((value) => !value)
@@ -258,8 +260,8 @@ export function GameTable({
     : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-6xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
 
   const tableHeightClass = isFullscreen
-    ? 'h-[calc(100svh-10.25rem)] min-h-[350px]'
-    : 'h-[calc(100svh-17rem)] min-h-[350px]'
+    ? 'h-[calc(100svh-10.25rem)] min-h-[300px]'
+    : 'h-[calc(100svh-17rem)] min-h-[300px]'
 
   return (
     <div ref={gameShellRef} className={shellClass}>
