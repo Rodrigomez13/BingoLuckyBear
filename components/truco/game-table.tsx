@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   type EnvidoCall,
   type GameState,
@@ -18,14 +17,9 @@ import {
   respondTruco,
 } from '@/lib/truco/engine'
 import { botAct } from '@/lib/truco/bot'
-import {
-  type OnlineAction,
-  type OnlineMessage,
-  type OnlineRole,
-  createTrucoRealtimeClient,
-  trucoRoomChannelName,
-} from '@/lib/truco/online'
+import { type OnlineAction, type OnlineRole } from '@/lib/truco/online'
 import { CARD_SPRITE_SRC } from '@/lib/truco/cards'
+import { fetchAuthoritativeRoom, sendAuthoritativeAction } from '@/lib/truco/server-client'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -43,7 +37,7 @@ import { RulesModal } from './rules-modal'
 import { TrickHistory } from './trick-history'
 
 type GameMode = 'bot' | 'online'
-type OnlineStatus = 'idle' | 'connecting' | 'waiting' | 'connected' | 'offline'
+type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
 
 export function GameTable({
   target,
@@ -51,35 +45,75 @@ export function GameTable({
   mode = 'bot',
   roomCode,
   onlineRole = 'player',
+  onlineSecret,
 }: {
   target: 15 | 30
   onExit: () => void
   mode?: GameMode
   roomCode?: string
   onlineRole?: OnlineRole
+  onlineSecret?: string
 }) {
   const [state, setState] = useState<GameState>(() => createGame(target))
   const [botPhrase, setBotPhrase] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState<OnlineStatus>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [actionBusy, setActionBusy] = useState(false)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
-  const channelRef = useRef<RealtimeChannel | null>(null)
-  const stateRef = useRef<GameState>(state)
   const gameShellRef = useRef<HTMLDivElement | null>(null)
   const spriteWarmedRef = useRef(false)
-  const clientId = useMemo(() => Math.random().toString(36).slice(2, 10), [])
+  const lastVersionRef = useRef<number | null>(null)
 
-  const isOnline = mode === 'online' && Boolean(roomCode)
+  const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
   const rival = otherPlayer(actor)
-  const isHost = !isOnline || actor === 'player'
   const rivalLabel = mode === 'bot' ? 'Oso' : 'Rival'
-  const waitingForHost = isOnline && actor === 'opponent' && onlineStatus !== 'connected'
+  const waitingForRival = isOnline && onlineStatus === 'waiting'
+
+  const updateOnlineStatus = useCallback((status?: string) => {
+    if (status === 'waiting') setOnlineStatus('waiting')
+    else if (status === 'playing' || status === 'finished') setOnlineStatus('connected')
+    else if (status === 'abandoned') setOnlineStatus('offline')
+    else setOnlineStatus('connected')
+  }, [])
 
   useEffect(() => {
-    stateRef.current = state
-  }, [state])
+    if (!isOnline || !roomCode || !onlineSecret) return
+
+    let cancelled = false
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    const loadRoom = async () => {
+      try {
+        const result = await fetchAuthoritativeRoom(roomCode, onlineSecret)
+        if (cancelled) return
+
+        if (!result.ok || !result.room) {
+          setOnlineStatus('offline')
+          if (result.error) setBotPhrase(result.error)
+          return
+        }
+
+        updateOnlineStatus(result.room.status)
+        if (lastVersionRef.current !== result.room.version) {
+          lastVersionRef.current = result.room.version
+          setState(result.room.state)
+        }
+      } catch {
+        if (!cancelled) setOnlineStatus('offline')
+      }
+    }
+
+    setOnlineStatus('syncing')
+    void loadRoom()
+    interval = setInterval(loadRoom, 1200)
+
+    return () => {
+      cancelled = true
+      if (interval) clearInterval(interval)
+    }
+  }, [isOnline, onlineSecret, roomCode, updateOnlineStatus])
 
   useEffect(() => {
     if (spriteWarmedRef.current) return
@@ -98,11 +132,7 @@ export function GameTable({
   }, [])
 
   useEffect(() => {
-    return () => {
-      timers.current.forEach(clearTimeout)
-      channelRef.current?.unsubscribe()
-      channelRef.current = null
-    }
+    return () => timers.current.forEach(clearTimeout)
   }, [])
 
   const toggleFullscreen = async () => {
@@ -120,72 +150,6 @@ export function GameTable({
       setIsFullscreen((value) => !value)
     }
   }
-
-  const broadcastState = useCallback(
-    (nextState: GameState) => {
-      if (!isOnline || !roomCode || !channelRef.current) return
-      const payload: OnlineMessage = { type: 'state', state: nextState, target, clientId }
-      void channelRef.current.send({ type: 'broadcast', event: 'truco', payload })
-    },
-    [clientId, isOnline, roomCode, target],
-  )
-
-  useEffect(() => {
-    if (!isOnline || !roomCode) return
-
-    const client = createTrucoRealtimeClient()
-    if (!client) {
-      setOnlineStatus('offline')
-      return
-    }
-
-    setOnlineStatus('connecting')
-    const channel = client.channel(trucoRoomChannelName(roomCode), {
-      config: { broadcast: { self: false } },
-    })
-    channelRef.current = channel
-
-    channel.on('broadcast', { event: 'truco' }, ({ payload }) => {
-      const message = payload as OnlineMessage
-      if (!message || message.clientId === clientId) return
-
-      if (message.type === 'join' && isHost) {
-        setOnlineStatus('connected')
-        const statePayload: OnlineMessage = { type: 'state', state: stateRef.current, target, clientId }
-        void channel.send({ type: 'broadcast', event: 'truco', payload: statePayload })
-        return
-      }
-
-      if (message.type === 'state' && !isHost) {
-        setState(message.state)
-        setOnlineStatus('connected')
-        return
-      }
-
-      if (message.type === 'action' && isHost) {
-        setOnlineStatus('connected')
-        setState((prev) => applyOnlineAction(prev, message.actor, message.action, target))
-      }
-    })
-
-    channel.subscribe((status) => {
-      if (status !== 'SUBSCRIBED') return
-      setOnlineStatus(isHost ? 'waiting' : 'connecting')
-      const joinPayload: OnlineMessage = { type: 'join', role: actor, clientId }
-      void channel.send({ type: 'broadcast', event: 'truco', payload: joinPayload })
-      if (isHost) broadcastState(stateRef.current)
-    })
-
-    return () => {
-      channel.unsubscribe()
-      if (channelRef.current === channel) channelRef.current = null
-    }
-  }, [actor, broadcastState, clientId, isHost, isOnline, roomCode, target])
-
-  useEffect(() => {
-    if (!isOnline || !isHost) return
-    broadcastState(state)
-  }, [broadcastState, isHost, isOnline, state])
 
   useEffect(() => {
     if (mode !== 'bot') return
@@ -214,45 +178,63 @@ export function GameTable({
   }, [mode, state])
 
   const commitAction = useCallback(
-    (action: OnlineAction) => {
-      if (isOnline && !isHost) {
-        if (!channelRef.current) return
-        const payload: OnlineMessage = { type: 'action', actor, action, clientId }
-        void channelRef.current.send({ type: 'broadcast', event: 'truco', payload })
+    async (action: OnlineAction) => {
+      if (isOnline) {
+        if (!roomCode || !onlineSecret || actionBusy) return
+        setActionBusy(true)
+        setBotPhrase(null)
+        try {
+          const result = await sendAuthoritativeAction({ roomCode, actor, secret: onlineSecret, action })
+          if (!result.ok || !result.room) {
+            setBotPhrase(result.error ?? 'No se pudo aplicar la acción')
+            return
+          }
+          lastVersionRef.current = result.room.version
+          updateOnlineStatus(result.room.status)
+          setState(result.room.state)
+        } catch (error) {
+          setBotPhrase(error instanceof Error ? error.message : 'Error de conexión')
+        } finally {
+          setActionBusy(false)
+        }
         return
       }
-      setState((prev) => applyOnlineAction(prev, actor, action, target))
+
+      setState((prev) => applyLocalAction(prev, actor, action, target))
     },
-    [actor, clientId, isHost, isOnline, target],
+    [actionBusy, actor, isOnline, onlineSecret, roomCode, target, updateOnlineStatus],
   )
 
-  const playerTurn = !waitingForHost && state.turn === actor && state.phase === 'playing' && !state.trucoPending && !state.envidoPending
+  const canInteractOnline = !isOnline || onlineStatus === 'connected'
+  const playerTurn = canInteractOnline && !actionBusy && !waitingForRival && state.turn === actor && state.phase === 'playing' && !state.trucoPending && !state.envidoPending
 
   const handlePlay = (cardId: string) => {
     if (!playerTurn) return
-    commitAction({ type: 'play-card', cardId })
+    void commitAction({ type: 'play-card', cardId })
   }
 
-  const handleFlor = () => commitAction({ type: 'call-flor' })
-  const handleEnvido = (call: EnvidoCall) => commitAction({ type: 'call-envido', call })
-  const handleTruco = () => commitAction({ type: 'call-truco' })
-  const handleMazo = () => commitAction({ type: 'go-maze' })
-  const handleRespond = (accept: boolean) => commitAction({ type: 'respond', accept })
-  const handleNextRound = () => commitAction({ type: 'next-round' })
+  const handleFlor = () => void commitAction({ type: 'call-flor' })
+  const handleEnvido = (call: EnvidoCall) => void commitAction({ type: 'call-envido', call })
+  const handleTruco = () => void commitAction({ type: 'call-truco' })
+  const handleMazo = () => void commitAction({ type: 'go-maze' })
+  const handleRespond = (accept: boolean) => void commitAction({ type: 'respond', accept })
+  const handleNextRound = () => void commitAction({ type: 'next-round' })
   const handleRestart = () => {
     setBotPhrase(null)
-    commitAction({ type: 'restart' })
+    void commitAction({ type: 'restart' })
   }
 
-  const turnLabel = state.trucoPending || state.envidoPending
-    ? 'Responder canto'
-    : state.turn === actor
-      ? 'Tu turno'
-      : mode === 'bot'
-        ? 'Turno del oso'
-        : 'Turno rival'
+  const turnLabel = actionBusy
+    ? 'Validando jugada'
+    : state.trucoPending || state.envidoPending
+      ? 'Responder canto'
+      : state.turn === actor
+        ? 'Tu turno'
+        : mode === 'bot'
+          ? 'Turno del oso'
+          : 'Turno rival'
 
-  const statusLabel = getOnlineStatusLabel(onlineStatus, isHost, roomCode)
+  const statusLabel = getOnlineStatusLabel(onlineStatus, roomCode)
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
 
   const shellClass = isFullscreen
@@ -287,9 +269,15 @@ export function GameTable({
         </div>
       </div>
 
-      {waitingForHost && (
+      {waitingForRival && (
         <div className="mb-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-center text-xs font-semibold text-amber-100 sm:mb-4 sm:text-sm">
-          Buscando mesa {roomCode}. El anfitrión debe tener la partida abierta.
+          Mesa {roomCode}: esperando rival. Compartí el código o enlace.
+        </div>
+      )}
+
+      {botPhrase && (
+        <div className="mb-2 rounded-xl border border-sky-300/25 bg-sky-400/10 px-3 py-2 text-center text-xs font-semibold text-sky-100 sm:mb-4 sm:text-sm">
+          {botPhrase}
         </div>
       )}
 
@@ -304,12 +292,6 @@ export function GameTable({
 
           <div className="relative flex h-full flex-col items-center justify-between gap-1.5 sm:gap-5">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
-
-            {botPhrase && mode === 'bot' && (
-              <div className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-100 sm:rounded-2xl sm:px-4 sm:py-1.5 sm:text-sm">
-                {botPhrase}
-              </div>
-            )}
 
             <div className="w-full space-y-2 sm:space-y-3">
               <TrickHistory winners={state.trickWinners} hand={state.hand} rivalLabel={rivalLabel} />
@@ -390,7 +372,7 @@ export function GameTable({
   )
 }
 
-function applyOnlineAction(state: GameState, actor: Player, action: OnlineAction, target: 15 | 30): GameState {
+function applyLocalAction(state: GameState, actor: Player, action: OnlineAction, target: 15 | 30): GameState {
   switch (action.type) {
     case 'play-card':
       return playCard(state, actor, action.cardId)
@@ -419,11 +401,11 @@ function otherPlayer(player: Player): Player {
   return player === 'player' ? 'opponent' : 'player'
 }
 
-function getOnlineStatusLabel(status: OnlineStatus, isHost: boolean, roomCode?: string) {
-  if (status === 'offline') return 'Online no configurado'
-  if (status === 'connecting') return `Conectando mesa ${roomCode}`
-  if (status === 'waiting') return isHost ? `Mesa ${roomCode}: esperando rival` : `Entrando a mesa ${roomCode}`
-  if (status === 'connected') return `Mesa ${roomCode}: conectada`
+function getOnlineStatusLabel(status: OnlineStatus, roomCode?: string) {
+  if (status === 'offline') return 'Mesa sin conexión'
+  if (status === 'syncing') return `Sincronizando mesa ${roomCode}`
+  if (status === 'waiting') return `Mesa ${roomCode}: esperando rival`
+  if (status === 'connected') return `Mesa ${roomCode}: server-authoritative`
   return `Mesa ${roomCode}`
 }
 
