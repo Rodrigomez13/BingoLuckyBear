@@ -1,9 +1,14 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { CONTACT_LINKS } from '@/lib/contact'
 
 export function FloatingWhatsApp() {
-  if (!CONTACT_LINKS.whatsappUrl) {
+  const pathname = usePathname()
+
+  if (!CONTACT_LINKS.whatsappUrl || pathname?.startsWith('/truco')) {
     return null
   }
 
