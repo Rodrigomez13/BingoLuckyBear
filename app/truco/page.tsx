@@ -9,7 +9,7 @@ import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
 type GameConfig =
   | { active: false; target: 15 | 30; mode: 'bot' }
   | { active: true; target: 15 | 30; mode: 'bot' }
-  | { active: true; target: 15 | 30; mode: 'online'; roomCode: string; role: OnlineRole }
+  | { active: true; target: 15 | 30; mode: 'online'; roomCode: string; role: OnlineRole; secret: string }
 
 export default function TrucoPage() {
   const [game, setGame] = useState<GameConfig>({ active: false, target: 30, mode: 'bot' })
@@ -33,14 +33,15 @@ export default function TrucoPage() {
             mode={game.mode}
             roomCode={game.mode === 'online' ? game.roomCode : undefined}
             onlineRole={game.mode === 'online' ? game.role : undefined}
+            onlineSecret={game.mode === 'online' ? game.secret : undefined}
             onExit={() => setGame({ active: false, target: game.target, mode: 'bot' })}
           />
         ) : (
           <RoomLobby
             initialRoomCode={initialRoomCode}
             onPlayBot={(target) => setGame({ active: true, target, mode: 'bot' })}
-            onPlayOnline={({ target, roomCode, role }) =>
-              setGame({ active: true, target, mode: 'online', roomCode, role })
+            onPlayOnline={({ target, roomCode, role, secret }) =>
+              setGame({ active: true, target, mode: 'online', roomCode, role, secret })
             }
           />
         )}
