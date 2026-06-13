@@ -14,15 +14,33 @@ import {
 } from './engine'
 import { generateRoomCode, normalizeRoomCode, type OnlineAction } from './online'
 
+export type RoomVisibility = 'private' | 'public'
+
 export interface StoredTrucoRoom {
   id: string
   room_code: string
   target_score: 15 | 30
   status: 'waiting' | 'playing' | 'finished' | 'abandoned'
+  visibility?: RoomVisibility
   state: GameState
   version: number
   host_secret: string
   guest_secret: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface PublicRoomSummary {
+  roomCode: string
+  target: 15 | 30
+  status: 'waiting' | 'playing' | 'finished' | 'abandoned'
+  scores: Record<Player, number>
+  currentTrick: number
+  hand: Player
+  version: number
+  createdAt?: string
+  updatedAt?: string
+  canJoin: boolean
 }
 
 export function createInitialRoomState(target: 15 | 30): GameState {
@@ -40,9 +58,25 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
     roomCode: room.room_code,
     target: room.target_score,
     status: room.status,
+    visibility: room.visibility ?? 'private',
     state: room.state,
     version: room.version,
     role,
+  }
+}
+
+export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
+  return {
+    roomCode: room.room_code,
+    target: room.target_score,
+    status: room.status,
+    scores: room.state.scores,
+    currentTrick: room.state.currentTrick,
+    hand: room.state.hand,
+    version: room.version,
+    createdAt: room.created_at,
+    updatedAt: room.updated_at,
+    canJoin: room.status === 'waiting' && !room.guest_secret,
   }
 }
 
