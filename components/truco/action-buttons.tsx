@@ -1,12 +1,13 @@
 'use client'
 
-import { type EnvidoCall, type GameState, type Player } from '@/lib/truco/engine'
+import { type EnvidoCall, type GameState, type Player, canCallEnvido, canCallFlor } from '@/lib/truco/engine'
 import { Button } from '@/components/ui/button'
 
 interface ActionButtonsProps {
   state: GameState
   player?: Player
   compact?: boolean
+  onFlor: () => void
   onEnvido: (call: EnvidoCall) => void
   onTruco: () => void
   onRespond: (accept: boolean) => void
@@ -17,25 +18,23 @@ export function ActionButtons({
   state,
   player = 'player',
   compact = false,
+  onFlor,
   onEnvido,
   onTruco,
   onRespond,
   onMazo,
 }: ActionButtonsProps) {
   const isPlayerTurn = state.turn === player && state.phase === 'playing'
-  const pendingForPlayer =
-    (state.trucoPending && state.trucoPending.by !== player) ||
-    (state.envidoPending && state.envidoPending.by !== player)
+  const pendingEnvidoForPlayer = Boolean(state.envidoPending && state.envidoPending.by !== player)
+  const pendingTrucoForPlayer = Boolean(state.trucoPending && state.trucoPending.by !== player)
+  const canEnvido = canCallEnvido(state, player)
+  const canFlor = canCallFlor(state, player)
 
-  if (pendingForPlayer) {
-    const label = state.trucoPending
-      ? ['Truco', 'Truco', 'Retruco', 'Vale Cuatro'][state.trucoPending.level - 1]
-      : 'Envido'
-
+  if (pendingEnvidoForPlayer) {
     return (
-      <div className={`${panelClass(compact)} border-amber-300/35`}>
-        <p className="mb-1.5 text-center text-[11px] font-bold text-amber-200 sm:mb-2 sm:text-sm">
-          Tu rival canta <span className="uppercase">{label}</span>
+      <div className={`${panelClass(compact)} border-emerald-300/35`}>
+        <p className="mb-1.5 text-center text-[11px] font-bold text-emerald-100 sm:mb-2 sm:text-sm">
+          Tu rival canta <span className="uppercase">Envido</span>
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button onClick={() => onRespond(true)} className={mainButtonClass('green')}>
@@ -49,13 +48,56 @@ export function ActionButtons({
     )
   }
 
-  const canEnvido = isPlayerTurn && state.currentTrick === 0 && !state.envidoResolved && state.trucoLevel === 0 && !state.envidoPending
-  const canTruco = isPlayerTurn && state.trucoLevel < 3 && state.trucoOwner !== player && !state.trucoPending
+  if (pendingTrucoForPlayer) {
+    const label = ['Truco', 'Truco', 'Retruco', 'Vale Cuatro'][state.trucoPending!.level - 1]
+
+    return (
+      <div className={`${panelClass(compact)} border-amber-300/35`}>
+        <p className="mb-1.5 text-center text-[11px] font-bold text-amber-200 sm:mb-2 sm:text-sm">
+          Tu rival canta <span className="uppercase">{label}</span>
+        </p>
+        {(canEnvido || canFlor) && (
+          <div className="mb-2 rounded-xl border border-emerald-300/15 bg-emerald-400/5 p-1.5">
+            <p className="mb-1 text-center text-[10px] font-bold uppercase tracking-wider text-emerald-100/55">
+              El tanto está primero
+            </p>
+            {canFlor && (
+              <Button onClick={onFlor} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
+                Flor
+              </Button>
+            )}
+            {canEnvido && (
+              <div className="grid grid-cols-3 gap-1.5">
+                <ActionBtn onClick={() => onEnvido('envido')}>Envido</ActionBtn>
+                <ActionBtn onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
+                <ActionBtn onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={() => onRespond(true)} className={mainButtonClass('green')}>
+            Quiero
+          </Button>
+          <Button onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
+            No quiero
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const canTruco = isPlayerTurn && state.trucoLevel < 3 && state.trucoOwner !== player && !state.trucoPending && !state.envidoPending
   const trucoLabel = ['Truco', 'Retruco', 'Vale Cuatro'][state.trucoLevel] ?? 'Vale Cuatro'
 
   return (
     <div className={panelClass(compact)}>
       {!compact && <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>}
+      {canFlor && (
+        <Button onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
+          Flor
+        </Button>
+      )}
       <div className={compact ? 'grid grid-cols-5 gap-1.5' : 'space-y-3'}>
         <div className={compact ? 'col-span-3' : ''}>
           {!compact && <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Envido</p>}
