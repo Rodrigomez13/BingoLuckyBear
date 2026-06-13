@@ -6,6 +6,7 @@ import { Bot, Users, LogIn, Copy, Check, Clover, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { generateRoomCode, normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
+import { RulesModal } from './rules-modal'
 
 interface RoomLobbyProps {
   initialRoomCode?: string | null
@@ -51,6 +52,10 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
   return (
     <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-10 text-center">
+      <div className="absolute right-4 top-4">
+        <RulesModal compact />
+      </div>
+
       <div className="relative mb-6">
         <div className="absolute inset-0 -z-10 rounded-full bg-amber-400/20 blur-3xl" />
         <Image
