@@ -43,7 +43,12 @@ export default async function CustomerPrizesPage() {
     .eq('payment_status', 'approved')
     .order('created_at', { ascending: false })
 
-  const prizes = ((cards ?? []) as CustomerCard[])
+  const normalizedCards: CustomerCard[] = (cards ?? []).map((card) => ({
+    ...card,
+    raffle: Array.isArray(card.raffle) ? (card.raffle[0] ?? null) : card.raffle,
+  })) as CustomerCard[]
+
+  const prizes = normalizedCards
     .flatMap((card) => {
       if (!card.bingo_numbers) return []
       const lines = getWinningLines(card.bingo_numbers, card.raffle?.drawn_numbers ?? [])
