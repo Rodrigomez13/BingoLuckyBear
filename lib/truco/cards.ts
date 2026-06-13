@@ -17,6 +17,13 @@ export const SUIT_LABELS: Record<Suit, string> = {
 const RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
 const SUITS: Suit[] = ['espada', 'basto', 'oro', 'copa']
 
+export const CARD_SPRITE_SRC = '/truco/cards/lbb-cards-spritesheet.webp'
+export const CARD_SPRITE_COLUMNS = 10
+export const CARD_SPRITE_ROWS = 5
+
+const SPRITE_RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
+const SPRITE_SUITS: Suit[] = ['oro', 'copa', 'espada', 'basto']
+
 /**
  * Truco card power: higher number beats lower number.
  * Special cards (matadores) get unique high values; the rest follow the
@@ -101,7 +108,25 @@ export function dealHands(): { player: TrucoCard[]; opponent: TrucoCard[] } {
   }
 }
 
-/** Image path for a custom Lucky Bingo Bear card asset. */
+/** Image path for the legacy custom Lucky Bingo Bear PNG card asset. */
 export function cardImagePath(card: TrucoCard): string {
   return `/truco/cards/${card.rank}-${card.suit}.png`
+}
+
+export function cardBackImagePath(): string {
+  return '/truco/cards/back.png'
+}
+
+export function cardSpritePosition(card?: TrucoCard): string {
+  if (!card) return '0% 100%'
+
+  const col = SPRITE_RANKS.indexOf(card.rank)
+  const row = SPRITE_SUITS.indexOf(card.suit)
+
+  if (col < 0 || row < 0) return '0% 100%'
+
+  const x = (col / (CARD_SPRITE_COLUMNS - 1)) * 100
+  const y = (row / (CARD_SPRITE_ROWS - 1)) * 100
+
+  return `${x}% ${y}%`
 }

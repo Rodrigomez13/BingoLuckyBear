@@ -13,10 +13,10 @@ export function PlayerHand({
   onPlay: (cardId: string) => void
 }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-end justify-center gap-3 sm:gap-4">
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+      <div className="flex items-end justify-center gap-2 sm:gap-4">
         {cards.length === 0 ? (
-          <p className="py-6 text-sm text-emerald-100/60">Sin cartas en la mano</p>
+          <p className="py-4 text-sm text-emerald-100/60 sm:py-6">Sin cartas en la mano</p>
         ) : (
           cards.map((card) => (
             <PlayingCard
@@ -24,12 +24,13 @@ export function PlayerHand({
               card={card}
               size="lg"
               selectable={canPlay}
+              eager
               onClick={() => canPlay && onPlay(card.id)}
             />
           ))
         )}
       </div>
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300/80">Tu mano</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/80 sm:text-xs">Tu mano</p>
     </div>
   )
 }
