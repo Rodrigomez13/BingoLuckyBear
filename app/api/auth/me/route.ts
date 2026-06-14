@@ -4,6 +4,10 @@ import { getUserAccess } from '@/lib/auth/roles'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { ensurePlayerAccount } from '@/lib/wallet/server'
 
+function isEmailVerified(user: { email_confirmed_at?: string | null; confirmed_at?: string | null }) {
+  return Boolean(user.email_confirmed_at || user.confirmed_at)
+}
+
 export async function GET() {
   const supabase = await createClient()
   const {
@@ -11,7 +15,19 @@ export async function GET() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ authenticated: false, user: null, player: null, access: null })
+    return NextResponse.json({ authenticated: false, user: null, player: null, access: null, email_verified: false })
+  }
+
+  const emailVerified = isEmailVerified(user)
+  if (!emailVerified) {
+    return NextResponse.json({
+      authenticated: false,
+      verification_required: true,
+      email_verified: false,
+      user: { id: user.id, email: user.email },
+      player: null,
+      access: null,
+    })
   }
 
   const serviceClient = await createServiceClient()
@@ -29,6 +45,7 @@ export async function GET() {
 
   return NextResponse.json({
     authenticated: true,
+    email_verified: true,
     user: { id: user.id, email: user.email },
     player: {
       alias,
