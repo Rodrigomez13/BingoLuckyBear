@@ -3,17 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, UserCircle2, WalletCards } from 'lucide-react'
+import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 
-interface PlayerPayload {
+interface AuthPayload {
+  authenticated?: boolean
   user: { id: string; email?: string | null } | null
-  player: { alias?: string | null; avatar_key?: string | null } | null
+  player: { alias?: string | null; avatar_key?: string | null; avatar_image_src?: string | null } | null
+  access?: { role?: 'admin' | 'operator' | 'player'; isAdmin?: boolean; dashboardPath?: string } | null
 }
 
 export function UserMenu({ active = false }: { active?: boolean }) {
-  const [payload, setPayload] = useState<PlayerPayload | null>(null)
+  const [payload, setPayload] = useState<AuthPayload | null>(null)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -22,25 +24,27 @@ export function UserMenu({ active = false }: { active?: boolean }) {
 
   const user = payload?.user ?? null
   const player = payload?.player ?? null
+  const access = payload?.access ?? null
+  const isAdmin = Boolean(access?.isAdmin)
   const avatar = getCustomerAvatar(player?.avatar_key)
   const alias = player?.alias || user?.email?.split('@')[0] || 'Jugador'
 
   const load = async () => {
     try {
-      const response = await fetch('/api/customer/player', { cache: 'no-store' })
+      const response = await fetch('/api/auth/me', { cache: 'no-store' })
       const data = await response.json()
-      if (data?.user) {
+      if (data?.authenticated) {
         setPayload(data)
         return
       }
 
       const { data: sessionData } = await supabase.auth.getSession()
       const sessionUser = sessionData.session?.user
-      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null } : { user: null, player: null })
+      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null, access: null } : { user: null, player: null, access: null })
     } catch {
       const { data: sessionData } = await supabase.auth.getSession()
       const sessionUser = sessionData.session?.user
-      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null } : { user: null, player: null })
+      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null, access: null } : { user: null, player: null, access: null })
     } finally {
       setLoading(false)
     }
@@ -50,9 +54,9 @@ export function UserMenu({ active = false }: { active?: boolean }) {
     void load()
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setPayload({ user: { id: session.user.id, email: session.user.email }, player: null })
+        setPayload({ user: { id: session.user.id, email: session.user.email }, player: null, access: null })
       } else {
-        setPayload({ user: null, player: null })
+        setPayload({ user: null, player: null, access: null })
       }
       setLoading(false)
       router.refresh()
@@ -80,7 +84,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   const logout = async () => {
     await supabase.auth.signOut()
     setOpen(false)
-    setPayload({ user: null, player: null })
+    setPayload({ user: null, player: null, access: null })
     router.refresh()
   }
 
@@ -114,7 +118,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         }`}
       >
         <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="sm" />
-        <span className="hidden truncate text-sm sm:block">{alias}</span>
+        <span className="hidden truncate text-sm sm:block">{isAdmin ? 'Admin' : alias}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -126,15 +130,27 @@ export function UserMenu({ active = false }: { active?: boolean }) {
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
+                {isAdmin && <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{access?.role === 'operator' ? 'Operador' : 'Administrador'}</p>}
               </div>
             </div>
           </div>
           <div className="p-2">
-            <MenuItem href="/mi-cuenta/jugador" icon={<WalletCards className="h-4 w-4" />} label="Saldo y movimientos" onClick={() => setOpen(false)} />
-            <MenuItem href="/mi-cuenta" icon={<Settings className="h-4 w-4" />} label="Datos y método de cobro" onClick={() => setOpen(false)} />
-            <MenuItem href="/mi-cuenta/seguridad" icon={<KeyRound className="h-4 w-4" />} label="Cambiar contraseña" onClick={() => setOpen(false)} />
-            <MenuItem href="/truco/ranking" icon={<History className="h-4 w-4" />} label="Ranking e historial" onClick={() => setOpen(false)} />
-            <MenuItem href="/participar" icon={<CreditCard className="h-4 w-4" />} label="Comprar cartones" onClick={() => setOpen(false)} />
+            {isAdmin ? (
+              <>
+                <MenuItem href="/admin" icon={<ShieldCheck className="h-4 w-4" />} label="Panel Admin" onClick={() => setOpen(false)} />
+                <MenuItem href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y pagos" onClick={() => setOpen(false)} />
+                <MenuItem href="/truco" icon={<History className="h-4 w-4" />} label="Mesas de Truco" onClick={() => setOpen(false)} />
+                <MenuItem href="/mi-cuenta/seguridad" icon={<KeyRound className="h-4 w-4" />} label="Seguridad" onClick={() => setOpen(false)} />
+              </>
+            ) : (
+              <>
+                <MenuItem href="/mi-cuenta/jugador" icon={<WalletCards className="h-4 w-4" />} label="Saldo y movimientos" onClick={() => setOpen(false)} />
+                <MenuItem href="/mi-cuenta" icon={<Settings className="h-4 w-4" />} label="Datos y método de cobro" onClick={() => setOpen(false)} />
+                <MenuItem href="/mi-cuenta/seguridad" icon={<KeyRound className="h-4 w-4" />} label="Cambiar contraseña" onClick={() => setOpen(false)} />
+                <MenuItem href="/truco/ranking" icon={<History className="h-4 w-4" />} label="Ranking e historial" onClick={() => setOpen(false)} />
+                <MenuItem href="/participar" icon={<CreditCard className="h-4 w-4" />} label="Comprar cartones" onClick={() => setOpen(false)} />
+              </>
+            )}
             <button
               type="button"
               onClick={logout}
