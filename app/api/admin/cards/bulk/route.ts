@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isReasonablePhone, normalizePhoneNumber } from '@/lib/phone'
+import { requireAdminApi } from '@/lib/auth/roles'
+import { logAdminAudit } from '@/lib/admin/audit'
 
 type PaymentStatus = 'pending' | 'approved' | 'rejected'
-
-interface CardAccessRecord {
-  id: string
-  raffle_id: string
-}
 
 interface ClientUpdatePayload {
   full_name?: string
@@ -34,43 +30,10 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-async function getOwnedCards(cardIds: string[], userId: string) {
-  const supabase = await createServiceClient()
-  const { data: cards, error: cardsError } = await supabase
-    .from('bingo_cards')
-    .select('id, raffle_id')
-    .in('id', cardIds)
-    .returns<CardAccessRecord[]>()
-
-  if (cardsError) throw cardsError
-  if (!cards || cards.length !== cardIds.length) {
-    throw new Error('Algunos cartones no existen o no se pudieron leer')
-  }
-
-  const raffleIds = [...new Set(cards.map((card) => card.raffle_id))]
-  const { data: raffles, error: rafflesError } = await supabase
-    .from('raffles')
-    .select('id')
-    .eq('admin_id', userId)
-    .in('id', raffleIds)
-
-  if (rafflesError) throw rafflesError
-
-  const ownedRaffleIds = new Set((raffles ?? []).map((raffle) => raffle.id))
-  if (cards.some((card) => !ownedRaffleIds.has(card.raffle_id))) {
-    throw new Error('No autorizado')
-  }
-
-  return supabase
-}
-
 export async function POST(request: Request) {
-  const authClient = await createClient()
-  const {
-    data: { user },
-  } = await authClient.auth.getUser()
-
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const { user, serviceClient, error: authError } = await requireAdminApi()
+  if (authError) return authError
+  if (!user || !serviceClient) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   try {
     const body = await request.json()
@@ -81,14 +44,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Selecciona al menos un carton' }, { status: 400 })
     }
 
-    const supabase = await getOwnedCards(cardIds, user.id)
+    const { data: existingCards, error: existingError } = await serviceClient
+      .from('bingo_cards')
+      .select('*')
+      .in('id', cardIds)
+
+    if (existingError) throw existingError
+    if (!existingCards || existingCards.length !== cardIds.length) {
+      return NextResponse.json({ error: 'Algunos cartones no existen' }, { status: 404 })
+    }
 
     if (action === 'set_payment_status') {
       if (!isPaymentStatus(body.payment_status)) {
         return NextResponse.json({ error: 'Estado invalido' }, { status: 400 })
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await serviceClient
         .from('bingo_cards')
         .update({
           payment_status: body.payment_status,
@@ -99,6 +70,17 @@ export async function POST(request: Request) {
         .select('*')
 
       if (error) throw error
+
+      await logAdminAudit(serviceClient, {
+        adminUserId: user.id,
+        action: `bingo_cards_${body.payment_status}`,
+        entityType: 'bingo_cards',
+        entityId: cardIds.join(','),
+        beforeData: existingCards,
+        afterData: data,
+        reason: String(body.reason ?? `Cambio masivo a ${body.payment_status}`),
+      })
+
       return NextResponse.json({ cards: data ?? [] })
     }
 
@@ -121,7 +103,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Tipo de cuenta de premio invalido' }, { status: 400 })
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await serviceClient
         .from('bingo_cards')
         .update({
           full_name: fullName,
@@ -137,13 +119,23 @@ export async function POST(request: Request) {
         .select('*')
 
       if (error) throw error
+
+      await logAdminAudit(serviceClient, {
+        adminUserId: user.id,
+        action: 'bingo_cards_update_client',
+        entityType: 'bingo_cards',
+        entityId: cardIds.join(','),
+        beforeData: existingCards,
+        afterData: data,
+        reason: String(body.reason ?? 'Actualización de datos de cliente'),
+      })
+
       return NextResponse.json({ cards: data ?? [] })
     }
 
     return NextResponse.json({ error: 'Accion invalida' }, { status: 400 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'No se pudo aplicar la accion masiva'
-    const status = message === 'No autorizado' ? 403 : 500
-    return NextResponse.json({ error: message }, { status })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
