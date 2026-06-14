@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getCustomerAvatar, isCustomerAvatarKey } from '@/lib/customer/avatars'
-import { ensurePlayerAccount } from '@/lib/wallet/server'
 
 function cleanEmail(value: unknown) {
   return String(value ?? '').trim().toLowerCase().slice(0, 160)
@@ -36,40 +35,48 @@ export async function POST(request: NextRequest) {
     }
 
     if (alias && alias.length < 3) {
-      return NextResponse.json({ ok: false, error: 'El alias debe tener al menos 3 caracteres.' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'El alias debe tener al menos 3 caracteres' }, { status: 400 })
     }
 
-    const serviceClient = await createServiceClient()
-    const { data, error } = await serviceClient.auth.admin.createUser({
+    const origin = request.headers.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.luckybingbear.com'
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          storageKey: 'lbb-auth-session',
+        },
+      },
+    )
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,
-      user_metadata: {
-        alias: alias || null,
-        avatar_key: avatarKey,
+      options: {
+        emailRedirectTo: `${origin}/mi-cuenta`,
+        data: {
+          alias: alias || null,
+          avatar_key: avatarKey,
+        },
       },
     })
 
-    if (error || !data.user) {
-      const message = error?.message?.toLowerCase().includes('already')
+    if (error) {
+      const message = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered')
         ? 'Ese correo ya está registrado. Iniciá sesión con tu contraseña.'
-        : error?.message || 'No se pudo crear la cuenta.'
+        : error.message || 'No se pudo crear la cuenta.'
       return NextResponse.json({ ok: false, error: message }, { status: 400 })
     }
 
-    await ensurePlayerAccount(serviceClient, data.user)
-
-    await serviceClient
-      .from('customer_profiles')
-      .update({
-        email,
-        alias: alias || null,
-        avatar_key: avatarKey,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', data.user.id)
-
-    return NextResponse.json({ ok: true, user: { id: data.user.id, email } })
+    return NextResponse.json({
+      ok: true,
+      requires_email_confirmation: true,
+      user: data.user ? { id: data.user.id, email } : null,
+      message: 'Cuenta creada. Revisá tu correo y confirmá el enlace antes de iniciar sesión.',
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error inesperado al crear la cuenta.'
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
