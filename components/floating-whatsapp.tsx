@@ -18,7 +18,7 @@ export function FloatingWhatsApp() {
       target="_blank"
       rel="noreferrer"
       aria-label="Unirse al WhatsApp de Lucky Bingo Bear"
-      className="fixed bottom-5 right-5 z-[60] flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-[#25d366] text-white shadow-2xl shadow-black/40 transition hover:scale-105 hover:bg-[#30e17b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#04f77c] sm:h-auto sm:w-auto sm:gap-3 sm:rounded-lg sm:px-4 sm:py-3"
+      className="fixed bottom-[6.25rem] right-4 z-[55] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-[#25d366] text-white shadow-2xl shadow-black/40 transition hover:scale-105 hover:bg-[#30e17b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#04f77c] md:bottom-5 md:right-5 md:h-auto md:w-auto md:gap-3 md:rounded-lg md:px-4 md:py-3"
     >
       <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#25d366]">
         <WhatsAppLogo className="h-6 w-6" />
@@ -26,7 +26,7 @@ export function FloatingWhatsApp() {
           <Image src="/logo-solo.svg" alt="" width={18} height={18} className="h-4 w-4 object-contain" />
         </span>
       </span>
-      <span className="hidden text-sm font-bold text-zinc-950 sm:inline">WhatsApp</span>
+      <span className="hidden text-sm font-bold text-zinc-950 md:inline">WhatsApp</span>
     </Link>
   )
 }
