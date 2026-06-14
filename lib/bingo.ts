@@ -134,6 +134,28 @@ export function formatMoneyAmount(value?: string | null, fallback = 'A confirmar
   return `$${trimmed}`
 }
 
+export function parseMoneyToInteger(value?: string | number | null): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 ? Math.trunc(value) : null
+  }
+
+  const raw = String(value ?? '').trim()
+  if (!raw) return null
+
+  // Remueve simbolos de moneda y separadores de miles (puntos o comas).
+  const digits = raw.replace(/[^\d.,]/g, '').replace(/[.,]/g, '')
+  if (!digits) return null
+
+  const amount = Number.parseInt(digits, 10)
+  return Number.isFinite(amount) && amount > 0 ? amount : null
+}
+
+export function getRaffleCardPrice(raffle: { card_price?: number | string | null; amount?: string | null }): number | null {
+  const explicit = parseMoneyToInteger(raffle.card_price ?? null)
+  if (explicit) return explicit
+  return parseMoneyToInteger(raffle.amount ?? null)
+}
+
 export function getPrizeAmounts(prize?: string | null, additionalPrizes?: string[] | null) {
   return normalizePrizeAmounts([prize ?? '', ...(additionalPrizes ?? [])]).map((amount) => formatMoneyAmount(amount))
 }
