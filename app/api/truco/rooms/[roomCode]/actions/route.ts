@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
+import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/shared'
 import {
   applyAuthoritativeAction,
   isValidRoleSecret,
