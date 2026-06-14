@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Clock3, ShieldCheck, Ticket, Trophy, WalletCards } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BearLogo } from '@/components/bear-logo'
+import { WalletAdjustmentPanel } from '@/components/admin/wallet-adjustment-panel'
+import { requireAdminPage } from '@/lib/auth/roles'
 
 interface WalletRow {
   user_id: string
@@ -33,34 +33,37 @@ interface TrucoRoomRow {
 }
 
 export default async function AdminWalletOpsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { serviceClient } = await requireAdminPage()
 
-  if (!user) redirect('/auth/login')
-
-  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }] = await Promise.all([
-    supabase.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').limit(500),
-    supabase
+  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }] = await Promise.all([
+    serviceClient.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').limit(500),
+    serviceClient
       .from('lbb_wallet_transactions')
       .select('id, user_id, wallet_kind, transaction_type, amount, balance_after, description, created_at')
       .order('created_at', { ascending: false })
       .limit(80),
-    supabase
+    serviceClient
       .from('truco_rooms')
       .select('id, status, entry_fee_points, prize_pool_points, created_at')
       .order('created_at', { ascending: false })
       .limit(40),
-    supabase
+    serviceClient
       .from('bingo_cards')
       .select('id, payment_status, receipt_amount, created_at')
       .order('created_at', { ascending: false })
       .limit(500),
+    serviceClient
+      .from('lbb_admin_audit_logs')
+      .select('id, action, entity_type, entity_id, reason, created_at')
+      .order('created_at', { ascending: false })
+      .limit(12),
   ])
 
   const walletRows = (wallets ?? []) as WalletRow[]
   const transactionRows = (transactions ?? []) as TransactionRow[]
   const trucoRoomRows = (trucoRooms ?? []) as TrucoRoomRow[]
   const cardRows = (cards ?? []) as { payment_status?: string | null; receipt_amount?: number | null }[]
+  const auditRows = (auditLogs ?? []) as { id: string; action: string; entity_type?: string | null; entity_id?: string | null; reason?: string | null; created_at: string }[]
 
   const pendingDeposits = transactionRows.filter((row) => row.transaction_type === 'deposit_pending')
   const approvedDeposits = transactionRows.filter((row) => row.transaction_type === 'deposit_approved')
@@ -93,6 +96,10 @@ export default async function AdminWalletOpsPage() {
           <WalletMetric icon={<Clock3 className="h-5 w-5" />} label="Recargas pendientes" value={String(pendingDeposits.length)} detail="requieren validación" />
           <WalletMetric icon={<Ticket className="h-5 w-5" />} label="Cartones aprobados" value={formatARS(approvedBingoAmount)} detail="ingreso confirmado" />
           <WalletMetric icon={<Trophy className="h-5 w-5" />} label="Pozo Truco activo" value={`${openTrucoRooms.reduce((total, room) => total + Number(room.prize_pool_points ?? 0), 0)} LBB`} detail={`${openTrucoRooms.length} mesa${openTrucoRooms.length !== 1 ? 's' : ''} abierta${openTrucoRooms.length !== 1 ? 's' : ''}`} />
+        </div>
+
+        <div className="mb-6">
+          <WalletAdjustmentPanel />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
@@ -146,13 +153,34 @@ export default async function AdminWalletOpsPage() {
           </Card>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <OperationBox label="Recargas aprobadas" value={String(approvedDeposits.length)} />
-          <OperationBox label="Entradas Truco debitadas" value={String(trucoEntryFees.length)} />
-          <OperationBox label="Premios Truco pagados" value={String(trucoPrizes.length)} />
-          <OperationBox label="Compras bingo con wallet" value={String(bingoPurchases.length)} />
-          <OperationBox label="Mesas Truco recientes" value={String(trucoRoomRows.length)} />
-          <OperationBox label="Saldo LBB circulante" value={`${walletRows.reduce((total, row) => total + Number(row.bonus_points_balance ?? 0), 0)} LBB`} />
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="grid gap-4 md:grid-cols-3">
+            <OperationBox label="Recargas aprobadas" value={String(approvedDeposits.length)} />
+            <OperationBox label="Entradas Truco debitadas" value={String(trucoEntryFees.length)} />
+            <OperationBox label="Premios Truco pagados" value={String(trucoPrizes.length)} />
+            <OperationBox label="Compras bingo con wallet" value={String(bingoPurchases.length)} />
+            <OperationBox label="Mesas Truco recientes" value={String(trucoRoomRows.length)} />
+            <OperationBox label="Saldo LBB circulante" value={`${walletRows.reduce((total, row) => total + Number(row.bonus_points_balance ?? 0), 0)} LBB`} />
+          </div>
+
+          <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">
+            <CardHeader>
+              <CardTitle className="text-white">Auditoría reciente</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {auditRows.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-zinc-400">No hay auditoría registrada todavía.</p>
+              ) : (
+                auditRows.map((log) => (
+                  <div key={log.id} className="rounded-2xl border border-white/10 bg-black/25 p-3">
+                    <p className="text-sm font-bold text-white">{formatTransactionType(log.action)}</p>
+                    <p className="mt-1 truncate text-xs text-zinc-500">{log.reason || `${log.entity_type ?? 'entidad'} ${log.entity_id ?? ''}`}</p>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">{formatDate(log.created_at)}</p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
       </section>
     </main>
