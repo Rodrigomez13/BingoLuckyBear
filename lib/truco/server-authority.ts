@@ -26,6 +26,12 @@ export interface StoredTrucoRoom {
   version: number
   host_secret: string
   guest_secret: string | null
+  host_user_id?: string | null
+  guest_user_id?: string | null
+  entry_fee_points?: number | null
+  prize_pool_points?: number | null
+  ranked?: boolean | null
+  settled_at?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -38,6 +44,9 @@ export interface PublicRoomSummary {
   currentTrick: number
   hand: Player
   version: number
+  entryFeePoints: number
+  prizePoolPoints: number
+  ranked: boolean
   createdAt?: string
   updatedAt?: string
   canJoin: boolean
@@ -61,6 +70,9 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
     visibility: room.visibility ?? 'private',
     state: room.state,
     version: room.version,
+    entryFeePoints: Number(room.entry_fee_points ?? 0),
+    prizePoolPoints: Number(room.prize_pool_points ?? 0),
+    ranked: Boolean(room.ranked),
     role,
   }
 }
@@ -74,6 +86,9 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
     currentTrick: room.state.currentTrick,
     hand: room.state.hand,
     version: room.version,
+    entryFeePoints: Number(room.entry_fee_points ?? 0),
+    prizePoolPoints: Number(room.prize_pool_points ?? 0),
+    ranked: Boolean(room.ranked),
     createdAt: room.created_at,
     updatedAt: room.updated_at,
     canJoin: room.status === 'waiting' && !room.guest_secret,
