@@ -1,6 +1,13 @@
 import Link from 'next/link'
-import { ArrowRight, Coins, Crown, ShieldCheck, Spade, Trophy, Users } from 'lucide-react'
+import { ArrowRight, Coins, Crown, ShieldCheck, Trophy, Users, Sword, Wine } from 'lucide-react'
+import type { ComponentType } from 'react'
 import { Button } from '@/components/ui/button'
+
+const SUIT_ICON: Record<string, ComponentType<{ className?: string }>> = {
+  ESPADA: Sword,
+  ORO: Coins,
+  COPA: Wine,
+}
 
 const featureCards = [
   {
@@ -30,10 +37,10 @@ export function TrucoPromoSection() {
   return (
     <section className="relative isolate overflow-hidden py-12 sm:py-16">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(251,191,36,.13),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(4,247,124,.09),transparent_28%)]" />
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1fr)] lg:px-8">
+      <div className="lbb-scroll-reveal mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1fr)] lg:px-8">
         <div className="flex min-w-0 flex-col justify-center text-center lg:text-left">
           <p className="mb-4 inline-flex w-fit items-center gap-2 self-center rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-amber-200 lg:self-start">
-            <Spade className="h-4 w-4" /> Nuevo juego online
+            <Coins className="h-4 w-4" /> Nuevo juego online
           </p>
           <h2 className="text-balance font-mono text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
             Truco argentino con la estética Lucky Bear.
@@ -59,8 +66,8 @@ export function TrucoPromoSection() {
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {featureCards.map((feature) => (
-              <div key={feature.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left shadow-lg shadow-black/20">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300 text-zinc-950">
+              <div key={feature.title} className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left shadow-lg shadow-black/20 transition-all duration-300 hover:-translate-y-1 hover:border-amber-300/40 hover:bg-white/[0.07]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300 text-zinc-950 transition-transform duration-300 group-hover:scale-110">
                   {feature.icon}
                 </div>
                 <h3 className="text-sm font-black text-white">{feature.title}</h3>
@@ -93,16 +100,18 @@ export function TrucoPromoSection() {
             </div>
 
             <div className="relative flex min-h-[12rem] items-center justify-center">
-              {sampleCards.map((card, index) => (
+              {sampleCards.map((card, index) => {
+                const SuitIcon = SUIT_ICON[card.suit] ?? Sword
+                return (
                 <div
                   key={`${card.rank}-${card.suit}`}
-                  className="absolute aspect-[5/7] w-28 rounded-2xl border border-amber-300/35 bg-gradient-to-br from-[#f8e5b0] to-[#b7822d] p-2 shadow-2xl shadow-black/40 sm:w-32"
+                  className="absolute aspect-[5/7] w-28 rounded-2xl border border-amber-300/35 bg-gradient-to-br from-[#f8e5b0] to-[#b7822d] p-2 shadow-2xl shadow-black/40 transition-transform duration-500 hover:-translate-y-2 sm:w-32"
                   style={{ transform: `translateX(${(index - 1) * 4.25}rem) rotate(${(index - 1) * 9}deg)`, zIndex: index + 1 }}
                 >
                   <div className="flex h-full flex-col justify-between rounded-xl border border-amber-950/20 bg-[#fff4ca] p-2 text-amber-950">
                     <div className="flex items-center justify-between font-mono font-black">
                       <span>{card.rank}</span>
-                      <Spade className="h-4 w-4" />
+                      <SuitIcon className="h-4 w-4" />
                     </div>
                     <div className="text-center">
                       <Crown className="mx-auto mb-2 h-8 w-8" />
@@ -112,7 +121,8 @@ export function TrucoPromoSection() {
                     <div className="text-right font-mono font-black">LBB</div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">

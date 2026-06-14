@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Radio, Spade, Trophy } from 'lucide-react'
+import { Radio, Coins, Trophy } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
@@ -38,7 +38,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
               </span>
             )}
             <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" className="hidden sm:inline-flex" />
-            <HeaderLink href="/truco" active={activePath === 'truco'} icon={<Spade className="h-4 w-4" />} label="Truco" className="hidden sm:inline-flex" />
+            <HeaderLink href="/truco" active={activePath === 'truco'} icon={<Coins className="h-4 w-4" />} label="Truco" className="hidden sm:inline-flex" />
             <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
             <UserMenu active={activePath === 'mi-cuenta'} />
             <MobileMenu />

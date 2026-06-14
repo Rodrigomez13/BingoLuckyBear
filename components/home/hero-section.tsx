@@ -3,6 +3,7 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RaffleCountdown } from '@/components/home/raffle-countdown'
 import { formatArgentinaDate } from '@/lib/date'
 
 const floatingBalls = [
@@ -64,6 +65,12 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
               {copy}
             </p>
 
+            {hasActiveRaffle && nextDrawDate ? (
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <RaffleCountdown drawDate={nextDrawDate} raffleName={raffleName} />
+              </div>
+            ) : null}
+
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
               {hasActiveRaffle ? (
                 <Button
@@ -109,13 +116,14 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
           </div>
 
           <div className="relative z-10 flex min-h-[24rem] items-center justify-center sm:min-h-[30rem] lg:min-h-[34rem]">
+            <div className="absolute inset-0 -z-10 mx-auto my-auto h-2/3 w-2/3 rounded-full bg-amber-300/15 blur-3xl" />
             <Image
               src="/brand/banner-logo-main.png"
               alt="Lucky Bingo Bear"
               width={900}
               height={900}
               priority
-              className="h-[22rem] w-[22rem] object-contain drop-shadow-2xl sm:h-[31rem] sm:w-[31rem] lg:h-[36rem] lg:w-[36rem]"
+              className="lbb-float h-[22rem] w-[22rem] object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.03] sm:h-[31rem] sm:w-[31rem] lg:h-[36rem] lg:w-[36rem]"
             />
           </div>
         </div>

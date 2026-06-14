@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { CUSTOMER_AVATARS, getCustomerAvatar } from '@/lib/customer/avatars'
+import { PlayerGamification } from '@/components/customer/player-gamification'
 
 interface WalletData {
   wallet: {
@@ -200,6 +201,12 @@ export default function PlayerAccountPage() {
                 <Metric icon={<WalletCards className="h-5 w-5" />} label="Créditos cash" value={String(wallet?.cash_credits_balance ?? 0)} />
                 <Metric icon={<Trophy className="h-5 w-5" />} label="Ranking" value={String(stats?.ranking_points ?? 1000)} />
               </div>
+
+              <PlayerGamification
+                userId={user?.id ?? null}
+                stats={stats}
+                matches={walletData?.trucoHistory ?? []}
+              />
 
               <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">
                 <CardHeader>
