@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { CUSTOMER_AVATARS } from '@/lib/customer/avatars'
-import { CheckCircle2, Loader2, LockKeyhole, LogOut, Mail, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, LogOut, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
 
 interface CustomerProfile {
   full_name?: string | null
@@ -55,6 +55,7 @@ const emptyProfile: Required<Record<keyof CustomerProfile, string>> = {
 export default function MyAccountPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [playerAlias, setPlayerAlias] = useState('')
   const [avatarKey, setAvatarKey] = useState('golden_bear')
@@ -301,16 +302,26 @@ export default function MyAccountPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    required
-                    minLength={6}
-                    className="border-zinc-700 bg-zinc-900 text-white"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                      className="border-zinc-700 bg-zinc-900 pr-11 text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-amber-200"
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" disabled={isAuthLoading} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
                   {isAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : authMode === 'login' ? <LockKeyhole className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
