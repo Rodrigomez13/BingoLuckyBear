@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SiteHeader } from '@/components/site-header'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
@@ -11,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
-import { CUSTOMER_AVATARS } from '@/lib/customer/avatars'
+import { CUSTOMER_AVATARS, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, LogOut, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
 
 interface CustomerProfile {
@@ -52,6 +54,10 @@ const emptyProfile: Required<Record<keyof CustomerProfile, string>> = {
   payout_holder_name: '',
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
 export default function MyAccountPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -69,12 +75,20 @@ export default function MyAccountPage() {
   const [cards, setCards] = useState<CustomerCard[]>([])
 
   const supabase = useMemo(() => createClient(), [])
+  const router = useRouter()
 
   const approvedCount = cards.filter((card) => card.payment_status === 'approved').length
   const pendingCount = cards.filter((card) => (card.payment_status ?? 'pending') === 'pending').length
   const rejectedCount = cards.filter((card) => card.payment_status === 'rejected').length
 
-  const loadAccount = async () => {
+  const applyAuthenticatedEmail = (value?: string | null) => {
+    if (!value) return
+    setUserEmail(value)
+    setEmail(value)
+    setProfile((current) => ({ ...current, email: current.email || value }))
+  }
+
+  const loadAccount = async (knownEmail?: string | null) => {
     setIsLoading(true)
     setError(null)
 
@@ -85,10 +99,10 @@ export default function MyAccountPage() {
       ])
       const profileData = await profileRes.json()
       const cardsData = await cardsRes.json()
+      const resolvedEmail = profileData.user?.email ?? knownEmail ?? null
 
-      if (profileData.user?.email) {
-        setUserEmail(profileData.user.email)
-        setEmail(profileData.user.email)
+      if (resolvedEmail) {
+        applyAuthenticatedEmail(resolvedEmail)
       } else {
         setUserEmail(null)
       }
@@ -99,13 +113,13 @@ export default function MyAccountPage() {
           dni: profileData.profile.dni ?? '',
           address: profileData.profile.address ?? '',
           phone: profileData.profile.phone ?? '',
-          email: profileData.profile.email ?? profileData.user?.email ?? '',
+          email: profileData.profile.email ?? resolvedEmail ?? '',
           payout_account_kind: profileData.profile.payout_account_kind ?? '',
           payout_account: profileData.profile.payout_account ?? '',
           payout_holder_name: profileData.profile.payout_holder_name ?? '',
         })
-      } else if (profileData.user?.email) {
-        setProfile((current) => ({ ...current, email: profileData.user.email }))
+      } else if (resolvedEmail) {
+        setProfile((current) => ({ ...current, email: resolvedEmail }))
       }
 
       setCards(cardsData.cards ?? [])
@@ -117,12 +131,34 @@ export default function MyAccountPage() {
   }
 
   useEffect(() => {
-    loadAccount()
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      loadAccount()
+    let cancelled = false
+
+    const boot = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (cancelled) return
+      const sessionEmail = data.session?.user.email ?? null
+      if (sessionEmail) applyAuthenticatedEmail(sessionEmail)
+      await loadAccount(sessionEmail)
+    }
+
+    void boot()
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionEmail = session?.user.email ?? null
+      if (sessionEmail) {
+        applyAuthenticatedEmail(sessionEmail)
+      } else {
+        setUserEmail(null)
+        setCards([])
+      }
+      router.refresh()
+      window.setTimeout(() => void loadAccount(sessionEmail), 150)
     })
 
-    return () => data.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      data.subscription.unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -143,12 +179,17 @@ export default function MyAccountPage() {
         if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo crear la cuenta')
       }
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
 
+      const signedEmail = data.user?.email ?? email
       setPassword('')
+      applyAuthenticatedEmail(signedEmail)
       setMessage(authMode === 'register' ? 'Cuenta creada. Ya estás dentro.' : 'Sesión iniciada.')
-      await loadAccount()
+      router.refresh()
+
+      await wait(250)
+      await loadAccount(signedEmail)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo acceder a tu cuenta')
     } finally {
@@ -172,8 +213,9 @@ export default function MyAccountPage() {
 
       if (!response.ok) throw new Error(data.error || 'No se pudo guardar el perfil')
 
-      setMessage('Datos guardados. La proxima compra se va a completar con esta informacion.')
-      await loadAccount()
+      setMessage('Datos guardados. La próxima compra se va a completar con esta información.')
+      await loadAccount(userEmail)
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el perfil')
     } finally {
@@ -187,7 +229,8 @@ export default function MyAccountPage() {
     setProfile(emptyProfile)
     setCards([])
     setPassword('')
-    setMessage('Sesion cerrada.')
+    setMessage('Sesión cerrada.')
+    router.refresh()
   }
 
   return (
@@ -279,7 +322,7 @@ export default function MyAccountPage() {
                             onClick={() => setAvatarKey(avatar.key)}
                             className={`rounded-2xl border p-2 text-center transition ${avatarKey === avatar.key ? 'border-amber-300 bg-amber-300/10' : 'border-white/10 bg-black/20 hover:border-white/25'}`}
                           >
-                            <span className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${avatar.gradient} text-2xl`}>{avatar.emoji}</span>
+                            <AvatarPreview avatarKey={avatar.key} label={avatar.label} />
                             <span className="mt-1 block text-[10px] font-bold text-zinc-300">{avatar.label}</span>
                           </button>
                         ))}
@@ -289,7 +332,7 @@ export default function MyAccountPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electronico</Label>
+                  <Label htmlFor="email">Correo electrónico</Label>
                   <Input
                     id="email"
                     type="email"
@@ -352,8 +395,8 @@ export default function MyAccountPage() {
                 <form onSubmit={saveProfile} className="space-y-4">
                   <Field label="Nombre completo" value={profile.full_name} onChange={(value) => setProfile({ ...profile, full_name: value })} />
                   <Field label="DNI" value={profile.dni} onChange={(value) => setProfile({ ...profile, dni: value })} />
-                  <Field label="Direccion" value={profile.address} onChange={(value) => setProfile({ ...profile, address: value })} />
-                  <Field label="Telefono" value={profile.phone} onChange={(value) => setProfile({ ...profile, phone: value })} />
+                  <Field label="Dirección" value={profile.address} onChange={(value) => setProfile({ ...profile, address: value })} />
+                  <Field label="Teléfono" value={profile.phone} onChange={(value) => setProfile({ ...profile, phone: value })} />
                   <Field label="Email de contacto" type="email" value={profile.email} onChange={(value) => setProfile({ ...profile, email: value })} />
 
                   <div className="rounded-xl border border-sky-300/20 bg-sky-400/10 p-4">
@@ -369,7 +412,7 @@ export default function MyAccountPage() {
                           onChange={(event) => setProfile({ ...profile, payout_account_kind: event.target.value })}
                           className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
                         >
-                          <option value="">Selecciona</option>
+                          <option value="">Seleccioná</option>
                           <option value="Alias">Alias</option>
                           <option value="CBU">CBU</option>
                           <option value="CVU">CVU</option>
@@ -397,7 +440,7 @@ export default function MyAccountPage() {
               <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="text-xl font-bold text-white">Mis cartones</h2>
-                  <p className="text-sm text-zinc-400">Los cartones aparecen aca cuando compras con la sesion iniciada o con este correo.</p>
+                  <p className="text-sm text-zinc-400">Los cartones aparecen acá cuando comprás con la sesión iniciada o con este correo.</p>
                 </div>
                 <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
                   <Link href="/participar">
@@ -411,9 +454,9 @@ export default function MyAccountPage() {
                 <Card className="border-dashed border-white/15 bg-zinc-950/60 text-zinc-100">
                   <CardContent className="p-8 text-center">
                     <Ticket className="mx-auto mb-3 h-10 w-10 text-amber-300" />
-                    <h3 className="text-lg font-bold text-white">Todavia no hay cartones vinculados</h3>
+                    <h3 className="text-lg font-bold text-white">Todavía no hay cartones vinculados</h3>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">
-                      La proxima vez que compres con esta sesion activa o con este correo, tus cartones van a quedar guardados en esta cuenta.
+                      La próxima vez que compres con esta sesión activa o con este correo, tus cartones van a quedar guardados en esta cuenta.
                     </p>
                   </CardContent>
                 </Card>
@@ -449,6 +492,14 @@ export default function MyAccountPage() {
         )}
       </section>
     </main>
+  )
+}
+
+function AvatarPreview({ avatarKey, label }: { avatarKey: string; label: string }) {
+  return (
+    <span className="mx-auto flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-amber-300/25 bg-amber-300/10">
+      <img src={getCustomerAvatarImageSrc(avatarKey)} alt={label} className="h-full w-full object-cover" />
+    </span>
   )
 }
 
