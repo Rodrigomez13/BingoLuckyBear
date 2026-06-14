@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Radio, Ticket, Spade, UserCircle2 } from 'lucide-react'
+import { Home, Radio, Ticket, Coins, UserCircle2 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 interface NavItem {
@@ -17,7 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Inicio', icon: Home, match: (p) => p === '/' },
   { href: '/en-vivo', label: 'En Vivo', icon: Radio, match: (p) => p.startsWith('/en-vivo') },
   { href: '/participar', label: 'Participar', icon: Ticket, match: (p) => p.startsWith('/participar') },
-  { href: '/truco', label: 'Truco', icon: Spade, match: (p) => p.startsWith('/truco') },
+  { href: '/truco', label: 'Truco', icon: Coins, match: (p) => p.startsWith('/truco') },
   { href: '/mi-cuenta', label: 'Cuenta', icon: UserCircle2, match: (p) => p.startsWith('/mi-cuenta') },
 ]
 

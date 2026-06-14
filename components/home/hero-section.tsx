@@ -116,13 +116,14 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
           </div>
 
           <div className="relative z-10 flex min-h-[24rem] items-center justify-center sm:min-h-[30rem] lg:min-h-[34rem]">
+            <div className="absolute inset-0 -z-10 mx-auto my-auto h-2/3 w-2/3 rounded-full bg-amber-300/15 blur-3xl" />
             <Image
               src="/brand/banner-logo-main.png"
               alt="Lucky Bingo Bear"
               width={900}
               height={900}
               priority
-              className="h-[22rem] w-[22rem] object-contain drop-shadow-2xl sm:h-[31rem] sm:w-[31rem] lg:h-[36rem] lg:w-[36rem]"
+              className="lbb-float h-[22rem] w-[22rem] object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-[1.03] sm:h-[31rem] sm:w-[31rem] lg:h-[36rem] lg:w-[36rem]"
             />
           </div>
         </div>

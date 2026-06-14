@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bot, Users, LogIn, Copy, Check, Clover, Link2, Loader2, Lock, Globe2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,6 +15,7 @@ import {
 } from '@/lib/truco/server-client'
 import { RulesModal } from './rules-modal'
 import { PublicRoomsPanel } from './public-rooms-panel'
+import { TrucoLoadingOverlay } from './truco-loading-overlay'
 
 interface RoomLobbyProps {
   initialRoomCode?: string | null
@@ -119,27 +119,17 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   const joinRoom = () => joinRoomByCode(joinCode)
 
   return (
-    <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 py-10 text-center">
+    <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 py-8 text-center lbb-fade-up">
+      <TrucoLoadingOverlay show={busy} message={mode === 'join' ? 'Entrando a la mesa…' : 'Preparando la mesa…'} />
+
       <div className="absolute right-4 top-4">
         <RulesModal compact />
       </div>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 -z-10 rounded-full bg-amber-400/20 blur-3xl" />
-        <Image
-          src="/truco/golden-bear-mascot.png"
-          alt="Oso dorado mascota de Truco Lucky Bear"
-          width={200}
-          height={200}
-          className="lbb-float drop-shadow-2xl"
-          priority
-        />
-      </div>
-
-      <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">
+      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">
         <Clover className="h-3.5 w-3.5" /> Lucky Bingo Bear
       </div>
-      <h1 className="font-mono text-5xl font-black tracking-tight text-white text-balance sm:text-6xl">
+      <h1 className="font-mono text-4xl font-black tracking-tight text-white text-balance sm:text-5xl">
         Truco <span className="text-amber-300">Lucky Bear</span>
       </h1>
       <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-emerald-100/70">
@@ -168,18 +158,18 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
       {mode === 'home' && (
         <>
-          <div className="mt-8 grid w-full gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid w-full gap-3 sm:grid-cols-3">
             <LobbyCard
-              icon={<Bot className="h-7 w-7" />}
+              icon={<Bot className="h-5 w-5" />}
               title="Jugar contra bot"
-              desc="Partida instantánea contra el oso dorado."
+              desc="Partida instantánea contra el oso."
               onClick={() => onPlayBot(target)}
               primary
             />
             <LobbyCard
-              icon={<Users className="h-7 w-7" />}
+              icon={<Users className="h-5 w-5" />}
               title="Crear mesa"
-              desc="Pública para la antesala o privada por código."
+              desc="Pública o privada por código."
               onClick={() => {
                 setError(null)
                 setRoomCode(generateRoomCode())
@@ -188,9 +178,9 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
               }}
             />
             <LobbyCard
-              icon={<LogIn className="h-7 w-7" />}
+              icon={<LogIn className="h-5 w-5" />}
               title="Unirse por código"
-              desc="Entrá a una mesa privada o a un enlace recibido."
+              desc="Entrá con un código o enlace."
               onClick={() => {
                 setError(null)
                 setMode('join')
@@ -323,17 +313,23 @@ function LobbyCard({
   return (
     <button
       onClick={onClick}
-      className={`group flex flex-col items-center gap-2 rounded-2xl border p-5 text-center transition-all hover:-translate-y-1 ${
+      className={`group flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 sm:flex-col sm:items-center sm:gap-2 sm:p-4 sm:text-center ${
         primary
           ? 'border-amber-300/40 bg-amber-300/10 hover:bg-amber-300/15'
           : 'border-white/10 bg-[#06140e]/70 hover:border-amber-300/30'
       }`}
     >
-      <span className={`flex h-14 w-14 items-center justify-center rounded-xl ${primary ? 'bg-amber-300 text-amber-950' : 'bg-white/5 text-amber-300'}`}>
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${
+          primary ? 'bg-amber-300 text-amber-950' : 'bg-white/5 text-amber-300'
+        }`}
+      >
         {icon}
       </span>
-      <span className="text-base font-bold text-white">{title}</span>
-      <span className="text-xs leading-relaxed text-emerald-100/60">{desc}</span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-white">{title}</span>
+        <span className="block text-xs leading-snug text-emerald-100/60">{desc}</span>
+      </span>
     </button>
   )
 }

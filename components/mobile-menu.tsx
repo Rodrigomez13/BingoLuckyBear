@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Radio, Spade, Trophy, Ticket, Home, BarChart3, HelpCircle } from 'lucide-react'
+import { Menu, X, Radio, Coins, Trophy, Ticket, Home, BarChart3, HelpCircle } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
 
@@ -18,7 +18,7 @@ const PRIMARY_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/en-vivo', label: 'Sorteo en vivo', icon: Radio },
   { href: '/participar', label: 'Comprar cartones', icon: Ticket },
-  { href: '/truco', label: 'Truco online', icon: Spade },
+  { href: '/truco', label: 'Truco online', icon: Coins },
 ]
 
 const SECONDARY_LINKS: MenuLink[] = [
