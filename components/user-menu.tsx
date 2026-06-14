@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, UserCircle2, WalletCards } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getCustomerAvatar } from '@/lib/customer/avatars'
+import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 
 interface PlayerPayload {
   user: { id: string; email?: string | null } | null
@@ -17,6 +18,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   const [loading, setLoading] = useState(true)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const supabase = useMemo(() => createClient(), [])
+  const router = useRouter()
 
   const user = payload?.user ?? null
   const player = payload?.player ?? null
@@ -27,9 +29,18 @@ export function UserMenu({ active = false }: { active?: boolean }) {
     try {
       const response = await fetch('/api/customer/player', { cache: 'no-store' })
       const data = await response.json()
-      setPayload(data)
+      if (data?.user) {
+        setPayload(data)
+        return
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession()
+      const sessionUser = sessionData.session?.user
+      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null } : { user: null, player: null })
     } catch {
-      setPayload({ user: null, player: null })
+      const { data: sessionData } = await supabase.auth.getSession()
+      const sessionUser = sessionData.session?.user
+      setPayload(sessionUser ? { user: { id: sessionUser.id, email: sessionUser.email }, player: null } : { user: null, player: null })
     } finally {
       setLoading(false)
     }
@@ -37,8 +48,15 @@ export function UserMenu({ active = false }: { active?: boolean }) {
 
   useEffect(() => {
     void load()
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      void load()
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setPayload({ user: { id: session.user.id, email: session.user.email }, player: null })
+      } else {
+        setPayload({ user: null, player: null })
+      }
+      setLoading(false)
+      router.refresh()
+      window.setTimeout(() => void load(), 150)
     })
     return () => data.subscription.unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +81,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
     await supabase.auth.signOut()
     setOpen(false)
     setPayload({ user: null, player: null })
+    router.refresh()
   }
 
   if (loading) {
@@ -94,9 +113,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
             : 'border-white/10 bg-white/5 text-slate-200 hover:border-amber-300/30 hover:text-amber-100'
         }`}
       >
-        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatar.gradient} text-base shadow-inner`}>
-          {avatar.emoji}
-        </span>
+        <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="sm" />
         <span className="hidden truncate text-sm sm:block">{alias}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -105,7 +122,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         <div className="absolute right-0 mt-2 w-[min(88vw,18rem)] overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
           <div className="border-b border-white/10 p-4">
             <div className="flex items-center gap-3">
-              <span className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${avatar.gradient} text-2xl`}>{avatar.emoji}</span>
+              <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="lg" />
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
@@ -130,6 +147,14 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         </div>
       )}
     </div>
+  )
+}
+
+function AvatarBubble({ avatarKey, label, size }: { avatarKey: string; label: string; size: 'sm' | 'lg' }) {
+  return (
+    <span className={`${size === 'lg' ? 'h-12 w-12 rounded-2xl' : 'h-7 w-7 rounded-full'} flex shrink-0 items-center justify-center overflow-hidden border border-amber-300/25 bg-amber-300/10 shadow-inner`}>
+      <img src={getCustomerAvatarImageSrc(avatarKey)} alt={label} className="h-full w-full object-cover" />
+    </span>
   )
 }
 
