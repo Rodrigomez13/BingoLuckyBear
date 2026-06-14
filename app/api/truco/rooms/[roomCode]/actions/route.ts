@@ -8,6 +8,7 @@ import {
   validateActionShape,
   type StoredTrucoRoom,
 } from '@/lib/truco/server-authority'
+import { settleTrucoRoomIfNeeded } from '@/lib/wallet/server'
 
 type RouteContext = {
   params: Promise<{ roomCode: string }>
@@ -85,6 +86,10 @@ export async function POST(request: Request, context: RouteContext) {
     action,
     state_version: nextVersion,
   })
+
+  if (nextStatus === 'finished') {
+    await settleTrucoRoomIfNeeded(supabase, updated as never)
+  }
 
   return NextResponse.json({ ok: true, room: sanitizeRoom(updated as StoredTrucoRoom, secret) })
 }
