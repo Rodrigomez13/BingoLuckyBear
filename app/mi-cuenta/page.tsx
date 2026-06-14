@@ -68,6 +68,7 @@ export default function MyAccountPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -177,6 +178,12 @@ export default function MyAccountPage() {
         })
         const data = await response.json()
         if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo crear la cuenta')
+        if (data.requires_email_confirmation) {
+          setPassword('')
+          setAuthMode('login')
+          setMessage(data.message || 'Cuenta creada. Revisá tu correo y confirmá el enlace antes de iniciar sesión.')
+          return
+        }
       }
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
@@ -194,6 +201,30 @@ export default function MyAccountPage() {
       setError(err instanceof Error ? err.message : 'No se pudo acceder a tu cuenta')
     } finally {
       setIsAuthLoading(false)
+    }
+  }
+
+  const handleGoogleAccess = async () => {
+    setIsGoogleLoading(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const origin = window.location.origin
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${origin}/auth/callback?next=/mi-cuenta`,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      })
+
+      if (googleError) throw googleError
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión con Google')
+      setIsGoogleLoading(false)
     }
   }
 
@@ -278,11 +309,28 @@ export default function MyAccountPage() {
               <CardTitle className="text-2xl text-white">{authMode === 'login' ? 'Entrar como jugador' : 'Crear cuenta de jugador'}</CardTitle>
               <CardDescription className="text-zinc-400">
                 {authMode === 'login'
-                  ? 'Ingresá con correo y contraseña. Sin link por email.'
+                  ? 'Ingresá con correo y contraseña, o continuá con Google.'
                   : 'Creá tu usuario, elegí avatar y recibí tus LBB Points iniciales.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <Button
+                type="button"
+                onClick={handleGoogleAccess}
+                disabled={isGoogleLoading || isAuthLoading}
+                variant="outline"
+                className="mb-4 h-12 w-full rounded-full border-white/15 bg-white text-zinc-950 hover:bg-zinc-100"
+              >
+                {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleGlyph />}
+                Continuar con Google
+              </Button>
+
+              <div className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                <span className="h-px flex-1 bg-white/10" />
+                <span>o</span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+
               <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5">
                 <button
                   type="button"
@@ -366,9 +414,9 @@ export default function MyAccountPage() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" disabled={isAuthLoading} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                <Button type="submit" disabled={isAuthLoading || isGoogleLoading} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
                   {isAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : authMode === 'login' ? <LockKeyhole className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                  {authMode === 'login' ? 'Entrar' : 'Crear cuenta y entrar'}
+                  {authMode === 'login' ? 'Entrar' : 'Crear cuenta'}
                 </Button>
               </form>
               <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
@@ -492,6 +540,14 @@ export default function MyAccountPage() {
         )}
       </section>
     </main>
+  )
+}
+
+function GoogleGlyph() {
+  return (
+    <span className="mr-2 grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-black text-zinc-950">
+      G
+    </span>
   )
 }
 
