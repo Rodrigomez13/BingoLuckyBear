@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { requireAdminPage } from '@/lib/auth/roles'
+import { DepositActionButton } from '@/components/admin/deposit-action-button'
 
 interface DepositRow {
   id: string
@@ -91,7 +92,7 @@ export default async function AdminDepositsPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-sm">
+              <table className="w-full min-w-[1080px] text-sm">
                 <thead className="bg-black/30 text-left text-[10px] uppercase tracking-[0.16em] text-zinc-500">
                   <tr>
                     <th className="px-4 py-3">Cliente</th>
@@ -100,13 +101,15 @@ export default async function AdminDepositsPage() {
                     <th className="px-4 py-3">Wallet</th>
                     <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {depositRows.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">No hay depósitos registrados.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">No hay depósitos registrados.</td></tr>
                   ) : depositRows.map((deposit) => {
                     const profile = deposit.user_id ? profilesById.get(deposit.user_id) : null
+                    const canReview = deposit.status === 'pending'
                     return (
                       <tr key={deposit.id} className="bg-zinc-950/30 hover:bg-white/[0.03]">
                         <td className="px-4 py-4">
@@ -128,6 +131,7 @@ export default async function AdminDepositsPage() {
                         </td>
                         <td className="px-4 py-4"><StatusBadge status={deposit.status} />{deposit.review_notes && <p className="mt-1 max-w-[220px] text-xs text-zinc-500">{deposit.review_notes}</p>}</td>
                         <td className="px-4 py-4 text-xs text-zinc-400">{formatDate(deposit.created_at)}{deposit.reviewed_at && <p className="text-zinc-600">Rev. {formatDate(deposit.reviewed_at)}</p>}</td>
+                        <td className="px-4 py-4 text-right"><div className="flex justify-end gap-2"><DepositActionButton id={deposit.id} action="approve" disabled={!canReview} /><DepositActionButton id={deposit.id} action="reject" disabled={!canReview} /></div></td>
                       </tr>
                     )
                   })}
