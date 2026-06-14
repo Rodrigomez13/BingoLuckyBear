@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { getAuthCallbackUrl } from '@/lib/site-url'
 import { SiteHeader } from '@/components/site-header'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
 import { Button } from '@/components/ui/button'
@@ -12,7 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
-import { CheckCircle2, Loader2, LogOut, Mail, Save, Ticket, UserCircle2, WalletCards } from 'lucide-react'
+import { CUSTOMER_AVATARS } from '@/lib/customer/avatars'
+import { CheckCircle2, Loader2, LockKeyhole, LogOut, Mail, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
 
 interface CustomerProfile {
   full_name?: string | null
@@ -54,9 +54,13 @@ const emptyProfile: Required<Record<keyof CustomerProfile, string>> = {
 
 export default function MyAccountPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [playerAlias, setPlayerAlias] = useState('')
+  const [avatarKey, setAvatarKey] = useState('golden_bear')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isSendingLink, setIsSendingLink] = useState(false)
+  const [isAuthLoading, setIsAuthLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -121,27 +125,33 @@ export default function MyAccountPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const sendMagicLink = async (event: React.FormEvent) => {
+  const handlePasswordAccess = async (event: React.FormEvent) => {
     event.preventDefault()
-    setIsSendingLink(true)
+    setIsAuthLoading(true)
     setError(null)
     setMessage(null)
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: getAuthCallbackUrl('/mi-cuenta'),
-          shouldCreateUser: true,
-        },
-      })
+      if (authMode === 'register') {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, alias: playerAlias, avatar_key: avatarKey }),
+        })
+        const data = await response.json()
+        if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo crear la cuenta')
+      }
 
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
-      setMessage('Te enviamos un enlace de acceso. Revisa tu correo y volve a esta pagina desde ese enlace.')
+
+      setPassword('')
+      setMessage(authMode === 'register' ? 'Cuenta creada. Ya estás dentro.' : 'Sesión iniciada.')
+      await loadAccount()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo enviar el enlace de acceso')
+      setError(err instanceof Error ? err.message : 'No se pudo acceder a tu cuenta')
     } finally {
-      setIsSendingLink(false)
+      setIsAuthLoading(false)
     }
   }
 
@@ -175,6 +185,7 @@ export default function MyAccountPage() {
     setUserEmail(null)
     setProfile(emptyProfile)
     setCards([])
+    setPassword('')
     setMessage('Sesion cerrada.')
   }
 
@@ -191,10 +202,10 @@ export default function MyAccountPage() {
               Mi cuenta
             </Badge>
             <h1 className="max-w-3xl font-mono text-4xl font-black leading-none text-white sm:text-6xl">
-              Tus datos y cartones en un solo lugar
+              Tus datos, saldo y cartones en un solo lugar
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
-              Guardá tus datos para comprar más rápido, revisar el estado de tus pagos y volver a descargar tus cartones aprobados.
+              Entrá con contraseña, elegí tu avatar, revisá tus cartones y usá tu cuenta para Truco y Bingo.
             </p>
           </div>
 
@@ -218,15 +229,64 @@ export default function MyAccountPage() {
           <Card className="mx-auto max-w-xl border-white/10 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/30">
             <CardHeader className="text-center">
               <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-300 text-zinc-950">
-                <Mail className="h-7 w-7" />
+                {authMode === 'login' ? <LockKeyhole className="h-7 w-7" /> : <UserPlus className="h-7 w-7" />}
               </div>
-              <CardTitle className="text-2xl text-white">Entrar como jugador</CardTitle>
+              <CardTitle className="text-2xl text-white">{authMode === 'login' ? 'Entrar como jugador' : 'Crear cuenta de jugador'}</CardTitle>
               <CardDescription className="text-zinc-400">
-                Te enviamos un enlace al correo. No necesitas crear contraseña.
+                {authMode === 'login'
+                  ? 'Ingresá con correo y contraseña. Sin link por email.'
+                  : 'Creá tu usuario, elegí avatar y recibí tus LBB Points iniciales.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={sendMagicLink} className="space-y-4">
+              <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  className={`rounded-xl px-3 py-2 text-xs font-black transition ${authMode === 'login' ? 'bg-amber-300 text-zinc-950' : 'text-zinc-400 hover:text-white'}`}
+                >
+                  Ingresar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('register')}
+                  className={`rounded-xl px-3 py-2 text-xs font-black transition ${authMode === 'register' ? 'bg-amber-300 text-zinc-950' : 'text-zinc-400 hover:text-white'}`}
+                >
+                  Registrarme
+                </button>
+              </div>
+
+              <form onSubmit={handlePasswordAccess} className="space-y-4">
+                {authMode === 'register' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Alias público</Label>
+                      <Input
+                        value={playerAlias}
+                        onChange={(event) => setPlayerAlias(event.target.value)}
+                        placeholder="Ej: LuckyRodri"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Elegí tu avatar</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {CUSTOMER_AVATARS.map((avatar) => (
+                          <button
+                            key={avatar.key}
+                            type="button"
+                            onClick={() => setAvatarKey(avatar.key)}
+                            className={`rounded-2xl border p-2 text-center transition ${avatarKey === avatar.key ? 'border-amber-300 bg-amber-300/10' : 'border-white/10 bg-black/20 hover:border-white/25'}`}
+                          >
+                            <span className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${avatar.gradient} text-2xl`}>{avatar.emoji}</span>
+                            <span className="mt-1 block text-[10px] font-bold text-zinc-300">{avatar.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo electronico</Label>
                   <Input
@@ -239,13 +299,26 @@ export default function MyAccountPage() {
                     className="border-zinc-700 bg-zinc-900 text-white"
                   />
                 </div>
-                <Button type="submit" disabled={isSendingLink} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-                  {isSendingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                  Enviarme acceso
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                    minLength={6}
+                    className="border-zinc-700 bg-zinc-900 text-white"
+                  />
+                </div>
+                <Button type="submit" disabled={isAuthLoading} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                  {isAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : authMode === 'login' ? <LockKeyhole className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                  {authMode === 'login' ? 'Entrar' : 'Crear cuenta y entrar'}
                 </Button>
               </form>
               <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
-                También podés seguir comprando como invitado. La cuenta solo sirve para recordar datos y consultar historial.
+                Podés comprar como invitado, pero para Truco online, puntos, ranking e historial necesitás cuenta.
               </p>
             </CardContent>
           </Card>
@@ -296,10 +369,15 @@ export default function MyAccountPage() {
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={isSaving} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Guardar datos
-                  </Button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button type="submit" disabled={isSaving} className="h-12 rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Guardar datos
+                    </Button>
+                    <Button asChild variant="outline" className="h-12 rounded-full border-amber-300/30 bg-transparent text-amber-100 hover:bg-amber-300/10">
+                      <Link href="/mi-cuenta/jugador">Ver saldo y avatar</Link>
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
