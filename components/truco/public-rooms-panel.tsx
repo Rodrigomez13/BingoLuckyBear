@@ -2,6 +2,7 @@
 
 import { RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getCustomerAvatar } from '@/lib/customer/avatars'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
 export function PublicRoomsPanel({
@@ -13,7 +14,7 @@ export function PublicRoomsPanel({
   rooms: PublicRoomSummary[]
   loading?: boolean
   onRefresh: () => void
-  onJoin: (roomCode: string) => void
+  onJoin: (room: PublicRoomSummary) => void
 }) {
   const visibleRooms = rooms.filter((room) => room.status === 'waiting' || room.status === 'playing')
 
@@ -51,19 +52,23 @@ export function PublicRoomsPanel({
   )
 }
 
-function RoomRow({ room, onJoin }: { room: PublicRoomSummary; onJoin: (roomCode: string) => void }) {
+function RoomRow({ room, onJoin }: { room: PublicRoomSummary; onJoin: (room: PublicRoomSummary) => void }) {
   const isWaiting = room.status === 'waiting'
+  const avatar = getCustomerAvatar(room.host.avatarKey)
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/25 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-300/25 bg-amber-300/10 font-mono text-sm font-black text-amber-200">
-          {room.target}
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-br text-xl ${avatar.gradient}`}>
+          {avatar.emoji}
         </div>
         <div className="min-w-0">
-          <p className="truncate font-mono text-lg font-black tracking-[0.18em] text-amber-300">{room.roomCode}</p>
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate font-bold text-white">{room.host.name}</p>
+            <span className="shrink-0 font-mono text-[10px] font-black tracking-wider text-amber-300">{room.roomCode}</span>
+          </div>
           <p className="text-xs font-semibold text-emerald-100/55">
-            {isWaiting ? 'Esperando rival' : 'En juego'} · {room.scores.player}-{room.scores.opponent}
+            A {room.target} · {isWaiting ? 'Esperando rival' : 'En juego'} · {room.entryFeePoints > 0 ? `Pozo ${room.entryFeePoints * 2} LBB` : 'Sin apuesta'}
           </p>
         </div>
       </div>
@@ -71,7 +76,7 @@ function RoomRow({ room, onJoin }: { room: PublicRoomSummary; onJoin: (roomCode:
       <Button
         type="button"
         disabled={!room.canJoin}
-        onClick={() => onJoin(room.roomCode)}
+        onClick={() => onJoin(room)}
         className="h-9 bg-amber-300 px-4 text-xs font-black text-amber-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-35"
       >
         {room.canJoin ? 'Entrar' : 'Ocupada'}

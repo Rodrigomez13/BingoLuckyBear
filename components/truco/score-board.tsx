@@ -1,18 +1,23 @@
 'use client'
 
 import { type Player } from '@/lib/truco/engine'
+import { TrickHistory } from './trick-history'
 
 export function ScoreBoard({
   scores,
   target,
   perspective = 'player',
   rivalLabel = 'Rival',
+  trickWinners,
+  hand,
   compact = false,
 }: {
   scores: Record<Player, number>
   target: number
   perspective?: Player
   rivalLabel?: string
+  trickWinners?: (Player | 'tie' | null)[]
+  hand?: Player
   compact?: boolean
 }) {
   const rival = perspective === 'player' ? 'opponent' : 'player'
@@ -29,6 +34,15 @@ export function ScoreBoard({
         <ScoreColumn label="Vos" value={scores[perspective]} target={target} accent="emerald" compact={compact} />
         <ScoreColumn label={rivalLabel} value={scores[rival]} target={target} accent="amber" compact={compact} />
       </div>
+      {trickWinners && hand && (
+        <TrickHistory
+          winners={trickWinners}
+          hand={hand}
+          perspective={perspective}
+          rivalLabel={rivalLabel}
+          compact
+        />
+      )}
     </div>
   )
 }

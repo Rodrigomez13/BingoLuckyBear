@@ -14,7 +14,7 @@ export function PlayerHand({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2">
-      <div className="flex items-end justify-center gap-2 sm:gap-4">
+      <div className="flex items-end justify-center gap-2 sm:gap-3">
         {cards.length === 0 ? (
           <p className="py-4 text-sm text-emerald-100/60 sm:py-6">Sin cartas en la mano</p>
         ) : (

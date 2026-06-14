@@ -35,7 +35,7 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, error: 'Actor inválido' }, { status: 400 })
   }
 
-  if (!secret) {
+  if (!secret || secret.length > 100) {
     return NextResponse.json({ ok: false, error: 'Falta token de jugador' }, { status: 401 })
   }
 
@@ -65,6 +65,10 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const nextState = applyAuthoritativeAction(room.state, actor, action, room.target_score)
+  if (nextState === room.state) {
+    return NextResponse.json({ ok: false, error: 'Esa acción no está permitida en este momento.' }, { status: 409 })
+  }
+
   const nextVersion = room.version + 1
   const nextStatus = nextState.phase === 'game-over' ? 'finished' : 'playing'
 

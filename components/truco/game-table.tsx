@@ -19,7 +19,12 @@ import {
 import { botAct } from '@/lib/truco/bot'
 import { type OnlineAction, type OnlineRole } from '@/lib/truco/online'
 import { CARD_SPRITE_SRC } from '@/lib/truco/cards'
-import { fetchAuthoritativeRoom, sendAuthoritativeAction } from '@/lib/truco/server-client'
+import {
+  fetchAuthoritativeRoom,
+  leaveAuthoritativeRoom,
+  sendAuthoritativeAction,
+  type AuthoritativeRoomView,
+} from '@/lib/truco/server-client'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -34,7 +39,6 @@ import { PlayedCards } from './played-cards'
 import { ScoreBoard } from './score-board'
 import { ActionButtons } from './action-buttons'
 import { RulesModal } from './rules-modal'
-import { TrickHistory } from './trick-history'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
@@ -59,6 +63,8 @@ export function GameTable({
   const [onlineStatus, setOnlineStatus] = useState<OnlineStatus>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
+  const [exitBusy, setExitBusy] = useState(false)
+  const [roomView, setRoomView] = useState<AuthoritativeRoomView | null>(null)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const gameShellRef = useRef<HTMLDivElement | null>(null)
@@ -68,7 +74,11 @@ export function GameTable({
   const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
   const rival = otherPlayer(actor)
-  const rivalLabel = mode === 'bot' ? 'Oso' : 'Rival'
+  const rivalLabel = mode === 'bot'
+    ? 'Oso'
+    : actor === 'player'
+      ? roomView?.players.opponent?.name ?? 'Rival'
+      : roomView?.players.player.name ?? 'Rival'
   const waitingForRival = isOnline && onlineStatus === 'waiting'
 
   const updateOnlineStatus = useCallback((status?: string) => {
@@ -96,6 +106,7 @@ export function GameTable({
         }
 
         updateOnlineStatus(result.room.status)
+        setRoomView(result.room)
         if (lastVersionRef.current !== result.room.version) {
           lastVersionRef.current = result.room.version
           setState(result.room.state)
@@ -132,7 +143,8 @@ export function GameTable({
   }, [])
 
   useEffect(() => {
-    return () => timers.current.forEach(clearTimeout)
+    const activeTimers = timers.current
+    return () => activeTimers.forEach(clearTimeout)
   }, [])
 
   const toggleFullscreen = async () => {
@@ -191,6 +203,7 @@ export function GameTable({
           }
           lastVersionRef.current = result.room.version
           updateOnlineStatus(result.room.status)
+          setRoomView(result.room)
           setState(result.room.state)
         } catch (error) {
           setBotPhrase(error instanceof Error ? error.message : 'Error de conexión')
@@ -220,8 +233,39 @@ export function GameTable({
   const handleRespond = (accept: boolean) => void commitAction({ type: 'respond', accept })
   const handleNextRound = () => void commitAction({ type: 'next-round' })
   const handleRestart = () => {
+    if (isOnline) return
     setBotPhrase(null)
     void commitAction({ type: 'restart' })
+  }
+
+  const handleExit = async () => {
+    if (!isOnline || !roomCode || !onlineSecret) {
+      onExit()
+      return
+    }
+
+    if (
+      onlineStatus === 'connected' &&
+      state.phase !== 'game-over' &&
+      !window.confirm('Salir ahora cuenta como abandono. El rival ganará la partida y el pozo. ¿Querés continuar?')
+    ) {
+      return
+    }
+
+    setExitBusy(true)
+    setBotPhrase(null)
+    try {
+      const result = await leaveAuthoritativeRoom({ roomCode, actor, secret: onlineSecret })
+      if (!result.ok) {
+        setBotPhrase(result.error ?? 'No se pudo cerrar la mesa correctamente.')
+        return
+      }
+      onExit()
+    } catch (error) {
+      setBotPhrase(error instanceof Error ? error.message : 'No se pudo cerrar la mesa correctamente.')
+    } finally {
+      setExitBusy(false)
+    }
   }
 
   const turnLabel = actionBusy
@@ -242,14 +286,14 @@ export function GameTable({
     : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-6xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
 
   const tableHeightClass = isFullscreen
-    ? 'h-[calc(100svh-10.25rem)] min-h-[300px]'
-    : 'h-[calc(100svh-17rem)] min-h-[300px]'
+    ? 'h-[calc(100svh-8.5rem)] min-h-[300px]'
+    : 'h-[calc(100svh-15.5rem)] min-h-[300px]'
 
   return (
     <div ref={gameShellRef} className={shellClass}>
       <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4">
-        <Button onClick={onExit} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
-          <ArrowLeft className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Salir</span>
+        <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+          <ArrowLeft className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">{exitBusy ? 'Saliendo' : 'Salir'}</span>
         </Button>
         <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
           <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 sm:px-4 sm:py-1.5">
@@ -263,9 +307,11 @@ export function GameTable({
           <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          <Button onClick={handleRestart} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
-            <RotateCcw className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Reiniciar</span>
-          </Button>
+          {!isOnline && (
+            <Button onClick={handleRestart} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+              <RotateCcw className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Reiniciar</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -282,7 +328,15 @@ export function GameTable({
       )}
 
       <div className="mb-2 lg:hidden">
-        <ScoreBoard scores={state.scores} target={state.targetScore} perspective={actor} rivalLabel={rivalLabel} compact />
+        <ScoreBoard
+          scores={state.scores}
+          target={state.targetScore}
+          perspective={actor}
+          rivalLabel={rivalLabel}
+          trickWinners={state.trickWinners}
+          hand={state.hand}
+          compact
+        />
       </div>
 
       <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px]">
@@ -290,14 +344,11 @@ export function GameTable({
           <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
 
-          <div className="relative flex h-full flex-col items-center justify-between gap-1.5 sm:gap-5">
+          <div className="relative flex h-full flex-col items-center justify-between gap-1 sm:gap-3">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
 
-            <div className="w-full space-y-2 sm:space-y-3">
-              <TrickHistory winners={state.trickWinners} hand={state.hand} rivalLabel={rivalLabel} />
-              <div className="w-full rounded-xl border border-amber-300/10 bg-black/20 py-1 sm:rounded-2xl sm:py-3">
-                <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
-              </div>
+            <div className="w-full rounded-xl border border-amber-300/10 bg-black/20 py-0.5 sm:rounded-2xl sm:py-1.5">
+              <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
             </div>
 
             <PlayerHand cards={state.hands[actor]} canPlay={playerTurn} onPlay={handlePlay} />
@@ -305,7 +356,14 @@ export function GameTable({
         </div>
 
         <aside className="hidden flex-col gap-4 overflow-hidden lg:flex">
-          <ScoreBoard scores={state.scores} target={state.targetScore} perspective={actor} rivalLabel={rivalLabel} />
+          <ScoreBoard
+            scores={state.scores}
+            target={state.targetScore}
+            perspective={actor}
+            rivalLabel={rivalLabel}
+            trickWinners={state.trickWinners}
+            hand={state.hand}
+          />
           <ActionButtons
             state={state}
             player={actor}
@@ -362,7 +420,7 @@ export function GameTable({
                 Siguiente mano
               </Button>
             )}
-            <Button onClick={onExit} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
+            <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
               Salir al menú
             </Button>
           </div>

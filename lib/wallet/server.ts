@@ -35,16 +35,18 @@ function cleanAlias(value?: string | null, fallback?: string | null) {
 export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: Pick<User, 'id' | 'email'>) {
   const email = user.email?.toLowerCase() ?? null
 
-  const { data: existingProfile } = await serviceClient
+  const { data: existingProfile, error: profileReadError } = await serviceClient
     .from('customer_profiles')
     .select('id, email, alias, avatar_key')
     .eq('id', user.id)
     .maybeSingle()
 
+  if (profileReadError) throw profileReadError
+
   const alias = cleanAlias(existingProfile?.alias, email)
   const avatarKey = isCustomerAvatarKey(existingProfile?.avatar_key) ? existingProfile.avatar_key : getCustomerAvatar().key
 
-  await serviceClient
+  const { error: profileUpsertError } = await serviceClient
     .from('customer_profiles')
     .upsert({
       id: user.id,
@@ -54,32 +56,48 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: P
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' })
 
-  const { data: existingWallet } = await serviceClient
+  if (profileUpsertError) throw profileUpsertError
+
+  const { data: existingWallet, error: walletReadError } = await serviceClient
     .from('lbb_wallets')
     .select('user_id, bonus_points_balance, cash_credits_balance')
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (!existingWallet) {
-    await serviceClient.from('lbb_wallets').insert({
-      user_id: user.id,
-      bonus_points_balance: 500,
-      cash_credits_balance: 0,
-    })
+  if (walletReadError) throw walletReadError
 
-    await serviceClient.from('lbb_wallet_transactions').insert({
-      user_id: user.id,
-      wallet_kind: 'bonus_points',
-      transaction_type: 'signup_bonus',
-      amount: 500,
-      balance_after: 500,
-      description: 'Bono inicial Lucky Bingo Bear',
-    })
+  if (!existingWallet) {
+    const { data: insertedWallet, error: walletInsertError } = await serviceClient
+      .from('lbb_wallets')
+      .insert({
+        user_id: user.id,
+        bonus_points_balance: 500,
+        cash_credits_balance: 0,
+      })
+      .select('user_id')
+      .maybeSingle()
+
+    if (walletInsertError && walletInsertError.code !== '23505') throw walletInsertError
+
+    if (insertedWallet) {
+      const { error: signupTransactionError } = await serviceClient.from('lbb_wallet_transactions').insert({
+        user_id: user.id,
+        wallet_kind: 'bonus_points',
+        transaction_type: 'signup_bonus',
+        amount: 500,
+        balance_after: 500,
+        description: 'Bono inicial Lucky Bingo Bear',
+      })
+
+      if (signupTransactionError) throw signupTransactionError
+    }
   }
 
-  await serviceClient
+  const { error: statsUpsertError } = await serviceClient
     .from('truco_player_stats')
     .upsert({ user_id: user.id }, { onConflict: 'user_id' })
+
+  if (statsUpsertError) throw statsUpsertError
 }
 
 export async function getWalletSnapshot(serviceClient: SupabaseClient, userId: string): Promise<WalletSnapshot> {
@@ -106,36 +124,19 @@ export async function applyWalletTransaction(
     metadata?: Record<string, unknown>
   },
 ) {
-  const wallet = await getWalletSnapshot(serviceClient, input.userId)
-  const balanceField = input.walletKind === 'bonus_points' ? 'bonus_points_balance' : 'cash_credits_balance'
-  const currentBalance = Number(wallet[balanceField] ?? 0)
-  const nextBalance = currentBalance + input.amount
-
-  if (nextBalance < 0) {
-    throw new Error('Saldo insuficiente')
-  }
-
-  const { error: updateError } = await serviceClient
-    .from('lbb_wallets')
-    .update({ [balanceField]: nextBalance })
-    .eq('user_id', input.userId)
-
-  if (updateError) throw updateError
-
-  const { error: txError } = await serviceClient.from('lbb_wallet_transactions').insert({
-    user_id: input.userId,
-    wallet_kind: input.walletKind,
-    transaction_type: input.type,
-    amount: input.amount,
-    balance_after: nextBalance,
-    related_type: input.relatedType ?? null,
-    related_id: input.relatedId ?? null,
-    description: input.description ?? null,
-    metadata: input.metadata ?? {},
+  const { data, error } = await serviceClient.rpc('lbb_apply_wallet_transaction', {
+    p_user_id: input.userId,
+    p_wallet_kind: input.walletKind,
+    p_transaction_type: input.type,
+    p_amount: input.amount,
+    p_related_type: input.relatedType ?? null,
+    p_related_id: input.relatedId ?? null,
+    p_description: input.description ?? null,
+    p_metadata: input.metadata ?? {},
   })
 
-  if (txError) throw txError
-  return nextBalance
+  if (error) throw error
+  return Number(data)
 }
 
 export async function chargeTrucoEntryFee(serviceClient: SupabaseClient, roomId: string, userId: string, amount: number) {
@@ -162,95 +163,19 @@ export async function settleTrucoRoomIfNeeded(
   serviceClient: SupabaseClient,
   room: {
     id: string
-    room_code: string
-    target_score: 15 | 30
     state: GameState
-    host_user_id: string | null
-    guest_user_id: string | null
-    entry_fee_points: number
-    prize_pool_points: number
-    ranked: boolean
-    settled_at: string | null
+    settled_at?: string | null
   },
 ) {
   if (room.settled_at || room.state.phase !== 'game-over') return
-  if (!room.host_user_id || !room.guest_user_id) return
 
   const winnerRole = winnerRoleFromState(room.state)
   if (!winnerRole) return
 
-  const winnerUserId = winnerRole === 'player' ? room.host_user_id : room.guest_user_id
-  const loserUserId = winnerRole === 'player' ? room.guest_user_id : room.host_user_id
-  const playerScore = room.state.scores.player
-  const opponentScore = room.state.scores.opponent
-  const prize = Number(room.prize_pool_points ?? 0)
-
-  if (prize > 0) {
-    await applyWalletTransaction(serviceClient, {
-      userId: winnerUserId,
-      walletKind: 'bonus_points',
-      type: 'truco_prize',
-      amount: prize,
-      relatedType: 'truco_room',
-      relatedId: room.id,
-      description: `Premio por ganar Truco (${prize} LBB)`,
-    })
-  }
-
-  await serviceClient.from('truco_match_history').insert({
-    room_id: room.id,
-    room_code: room.room_code,
-    player_user_id: room.host_user_id,
-    opponent_user_id: room.guest_user_id,
-    winner_user_id: winnerUserId,
-    loser_user_id: loserUserId,
-    target_score: room.target_score,
-    player_score: playerScore,
-    opponent_score: opponentScore,
-    entry_fee_points: Number(room.entry_fee_points ?? 0),
-    prize_points: prize,
-    ranked: room.ranked,
-    metadata: { finalResult: room.state.lastResult },
+  const { error } = await serviceClient.rpc('lbb_settle_truco_room', {
+    p_room_id: room.id,
+    p_winner_role: winnerRole,
   })
 
-  await updateTrucoStats(serviceClient, winnerUserId, true, winnerUserId === room.host_user_id ? playerScore : opponentScore, winnerUserId === room.host_user_id ? opponentScore : playerScore, prize, room.entry_fee_points)
-  await updateTrucoStats(serviceClient, loserUserId, false, loserUserId === room.host_user_id ? playerScore : opponentScore, loserUserId === room.host_user_id ? opponentScore : playerScore, 0, room.entry_fee_points)
-
-  await serviceClient
-    .from('truco_rooms')
-    .update({ settled_at: new Date().toISOString() })
-    .eq('id', room.id)
-}
-
-async function updateTrucoStats(
-  serviceClient: SupabaseClient,
-  userId: string,
-  won: boolean,
-  pointsFor: number,
-  pointsAgainst: number,
-  prizeWon: number,
-  entryFee: number,
-) {
-  await serviceClient.from('truco_player_stats').upsert({ user_id: userId }, { onConflict: 'user_id' })
-  const { data, error } = await serviceClient
-    .from('truco_player_stats')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
   if (error) throw error
-
-  await serviceClient
-    .from('truco_player_stats')
-    .update({
-      matches_played: Number(data.matches_played ?? 0) + 1,
-      matches_won: Number(data.matches_won ?? 0) + (won ? 1 : 0),
-      matches_lost: Number(data.matches_lost ?? 0) + (won ? 0 : 1),
-      points_for: Number(data.points_for ?? 0) + pointsFor,
-      points_against: Number(data.points_against ?? 0) + pointsAgainst,
-      ranking_points: Number(data.ranking_points ?? 1000) + (won ? 15 : -10),
-      bonus_points_won: Number(data.bonus_points_won ?? 0) + prizeWon,
-      bonus_points_spent: Number(data.bonus_points_spent ?? 0) + Math.max(0, Number(entryFee ?? 0)),
-      last_match_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
 }

@@ -32,6 +32,12 @@ export interface StoredTrucoRoom {
   prize_pool_points?: number | null
   ranked?: boolean | null
   settled_at?: string | null
+  host_name?: string | null
+  host_avatar_key?: string | null
+  guest_name?: string | null
+  guest_avatar_key?: string | null
+  abandoned_by?: Player | null
+  refunded_at?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -47,6 +53,10 @@ export interface PublicRoomSummary {
   entryFeePoints: number
   prizePoolPoints: number
   ranked: boolean
+  host: {
+    name: string
+    avatarKey: string
+  }
   createdAt?: string
   updatedAt?: string
   canJoin: boolean
@@ -73,6 +83,18 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
     ranked: Boolean(room.ranked),
+    players: {
+      player: {
+        name: room.host_name?.trim() || 'Jugador',
+        avatarKey: room.host_avatar_key || 'golden_bear',
+      },
+      opponent: room.guest_name
+        ? {
+            name: room.guest_name,
+            avatarKey: room.guest_avatar_key || 'golden_bear',
+          }
+        : null,
+    },
     role,
   }
 }
@@ -89,6 +111,10 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
     ranked: Boolean(room.ranked),
+    host: {
+      name: room.host_name?.trim() || 'Jugador',
+      avatarKey: room.host_avatar_key || 'golden_bear',
+    },
     createdAt: room.created_at,
     updatedAt: room.updated_at,
     canJoin: room.status === 'waiting' && !room.guest_secret,
@@ -130,7 +156,10 @@ export function validateActionShape(action: unknown): action is OnlineAction {
   const type = (action as { type?: unknown }).type
   if (typeof type !== 'string') return false
 
-  if (type === 'play-card') return typeof (action as { cardId?: unknown }).cardId === 'string'
+  if (type === 'play-card') {
+    const cardId = (action as { cardId?: unknown }).cardId
+    return typeof cardId === 'string' && cardId.length > 0 && cardId.length <= 80
+  }
   if (type === 'call-envido') {
     const call = (action as { call?: unknown }).call
     return call === 'envido' || call === 'real-envido' || call === 'falta-envido'
@@ -140,7 +169,34 @@ export function validateActionShape(action: unknown): action is OnlineAction {
   if (type === 'respond') return typeof (action as { accept?: unknown }).accept === 'boolean'
   if (type === 'go-maze') return true
   if (type === 'next-round') return true
-  if (type === 'restart') return true
+  if (type === 'restart') return false
 
   return false
+}
+
+export function forfeitGame(state: GameState, quitter: Player): GameState {
+  if (state.phase === 'game-over') return state
+
+  const winner = quitter === 'player' ? 'opponent' : 'player'
+  const result = winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'
+
+  return {
+    ...state,
+    phase: 'game-over',
+    scores: {
+      ...state.scores,
+      [winner]: Math.max(state.targetScore, state.scores[winner]),
+    },
+    trucoPending: null,
+    envidoPending: null,
+    lastResult: result,
+    log: [
+      ...state.log.slice(-40),
+      {
+        id: `leave-${Date.now().toString(36)}`,
+        by: 'system',
+        text: `${quitter === 'player' ? 'El anfitrión' : 'El rival'} abandonó la partida.`,
+      },
+    ],
+  }
 }

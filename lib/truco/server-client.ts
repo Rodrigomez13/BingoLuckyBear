@@ -1,4 +1,5 @@
 import type { GameState, Player } from './engine'
+import type { TrucoIdentity } from './identity'
 import type { OnlineAction, OnlineRole } from './online'
 import type { PublicRoomSummary, RoomVisibility } from './server-authority'
 
@@ -9,6 +10,13 @@ export interface AuthoritativeRoomView {
   visibility?: RoomVisibility
   state: GameState
   version: number
+  entryFeePoints: number
+  prizePoolPoints: number
+  ranked: boolean
+  players: {
+    player: TrucoIdentity
+    opponent: TrucoIdentity | null
+  }
   role: OnlineRole | null
 }
 
@@ -58,20 +66,32 @@ export async function listPublicTrucoRooms() {
   return readPublicRoomsResponse(response)
 }
 
-export async function createAuthoritativeRoom(target: 15 | 30, roomCode?: string, visibility: RoomVisibility = 'private') {
+export async function createAuthoritativeRoom({
+  target,
+  roomCode,
+  visibility = 'private',
+  potPoints = 0,
+  identity,
+}: {
+  target: 15 | 30
+  roomCode?: string
+  visibility?: RoomVisibility
+  potPoints?: number
+  identity?: TrucoIdentity | null
+}) {
   const response = await fetch('/api/truco/rooms', {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ target, roomCode, visibility }),
+    body: JSON.stringify({ target, roomCode, visibility, potPoints, identity }),
   })
   return readApiResponse(response)
 }
 
-export async function joinAuthoritativeRoom(roomCode: string, secret?: string | null) {
+export async function joinAuthoritativeRoom(roomCode: string, secret?: string | null, identity?: TrucoIdentity | null) {
   const response = await fetch(`/api/truco/rooms/${roomCode}`, {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ secret }),
+    body: JSON.stringify({ secret, identity }),
   })
   return readApiResponse(response)
 }
@@ -98,6 +118,23 @@ export async function sendAuthoritativeAction({
     method: 'POST',
     headers: jsonHeaders,
     body: JSON.stringify({ actor, secret, action }),
+  })
+  return readApiResponse(response)
+}
+
+export async function leaveAuthoritativeRoom({
+  roomCode,
+  actor,
+  secret,
+}: {
+  roomCode: string
+  actor: OnlineRole
+  secret: string
+}) {
+  const response = await fetch(`/api/truco/rooms/${roomCode}`, {
+    method: 'DELETE',
+    headers: jsonHeaders,
+    body: JSON.stringify({ actor, secret }),
   })
   return readApiResponse(response)
 }

@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import type { User } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { ensurePlayerAccount, getWalletSnapshot } from '@/lib/wallet/server'
+import { ensurePlayerAccount } from '@/lib/wallet/server'
+import { parseTrucoIdentity, type TrucoIdentity } from '@/lib/truco/identity'
 import {
   createInitialRoomState,
   makeRoomCode,
@@ -20,16 +22,34 @@ function missingSupabaseEnv() {
 
 function dbSetupHint(message: string) {
   const lower = message.toLowerCase()
+  if (lower.includes('lbb_create_truco_room') || lower.includes('host_name')) return 'Ejecutá la migración 20260616_truco_guest_stakes_wallet_atomic.sql en Supabase.'
   if (lower.includes('lbb_wallets') || lower.includes('entry_fee_points')) return 'Ejecutá la migración 20260615_profiles_wallet_truco_economy.sql en Supabase.'
   if (lower.includes('visibility')) return 'Ejecutá la migración 20260614_truco_lobby_visibility.sql en el mismo proyecto Supabase conectado a Vercel.'
   if (lower.includes('truco_rooms')) return 'Ejecutá primero la migración 20260613_truco_server_authority.sql en Supabase.'
   return 'Revisá que Vercel apunte al mismo proyecto Supabase donde ejecutaste las migraciones.'
 }
 
-function normalizeEntryFee(value: unknown) {
+function normalizePotPoints(value: unknown) {
   const amount = Number(value ?? 0)
-  if (![0, 10, 50, 100].includes(amount)) return 0
-  return amount
+  return [0, 20, 100, 200].includes(amount) ? amount : null
+}
+
+async function getAuthenticatedIdentity(
+  serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
+  user: Pick<User, 'id' | 'email'>,
+): Promise<TrucoIdentity> {
+  await ensurePlayerAccount(serviceClient, user)
+  const { data, error } = await serviceClient
+    .from('customer_profiles')
+    .select('alias, avatar_key')
+    .eq('id', user.id)
+    .single()
+
+  if (error) throw error
+  return parseTrucoIdentity({ name: data.alias, avatarKey: data.avatar_key }) ?? {
+    name: 'Jugador',
+    avatarKey: 'golden_bear',
+  }
 }
 
 export async function GET() {
@@ -74,21 +94,28 @@ export async function POST(request: Request) {
       data: { user },
     } = await authClient.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ ok: false, error: 'Para crear una mesa online tenés que iniciar sesión.' }, { status: 401 })
-    }
-
     const body = await request.json().catch(() => ({}))
     const target: 15 | 30 = body?.target === 15 ? 15 : 30
     const visibility: RoomVisibility = body?.visibility === 'public' ? 'public' : 'private'
-    const entryFee = normalizeEntryFee(body?.entryFeePoints)
-    const ranked = Boolean(body?.ranked ?? entryFee > 0)
-    const supabase = await createServiceClient()
+    const potPoints = normalizePotPoints(body?.potPoints)
 
-    await ensurePlayerAccount(supabase, user)
-    const wallet = await getWalletSnapshot(supabase, user.id)
-    if (entryFee > 0 && wallet.bonus_points_balance < entryFee) {
-      return NextResponse.json({ ok: false, error: 'Saldo insuficiente para crear esta mesa.' }, { status: 402 })
+    if (potPoints === null) {
+      return NextResponse.json({ ok: false, error: 'El pozo debe ser 0, 20, 100 o 200 LBB.' }, { status: 400 })
+    }
+
+    if (potPoints > 0 && !user) {
+      return NextResponse.json({ ok: false, error: 'Las mesas con pozo requieren iniciar sesión.' }, { status: 401 })
+    }
+
+    const entryFee = potPoints / 2
+    const ranked = entryFee > 0
+    const supabase = await createServiceClient()
+    const identity = user
+      ? await getAuthenticatedIdentity(supabase, user)
+      : parseTrucoIdentity(body?.identity)
+
+    if (!identity) {
+      return NextResponse.json({ ok: false, error: 'Ingresá un nombre de 3 a 24 caracteres y elegí un avatar.' }, { status: 400 })
     }
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -96,23 +123,18 @@ export async function POST(request: Request) {
       const hostSecret = randomUUID()
       const state = createInitialRoomState(target)
 
-      const { data, error } = await supabase
-        .from('truco_rooms')
-        .insert({
-          room_code: roomCode,
-          target_score: target,
-          status: 'waiting',
-          visibility,
-          state,
-          host_secret: hostSecret,
-          host_user_id: user.id,
-          entry_fee_points: entryFee,
-          prize_pool_points: 0,
-          ranked,
-          host_connected_at: new Date().toISOString(),
-        })
-        .select('*')
-        .single()
+      const { data, error } = await supabase.rpc('lbb_create_truco_room', {
+        p_room_code: roomCode,
+        p_target_score: target,
+        p_visibility: visibility,
+        p_state: state,
+        p_host_secret: hostSecret,
+        p_host_user_id: user?.id ?? null,
+        p_host_name: identity.name,
+        p_host_avatar_key: identity.avatarKey,
+        p_entry_fee_points: entryFee,
+        p_ranked: ranked,
+      })
 
       if (!error && data) {
         return NextResponse.json({
@@ -123,8 +145,10 @@ export async function POST(request: Request) {
       }
 
       const message = error?.message ?? 'No se pudo crear la mesa'
-      if (!message.toLowerCase().includes('duplicate')) {
-        return NextResponse.json({ ok: false, error: message, hint: dbSetupHint(message) }, { status: 500 })
+      const lower = message.toLowerCase()
+      if (!lower.includes('duplicate') && error?.code !== '23505') {
+        const status = lower.includes('saldo insuficiente') ? 402 : lower.includes('requieren una cuenta') ? 401 : 500
+        return NextResponse.json({ ok: false, error: message, hint: dbSetupHint(message) }, { status })
       }
     }
 
