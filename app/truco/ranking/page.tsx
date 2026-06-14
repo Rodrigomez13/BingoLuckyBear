@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge'
 interface RankingItem {
   position: number
   alias: string
-  avatar_emoji: string
+  avatar_key: string
+  avatar_label: string
+  avatar_image_src: string
   matches_played: number
   matches_won: number
   matches_lost: number
@@ -82,7 +84,9 @@ export default function TrucoRankingPage() {
                   <div key={`${item.position}-${item.alias}`} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="w-8 text-center font-mono text-lg font-black text-amber-300">#{item.position}</span>
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-300/15 text-2xl">{item.avatar_emoji}</span>
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-amber-300/25 bg-amber-300/15">
+                        <img src={item.avatar_image_src} alt={item.avatar_label} className="h-full w-full object-cover" />
+                      </span>
                       <div className="min-w-0">
                         <p className="truncate font-bold text-white">{item.alias}</p>
                         <p className="text-xs text-zinc-500">{item.matches_won}G / {item.matches_lost}P · {item.matches_played} jugadas</p>
