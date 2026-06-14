@@ -39,6 +39,8 @@ import { PlayedCards } from './played-cards'
 import { ScoreBoard } from './score-board'
 import { ActionButtons } from './action-buttons'
 import { RulesModal } from './rules-modal'
+import { PlayerMatchPreview } from './player-match-preview'
+import { GameHistoryPanel } from './game-history-panel'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
@@ -278,16 +280,16 @@ export function GameTable({
           ? 'Turno del oso'
           : 'Turno rival'
 
-  const statusLabel = getOnlineStatusLabel(onlineStatus, roomCode)
+  const statusLabel = getOnlineStatusLabel(onlineStatus, isOnline)
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
 
   const shellClass = isFullscreen
     ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
-    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-6xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
+    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-7xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
 
   const tableHeightClass = isFullscreen
-    ? 'h-[calc(100svh-8.5rem)] min-h-[300px]'
-    : 'h-[calc(100svh-15.5rem)] min-h-[300px]'
+    ? 'h-[calc(100svh-11rem)] min-h-[300px]'
+    : 'h-[calc(100svh-18rem)] min-h-[300px]'
 
   return (
     <div ref={gameShellRef} className={shellClass}>
@@ -317,7 +319,7 @@ export function GameTable({
 
       {waitingForRival && (
         <div className="mb-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-center text-xs font-semibold text-amber-100 sm:mb-4 sm:text-sm">
-          Mesa {roomCode}: esperando rival. Compartí el código o enlace.
+          Esperando rival. Si la mesa es privada, compartí el enlace o código por privado.
         </div>
       )}
 
@@ -326,6 +328,16 @@ export function GameTable({
           {botPhrase}
         </div>
       )}
+
+      <PlayerMatchPreview
+        roomView={roomView}
+        scores={state.scores}
+        target={state.targetScore}
+        perspective={actor}
+        rivalLabel={rivalLabel}
+        statusLabel={statusLabel}
+        isOnline={isOnline}
+      />
 
       <div className="mb-2 lg:hidden">
         <ScoreBoard
@@ -339,7 +351,7 @@ export function GameTable({
         />
       </div>
 
-      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className={`relative overflow-hidden rounded-[1.5rem] border-2 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-2 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:border-4 sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
           <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
@@ -373,7 +385,12 @@ export function GameTable({
             onRespond={handleRespond}
             onMazo={handleMazo}
           />
+          <GameHistoryPanel log={state.log} perspective={actor} rivalLabel={rivalLabel} />
         </aside>
+      </div>
+
+      <div className="mt-2 lg:hidden">
+        <GameHistoryPanel log={state.log} perspective={actor} rivalLabel={rivalLabel} compact />
       </div>
 
       <div className="fixed inset-x-2 bottom-2 z-[70] lg:hidden">
@@ -459,12 +476,13 @@ function otherPlayer(player: Player): Player {
   return player === 'player' ? 'opponent' : 'player'
 }
 
-function getOnlineStatusLabel(status: OnlineStatus, roomCode?: string) {
+function getOnlineStatusLabel(status: OnlineStatus, isOnline: boolean) {
+  if (!isOnline) return 'Partida local contra bot'
   if (status === 'offline') return 'Mesa sin conexión'
-  if (status === 'syncing') return `Sincronizando mesa ${roomCode}`
-  if (status === 'waiting') return `Mesa ${roomCode}: esperando rival`
-  if (status === 'connected') return `Mesa ${roomCode}: server-authoritative`
-  return `Mesa ${roomCode}`
+  if (status === 'syncing') return 'Sincronizando mesa'
+  if (status === 'waiting') return 'Mesa privada esperando rival'
+  if (status === 'connected') return 'Mesa conectada y validada'
+  return 'Mesa online'
 }
 
 function formatResultForPerspective(text: string | null, mode: GameMode, perspective: Player) {
