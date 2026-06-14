@@ -25,6 +25,10 @@ export interface WalletSnapshot {
   cash_credits_balance: number
 }
 
+type AuthUserLike = Pick<User, 'id' | 'email'> & {
+  user_metadata?: Record<string, unknown> | null
+}
+
 function cleanAlias(value?: string | null, fallback?: string | null) {
   const raw = String(value || '').trim().replace(/[^a-zA-Z0-9_\-.]/g, '').slice(0, 24)
   if (raw.length >= 3) return raw
@@ -32,7 +36,12 @@ function cleanAlias(value?: string | null, fallback?: string | null) {
   return base || `jugador_${Math.floor(Math.random() * 9999)}`
 }
 
-export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: Pick<User, 'id' | 'email'>) {
+function metadataString(user: AuthUserLike, key: string) {
+  const value = user.user_metadata?.[key]
+  return typeof value === 'string' ? value : null
+}
+
+export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: AuthUserLike) {
   const email = user.email?.toLowerCase() ?? null
 
   const { data: existingProfile, error: profileReadError } = await serviceClient
@@ -43,8 +52,9 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: P
 
   if (profileReadError) throw profileReadError
 
-  const alias = cleanAlias(existingProfile?.alias, email)
-  const avatarKey = isCustomerAvatarKey(existingProfile?.avatar_key) ? existingProfile.avatar_key : getCustomerAvatar().key
+  const alias = cleanAlias(existingProfile?.alias ?? metadataString(user, 'alias'), email)
+  const rawAvatarKey = existingProfile?.avatar_key ?? metadataString(user, 'avatar_key')
+  const avatarKey = isCustomerAvatarKey(rawAvatarKey) ? rawAvatarKey : getCustomerAvatar().key
 
   const { error: profileUpsertError } = await serviceClient
     .from('customer_profiles')
