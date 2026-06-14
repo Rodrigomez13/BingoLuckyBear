@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { normalizeRoomCode } from '@/lib/truco/online'
+import { normalizeRoomCode } from '@/lib/truco/shared'
 import { sanitizeRoom, type StoredTrucoRoom } from '@/lib/truco/server-authority'
 
 type RouteContext = {
