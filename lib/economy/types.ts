@@ -20,11 +20,14 @@ export interface PaymentDepositInput {
   metadata?: Record<string, unknown>
 }
 
+export type PaymentSource = 'wallet' | 'receipt'
+
 export interface GamePurchaseInput {
   userId?: string | null
   gameType: GameType
   purchaseType: PurchaseType
   walletKind?: WalletKind
+  paymentSource?: PaymentSource
   amount: number
   quantity?: number
   status?: GamePurchaseStatus
