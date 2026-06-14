@@ -3,6 +3,7 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RaffleCountdown } from '@/components/home/raffle-countdown'
 import { formatArgentinaDate } from '@/lib/date'
 
 const floatingBalls = [
@@ -63,6 +64,12 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
             <p className="mx-auto mt-6 max-w-[38rem] text-balance text-base leading-7 text-slate-300 lg:mx-0 sm:text-lg">
               {copy}
             </p>
+
+            {hasActiveRaffle && nextDrawDate ? (
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <RaffleCountdown drawDate={nextDrawDate} raffleName={raffleName} />
+              </div>
+            ) : null}
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
               {hasActiveRaffle ? (
