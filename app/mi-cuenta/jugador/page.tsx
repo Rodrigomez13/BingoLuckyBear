@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { CUSTOMER_AVATARS, getCustomerAvatar } from '@/lib/customer/avatars'
+import { CUSTOMER_AVATARS, getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { PlayerGamification } from '@/components/customer/player-gamification'
 
 interface WalletData {
@@ -156,9 +156,7 @@ export default function PlayerAccountPage() {
             <Card className="h-fit border-white/10 bg-zinc-950/85 text-zinc-100">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${selectedAvatar.gradient} text-3xl shadow-lg shadow-black/30`}>
-                    {selectedAvatar.emoji}
-                  </div>
+                  <AvatarPreview avatarKey={selectedAvatar.key} label={selectedAvatar.label} size="lg" />
                   <div>
                     <CardTitle className="text-white">Tu identidad pública</CardTitle>
                     <CardDescription className="text-zinc-400">{user.email}</CardDescription>
@@ -181,7 +179,7 @@ export default function PlayerAccountPage() {
                         onClick={() => setAvatarKey(avatar.key)}
                         className={`rounded-2xl border p-2 text-center transition ${avatarKey === avatar.key ? 'border-amber-300 bg-amber-300/10' : 'border-white/10 bg-black/20 hover:border-white/25'}`}
                       >
-                        <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${avatar.gradient} text-2xl`}>{avatar.emoji}</span>
+                        <AvatarPreview avatarKey={avatar.key} label={avatar.label} />
                         <span className="mt-1 block text-[10px] font-bold text-zinc-300">{avatar.label}</span>
                       </button>
                     ))}
@@ -273,6 +271,14 @@ export default function PlayerAccountPage() {
         )}
       </section>
     </main>
+  )
+}
+
+function AvatarPreview({ avatarKey, label, size = 'sm' }: { avatarKey: string; label: string; size?: 'sm' | 'lg' }) {
+  return (
+    <span className={`${size === 'lg' ? 'h-16 w-16 rounded-2xl' : 'mx-auto h-12 w-12 rounded-xl'} flex items-center justify-center overflow-hidden border border-amber-300/25 bg-amber-300/10 shadow-lg shadow-black/30`}>
+      <img src={getCustomerAvatarImageSrc(avatarKey)} alt={label} className="h-full w-full object-cover" />
+    </span>
   )
 }
 
