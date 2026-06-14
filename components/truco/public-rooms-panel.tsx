@@ -2,7 +2,7 @@
 
 import { RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getCustomerAvatar } from '@/lib/customer/avatars'
+import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
 export function PublicRoomsPanel({
@@ -59,13 +59,15 @@ function RoomRow({ room, onJoin }: { room: PublicRoomSummary; onJoin: (room: Pub
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/25 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-br text-xl ${avatar.gradient}`}>
-          {avatar.emoji}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-amber-300/10">
+          <img src={getCustomerAvatarImageSrc(avatar.key)} alt={avatar.label} className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <p className="truncate font-bold text-white">{room.host.name}</p>
-            <span className="shrink-0 font-mono text-[10px] font-black tracking-wider text-amber-300">{room.roomCode}</span>
+            <span className="shrink-0 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-100/70">
+              {room.ranked ? 'Ranking' : 'Casual'}
+            </span>
           </div>
           <p className="text-xs font-semibold text-emerald-100/55">
             A {room.target} · {isWaiting ? 'Esperando rival' : 'En juego'} · {room.entryFeePoints > 0 ? `Pozo ${room.entryFeePoints * 2} LBB` : 'Sin apuesta'}
