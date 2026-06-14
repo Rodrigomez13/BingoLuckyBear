@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { getCustomerAvatar } from '@/lib/customer/avatars'
+import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 
 interface RankingRow {
   user_id: string
@@ -47,7 +47,8 @@ export async function GET() {
         position: index + 1,
         alias: profile?.alias ?? `Jugador ${row.user_id.slice(0, 4)}`,
         avatar_key: avatar.key,
-        avatar_emoji: avatar.emoji,
+        avatar_label: avatar.label,
+        avatar_image_src: getCustomerAvatarImageSrc(avatar.key),
         matches_played: row.matches_played,
         matches_won: row.matches_won,
         matches_lost: row.matches_lost,
