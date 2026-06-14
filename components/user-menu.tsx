@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
+import { ChevronDown, CreditCard, History, KeyRound, LogOut, ReceiptText, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 
@@ -138,6 +138,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
             {isAdmin ? (
               <>
                 <MenuItem href="/admin" icon={<ShieldCheck className="h-4 w-4" />} label="Panel Admin" onClick={() => setOpen(false)} />
+                <MenuItem href="/admin/depositos" icon={<ReceiptText className="h-4 w-4" />} label="Depósitos" onClick={() => setOpen(false)} />
                 <MenuItem href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y pagos" onClick={() => setOpen(false)} />
                 <MenuItem href="/truco" icon={<History className="h-4 w-4" />} label="Mesas de Truco" onClick={() => setOpen(false)} />
                 <MenuItem href="/mi-cuenta/seguridad" icon={<KeyRound className="h-4 w-4" />} label="Seguridad" onClick={() => setOpen(false)} />
