@@ -102,7 +102,7 @@ export async function POST(request: Request, context: RouteContext) {
       prize_pool_points: entryFee > 0 ? entryFee * 2 : 0,
     })
     .eq('id', room.id)
-    .eq('guest_secret', null)
+    .is('guest_secret', null)
     .select('*')
     .single()
 
