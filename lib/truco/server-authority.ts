@@ -12,7 +12,7 @@ import {
   respondEnvido,
   respondTruco,
 } from './engine'
-import { generateRoomCode, normalizeRoomCode, type OnlineAction } from './online'
+import { generateRoomCode, normalizeRoomCode, type OnlineAction } from './shared'
 
 export type RoomVisibility = 'private' | 'public'
 
