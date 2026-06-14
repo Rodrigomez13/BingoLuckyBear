@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { ensurePlayerAccount, getWalletSnapshot } from '@/lib/wallet/server'
 import {
   createInitialRoomState,
   makeRoomCode,
@@ -19,9 +20,16 @@ function missingSupabaseEnv() {
 
 function dbSetupHint(message: string) {
   const lower = message.toLowerCase()
+  if (lower.includes('lbb_wallets') || lower.includes('entry_fee_points')) return 'Ejecutá la migración 20260615_profiles_wallet_truco_economy.sql en Supabase.'
   if (lower.includes('visibility')) return 'Ejecutá la migración 20260614_truco_lobby_visibility.sql en el mismo proyecto Supabase conectado a Vercel.'
   if (lower.includes('truco_rooms')) return 'Ejecutá primero la migración 20260613_truco_server_authority.sql en Supabase.'
   return 'Revisá que Vercel apunte al mismo proyecto Supabase donde ejecutaste las migraciones.'
+}
+
+function normalizeEntryFee(value: unknown) {
+  const amount = Number(value ?? 0)
+  if (![0, 10, 50, 100].includes(amount)) return 0
+  return amount
 }
 
 export async function GET() {
@@ -61,10 +69,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: `Faltan variables en Vercel: ${missing.join(', ')}` }, { status: 500 })
     }
 
+    const authClient = await createClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ ok: false, error: 'Para crear una mesa online tenés que iniciar sesión.' }, { status: 401 })
+    }
+
     const body = await request.json().catch(() => ({}))
     const target: 15 | 30 = body?.target === 15 ? 15 : 30
     const visibility: RoomVisibility = body?.visibility === 'public' ? 'public' : 'private'
+    const entryFee = normalizeEntryFee(body?.entryFeePoints)
+    const ranked = Boolean(body?.ranked ?? entryFee > 0)
     const supabase = await createServiceClient()
+
+    await ensurePlayerAccount(supabase, user)
+    const wallet = await getWalletSnapshot(supabase, user.id)
+    if (entryFee > 0 && wallet.bonus_points_balance < entryFee) {
+      return NextResponse.json({ ok: false, error: 'Saldo insuficiente para crear esta mesa.' }, { status: 402 })
+    }
 
     for (let attempt = 0; attempt < 5; attempt++) {
       const roomCode = makeRoomCode(attempt === 0 ? body?.roomCode : undefined)
@@ -80,6 +105,10 @@ export async function POST(request: Request) {
           visibility,
           state,
           host_secret: hostSecret,
+          host_user_id: user.id,
+          entry_fee_points: entryFee,
+          prize_pool_points: 0,
+          ranked,
           host_connected_at: new Date().toISOString(),
         })
         .select('*')
