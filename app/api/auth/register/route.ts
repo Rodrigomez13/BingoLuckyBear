@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/server'
 import { getCustomerAvatar, isCustomerAvatarKey } from '@/lib/customer/avatars'
 
 function cleanEmail(value: unknown) {
@@ -69,6 +70,18 @@ export async function POST(request: NextRequest) {
         ? 'Ese correo ya está registrado. Iniciá sesión con tu contraseña.'
         : error.message || 'No se pudo crear la cuenta.'
       return NextResponse.json({ ok: false, error: message }, { status: 400 })
+    }
+
+    if (data.session && data.user) {
+      const serviceClient = await createServiceClient()
+      await serviceClient.auth.admin.deleteUser(data.user.id)
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Registro bloqueado: tenés que activar la confirmación de email en Supabase Auth antes de permitir nuevas cuentas.',
+        },
+        { status: 400 },
+      )
     }
 
     return NextResponse.json({
