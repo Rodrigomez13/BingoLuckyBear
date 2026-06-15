@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { requireAdminPage } from '@/lib/auth/roles'
 import { DepositActionButton } from '@/components/admin/deposit-action-button'
+import { DepositOcrControls } from '@/components/admin/deposit-ocr-controls'
 import { AdminEconomyNav } from '@/components/admin/admin-economy-nav'
 
 interface DepositRow {
@@ -18,6 +19,13 @@ interface DepositRow {
   payment_method: string
   payment_reference: string | null
   receipt_url: string | null
+  receipt_amount: number | null
+  receipt_operation_number: string | null
+  receipt_destination_account: string | null
+  receipt_date: string | null
+  receipt_parse_status: 'pending' | 'parsed' | 'failed' | 'manual' | null
+  receipt_parse_error: string | null
+  metadata: Record<string, unknown> | null
   status: string
   reviewed_at: string | null
   review_notes: string | null
@@ -40,7 +48,7 @@ export default async function AdminDepositsPage() {
 
   const { data: deposits } = await serviceClient
     .from('payment_deposits')
-    .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, status, reviewed_at, review_notes, wallet_transaction_id, created_at, game_purchases(id, status, purchase_type, quantity)')
+    .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, receipt_amount, receipt_operation_number, receipt_destination_account, receipt_date, receipt_parse_status, receipt_parse_error, metadata, status, reviewed_at, review_notes, wallet_transaction_id, created_at, game_purchases(id, status, purchase_type, quantity)')
     .order('created_at', { ascending: false })
     .limit(120)
 
@@ -96,12 +104,13 @@ export default async function AdminDepositsPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1080px] text-sm">
+              <table className="w-full min-w-[1320px] text-sm">
                 <thead className="bg-black/30 text-left text-[10px] uppercase tracking-[0.16em] text-zinc-500">
                   <tr>
                     <th className="px-4 py-3">Cliente</th>
                     <th className="px-4 py-3">Monto</th>
                     <th className="px-4 py-3">Referencia</th>
+                    <th className="px-4 py-3">Validación OCR</th>
                     <th className="px-4 py-3">Wallet</th>
                     <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3">Fecha</th>
@@ -110,11 +119,15 @@ export default async function AdminDepositsPage() {
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {depositRows.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">No hay depósitos registrados.</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-zinc-500">No hay depósitos registrados.</td></tr>
                   ) : depositRows.map((deposit) => {
                     const profile = deposit.user_id ? profilesById.get(deposit.user_id) : null
                     const canReview = deposit.status === 'pending'
                     const linkedPurchase = deposit.game_purchases?.[0] ?? null
+                    const ocr = getOcrMetadata(deposit.metadata)
+                    const canApprove = !deposit.receipt_url
+                      || deposit.receipt_parse_status === 'manual'
+                      || (deposit.receipt_parse_status === 'parsed' && ocr.reviewRecommendation === 'ready_for_review')
                     return (
                       <tr key={deposit.id} className="bg-zinc-950/30 hover:bg-white/[0.03]">
                         <td className="px-4 py-4">
@@ -128,7 +141,16 @@ export default async function AdminDepositsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <p className="max-w-[220px] truncate font-semibold text-white">{deposit.payment_reference || 'Sin referencia'}</p>
-                          {deposit.receipt_url && <a href={deposit.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-300">Ver comprobante <ExternalLink className="h-3 w-3" /></a>}
+                          {deposit.receipt_url && <a href={`/api/file?pathname=${encodeURIComponent(deposit.receipt_url)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-300">Ver comprobante <ExternalLink className="h-3 w-3" /></a>}
+                        </td>
+                        <td className="px-4 py-4">
+                          <OcrStatusBadge status={deposit.receipt_parse_status} recommendation={ocr.reviewRecommendation} />
+                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}%</p>}
+                          {deposit.receipt_amount !== null && <p className="mt-1 text-xs text-zinc-300">Monto {formatMoney(deposit.receipt_amount, deposit.currency)}</p>}
+                          {deposit.receipt_operation_number && <p className="max-w-[210px] truncate text-xs text-zinc-500">Op. {deposit.receipt_operation_number}</p>}
+                          {ocr.senderDocument && <p className="text-xs text-zinc-500">Doc. {ocr.senderDocument}</p>}
+                          {ocr.warnings.length > 0 && <p className="mt-1 max-w-[240px] text-xs text-amber-200">{ocr.warnings[0]}{ocr.warnings.length > 1 ? ` (+${ocr.warnings.length - 1})` : ''}</p>}
+                          {deposit.receipt_parse_error && <p className="mt-1 max-w-[240px] text-xs text-rose-200">{deposit.receipt_parse_error}</p>}
                         </td>
                         <td className="px-4 py-4">
                           <Badge className="bg-zinc-800 text-zinc-100 hover:bg-zinc-800">{linkedPurchase ? 'Compra de cartones' : deposit.wallet_kind === 'cash_credits' ? 'Cash Credits' : 'LBB Points'}</Badge>
@@ -136,7 +158,18 @@ export default async function AdminDepositsPage() {
                         </td>
                         <td className="px-4 py-4"><StatusBadge status={deposit.status} />{deposit.review_notes && <p className="mt-1 max-w-[220px] text-xs text-zinc-500">{deposit.review_notes}</p>}</td>
                         <td className="px-4 py-4 text-xs text-zinc-400">{formatDate(deposit.created_at)}{deposit.reviewed_at && <p className="text-zinc-600">Rev. {formatDate(deposit.reviewed_at)}</p>}</td>
-                        <td className="px-4 py-4 text-right"><div className="flex justify-end gap-2"><DepositActionButton id={deposit.id} action="approve" disabled={!canReview} /><DepositActionButton id={deposit.id} action="reject" disabled={!canReview} /></div></td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <DepositOcrControls id={deposit.id} disabled={!canReview || !deposit.receipt_url} />
+                            <DepositActionButton
+                              id={deposit.id}
+                              action="approve"
+                              disabled={!canReview || !canApprove}
+                              disabledReason="Leé el comprobante con OCR o marcá revisión manual antes de aprobar"
+                            />
+                            <DepositActionButton id={deposit.id} action="reject" disabled={!canReview} />
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
@@ -148,6 +181,37 @@ export default async function AdminDepositsPage() {
       </section>
     </main>
   )
+}
+
+function getOcrMetadata(metadata: Record<string, unknown> | null) {
+  const ocr = metadata && typeof metadata.ocr === 'object' && metadata.ocr
+    ? metadata.ocr as Record<string, unknown>
+    : {}
+  return {
+    confidence: typeof ocr.confidence === 'number' ? ocr.confidence : null,
+    senderDocument: typeof ocr.senderDocument === 'string' ? ocr.senderDocument : null,
+    reviewRecommendation: typeof ocr.reviewRecommendation === 'string' ? ocr.reviewRecommendation : null,
+    warnings: Array.isArray(ocr.warnings) ? ocr.warnings.map(String).filter(Boolean) : [],
+  }
+}
+
+function OcrStatusBadge({
+  status,
+  recommendation,
+}: {
+  status: DepositRow['receipt_parse_status']
+  recommendation: string | null
+}) {
+  if (status === 'manual') return <Badge className="bg-zinc-700 text-white hover:bg-zinc-700">Revisión manual</Badge>
+  if (status === 'failed') return <Badge className="bg-rose-500 text-white hover:bg-rose-500">OCR fallido</Badge>
+  if (status === 'parsed' && recommendation === 'ready_for_review') {
+    return <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Coincidencias OK</Badge>
+  }
+  if (status === 'parsed' && recommendation === 'mismatch') {
+    return <Badge className="bg-rose-500 text-white hover:bg-rose-500">Hay diferencias</Badge>
+  }
+  if (status === 'parsed') return <Badge className="bg-amber-300 text-zinc-950 hover:bg-amber-300">Revisar lectura</Badge>
+  return <Badge className="bg-sky-500 text-white hover:bg-sky-500">Sin leer</Badge>
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {

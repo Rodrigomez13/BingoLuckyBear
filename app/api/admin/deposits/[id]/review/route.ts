@@ -42,6 +42,19 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     if (action === 'approve') {
+      const ocrMetadata = deposit.metadata && typeof deposit.metadata.ocr === 'object'
+        ? deposit.metadata.ocr as Record<string, unknown>
+        : null
+      const receiptWasReviewed = deposit.receipt_parse_status === 'manual'
+        || (deposit.receipt_parse_status === 'parsed' && ocrMetadata?.reviewRecommendation === 'ready_for_review')
+
+      if (deposit.receipt_url && !receiptWasReviewed) {
+        return NextResponse.json(
+          { error: 'Leé el comprobante con OCR o marcá una revisión manual antes de aprobar' },
+          { status: 409 },
+        )
+      }
+
       if (!deposit.user_id && targetUserId) {
         if (!UUID_RE.test(targetUserId)) return NextResponse.json({ error: 'Usuario destino inválido' }, { status: 400 })
         const [{ data: targetAuth }, { data: targetProfile }] = await Promise.all([

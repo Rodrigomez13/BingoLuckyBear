@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
     let query = serviceClient
       .from('payment_deposits')
-      .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, status, reviewed_by, reviewed_at, review_notes, wallet_transaction_id, metadata, created_at, updated_at')
+      .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, receipt_amount, receipt_operation_number, receipt_destination_account, receipt_date, receipt_parse_status, receipt_parse_error, status, reviewed_by, reviewed_at, review_notes, wallet_transaction_id, metadata, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(limit)
 

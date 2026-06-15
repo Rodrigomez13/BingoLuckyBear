@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { get } from '@vercel/blob'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
 import { validateParsedReceipt, type PaymentStatus } from '@/lib/receipt-validation'
+import { getPrivateReceiptFile } from '@/lib/receipt-file'
 
 interface PaymentAccountRecord {
   alias?: string | null
@@ -71,23 +71,6 @@ async function getAuthenticatedUser() {
   return user
 }
 
-async function blobToFile(pathname: string) {
-  const result = await get(pathname, { access: 'private' })
-
-  if (!result) {
-    throw new Error('No se encontro el comprobante')
-  }
-
-  const body = result.stream as unknown as BodyInit
-  const bytes = Buffer.from(await new Response(body).arrayBuffer())
-
-  return {
-    contentType: result.blob.contentType || (pathname.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
-    filename: pathname.split('/').pop() || 'comprobante',
-    bytes,
-  }
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -150,27 +133,27 @@ export async function POST(
   const access = await ensureAdminOwnsCard(id, user.id)
   if (access.error) return access.error
 
-  const expectedDestinationAccount = access.paymentAccount?.alias || access.paymentAccount?.cbu || null
-
   try {
-    const file = await blobToFile(access.card.payment_receipt_url)
+    const file = await getPrivateReceiptFile(access.card.payment_receipt_url)
     const parsed = await parseReceiptWithFreeOcr({
       ...file,
-      expectedDestinationAccount,
+      expectedAmount: access.raffle.amount,
+      expectedOperationNumber: access.card.payment_reference,
+      expectedDestinationAccounts: [access.paymentAccount?.alias, access.paymentAccount?.cbu],
     })
 
     const validation = validateParsedReceipt(parsed, {
       expectedAmount: access.raffle.amount,
       expectedOperationNumber: access.card.payment_reference,
-      expectedDestinationAccount,
+      expectedDestinationAccounts: [access.paymentAccount?.alias, access.paymentAccount?.cbu],
     })
 
     const { data, error } = await access.supabase
       .from('bingo_cards')
       .update({
-        payment_status: validation.suggestedStatus,
-        card_status: validation.suggestedStatus === 'approved' ? 'active' : 'reserved',
-        issued_at: validation.suggestedStatus === 'approved' ? new Date().toISOString() : null,
+        payment_status: 'pending',
+        card_status: 'reserved',
+        issued_at: null,
         receipt_amount: parsed.amount,
         receipt_operation_number: parsed.operationNumber,
         receipt_destination_account: parsed.destinationAccount,

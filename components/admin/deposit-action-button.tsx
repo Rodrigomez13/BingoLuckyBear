@@ -5,7 +5,17 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export function DepositActionButton({ id, action, disabled }: { id: string; action: 'approve' | 'reject'; disabled?: boolean }) {
+export function DepositActionButton({
+  id,
+  action,
+  disabled,
+  disabledReason,
+}: {
+  id: string
+  action: 'approve' | 'reject'
+  disabled?: boolean
+  disabledReason?: string
+}) {
   const [busy, setBusy] = useState(false)
   const router = useRouter()
 
@@ -34,6 +44,7 @@ export function DepositActionButton({ id, action, disabled }: { id: string; acti
       disabled={disabled || busy}
       onClick={run}
       variant={action === 'reject' ? 'outline' : 'default'}
+      title={disabled && disabledReason ? disabledReason : action === 'approve' ? 'Aprobar depósito' : 'Rechazar depósito'}
       className={action === 'approve' ? 'bg-emerald-500 text-white hover:bg-emerald-400' : 'border-rose-400/40 bg-transparent text-rose-200 hover:bg-rose-500/10'}
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : action === 'approve' ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
