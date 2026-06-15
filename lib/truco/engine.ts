@@ -434,7 +434,10 @@ export function respondEnvido(state: GameState, by: Player, accept: boolean): Ga
 }
 
 export function nextRound(state: GameState): GameState {
-  if (state.phase === 'game-over') return state
+  // Only advance from a finished round. This makes the call idempotent so the
+  // automatic advance (which can fire from both clients in online mode) never
+  // re-deals an in-progress hand.
+  if (state.phase !== 'round-over') return state
   const newMano = other(state.hand)
   return startRound(state, newMano)
 }

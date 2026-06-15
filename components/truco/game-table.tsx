@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Hash, Maximize2, Minimize2, RotateCcw, Tally5 } from 'lucide-react'
 import {
   type EnvidoCall,
   type GameState,
@@ -41,7 +41,7 @@ import { ActionButtons } from './action-buttons'
 import { RulesModal } from './rules-modal'
 import { PlayerMatchPreview } from './player-match-preview'
 import { GameHistoryPanel } from './game-history-panel'
-import { normalizeTrucoRules, type TrucoRules } from '@/lib/truco/rules'
+import { normalizeTrucoRules, type TrucoRules, type TrucoScoreStyle } from '@/lib/truco/rules'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
@@ -71,6 +71,9 @@ export function GameTable({
   const [exitBusy, setExitBusy] = useState(false)
   const [roomView, setRoomView] = useState<AuthoritativeRoomView | null>(null)
   const [availableBalance, setAvailableBalance] = useState<number | null>(null)
+  // Personal, visual-only score notation. Initialized from the table rule but
+  // can be switched at any time during play without affecting the rival.
+  const [scoreStyle, setScoreStyle] = useState<TrucoScoreStyle>(() => normalizeTrucoRules(rules).scoreStyle)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const gameShellRef = useRef<HTMLDivElement | null>(null)
@@ -252,12 +255,23 @@ export function GameTable({
   const handleTruco = () => void commitAction({ type: 'call-truco' })
   const handleMazo = () => void commitAction({ type: 'go-maze' })
   const handleRespond = (accept: boolean) => void commitAction({ type: 'respond', accept })
-  const handleNextRound = () => void commitAction({ type: 'next-round' })
   const handleRestart = () => {
     if (isOnline) return
     setBotPhrase(null)
     void commitAction({ type: 'restart' })
   }
+
+  // When a round finishes, briefly show who won and advance automatically.
+  // The player no longer needs to press "Siguiente mano". In online mode only
+  // the host drives the advance; the guest receives the new hand via polling.
+  useEffect(() => {
+    if (state.phase !== 'round-over') return
+    if (isOnline && (actor !== 'player' || onlineStatus !== 'connected' || actionBusy)) return
+    const t = setTimeout(() => {
+      void commitAction({ type: 'next-round' })
+    }, 1800)
+    return () => clearTimeout(t)
+  }, [state.phase, isOnline, actor, onlineStatus, actionBusy, commitAction])
 
   const handleExit = async () => {
     if (!isOnline || !roomCode || !onlineSecret) {
@@ -324,6 +338,17 @@ export function GameTable({
           {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
         <div className="flex gap-1.5">
+          <Button
+            onClick={() => setScoreStyle((value) => (value === 'numeric' ? 'traditional' : 'numeric'))}
+            variant="outline"
+            size="sm"
+            className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3"
+            aria-label={scoreStyle === 'numeric' ? 'Cambiar a anotación tradicional' : 'Cambiar a anotación numérica'}
+            title={scoreStyle === 'numeric' ? 'Anotación numérica' : 'Anotación tradicional'}
+          >
+            {scoreStyle === 'numeric' ? <Hash className="h-4 w-4" /> : <Tally5 className="h-4 w-4" />}
+            <span className="hidden sm:ml-1.5 sm:inline">{scoreStyle === 'numeric' ? 'Números' : 'Palitos'}</span>
+          </Button>
           <RulesModal compact />
           <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -369,7 +394,7 @@ export function GameTable({
           trickWinners={state.trickWinners}
           hand={state.hand}
           compact
-          scoreStyle={activeRules.scoreStyle}
+          scoreStyle={scoreStyle}
         />
       </div>
 
@@ -397,7 +422,7 @@ export function GameTable({
             rivalLabel={rivalLabel}
             trickWinners={state.trickWinners}
             hand={state.hand}
-            scoreStyle={activeRules.scoreStyle}
+            scoreStyle={scoreStyle}
           />
           <ActionButtons
             state={state}
@@ -450,20 +475,21 @@ export function GameTable({
               <p className="font-mono text-4xl font-black text-amber-300">{state.scores[rival]}</p>
             </div>
           </div>
-          <div className="flex justify-center gap-3">
-            {state.phase === 'game-over' ? (
+          {state.phase === 'game-over' ? (
+            <div className="flex justify-center gap-3">
               <Button onClick={handleRestart} className="bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
                 Jugar de nuevo
               </Button>
-            ) : (
-              <Button onClick={handleNextRound} className="bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
-                Siguiente mano
+              <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
+                Salir al menú
               </Button>
-            )}
-            <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
-              Salir al menú
-            </Button>
-          </div>
+            </div>
+          ) : (
+            <p className="flex items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-100/50">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
+              Siguiente mano
+            </p>
+          )}
         </DialogContent>
       </Dialog>
     </div>
