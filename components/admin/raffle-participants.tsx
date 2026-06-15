@@ -36,6 +36,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  card_price?: number | null
   bundle_offers?: string[] | null
   draw_date?: string | null
   is_active: boolean
@@ -189,6 +190,7 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
     amount: raffle.amount ?? '',
+    card_price: raffle.card_price?.toString() ?? '',
     payment_account_id: raffle.payment_account_id ?? '',
     bundle_offers: raffle.bundle_offers ?? [],
     draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
@@ -224,11 +226,12 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
       prize: raffle.prize ?? '',
       additional_prizes: raffle.additional_prizes ?? [],
       amount: raffle.amount ?? '',
+      card_price: raffle.card_price?.toString() ?? '',
       payment_account_id: raffle.payment_account_id ?? '',
       bundle_offers: raffle.bundle_offers ?? [],
       draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
     })
-  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.payment_account_id, raffle.bundle_offers, raffle.draw_date])
+  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.card_price, raffle.payment_account_id, raffle.bundle_offers, raffle.draw_date])
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle.prize, raffle.additional_prizes), [raffle.prize, raffle.additional_prizes])
@@ -325,10 +328,17 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
         return
       }
 
+      const cardPrice = Math.trunc(Number(details.card_price))
+      if (!Number.isFinite(cardPrice) || cardPrice <= 0) {
+        alert('Carga un precio numérico por cartón mayor a cero.')
+        return
+      }
+
       const payload = {
         prize: sortedPrizes[0],
         additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
-        amount: details.amount || null,
+        amount: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(cardPrice),
+        card_price: cardPrice,
         payment_account_id: details.payment_account_id || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
         draw_date: parseArgentinaDateTimeLocal(details.draw_date),
@@ -451,13 +461,16 @@ export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }:
             <div className="space-y-2">
               <label htmlFor="raffle-amount" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
                 <DollarSign className="h-4 w-4 text-amber-200" />
-                Monto del carton
+                Precio por cartón
               </label>
               <Input
                 id="raffle-amount"
-                value={details.amount}
-                onChange={(event) => setDetails((current) => ({ ...current, amount: event.target.value }))}
-                placeholder="$2.000"
+                type="number"
+                min={1}
+                step={1}
+                value={details.card_price}
+                onChange={(event) => setDetails((current) => ({ ...current, card_price: event.target.value }))}
+                placeholder="2000"
                 className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
               />
             </div>

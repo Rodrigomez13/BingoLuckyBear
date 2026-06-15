@@ -32,6 +32,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  card_price?: number | null
   bundle_offers?: string[] | null
   draw_date?: string | null
   is_active: boolean
@@ -116,7 +117,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const [description, setDescription] = useState('')
   const [prize, setPrize] = useState('')
   const [additionalPrizes, setAdditionalPrizes] = useState<string[]>([])
-  const [amount, setAmount] = useState('')
+  const [cardPrice, setCardPrice] = useState('')
   const [paymentAccountId, setPaymentAccountId] = useState(initialPaymentAccounts.find((account) => account.is_default)?.id ?? initialPaymentAccounts[0]?.id ?? '')
   const [bundleOffers, setBundleOffers] = useState<string[]>([])
   const [drawDate, setDrawDate] = useState('')
@@ -460,7 +461,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           name,
           description,
           prizes: sortedPrizes,
-          amount,
+          card_price: Number(cardPrice),
           payment_account_id: paymentAccountId || null,
           bundle_offers: cleanTextItems(bundleOffers),
           draw_date: drawDate || null,
@@ -477,7 +478,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
       setDescription('')
       setPrize('')
       setAdditionalPrizes([])
-      setAmount('')
+      setCardPrice('')
       setPaymentAccountId(paymentAccounts.find((account) => account.is_default)?.id ?? paymentAccounts[0]?.id ?? '')
       setBundleOffers([])
       setDrawDate('')
@@ -486,7 +487,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
     } catch (error) {
       console.error('Error creating raffle:', error)
       const message = error instanceof Error ? error.message : 'No se pudo crear el sorteo.'
-      const isMissingColumn = /schema cache|column|additional_prizes|bundle_offers|draw_date|prize|amount/i.test(message)
+      const isMissingColumn = /schema cache|column|additional_prizes|bundle_offers|draw_date|prize|amount|card_price/i.test(message)
 
       setCreateError(
         isMissingColumn
@@ -1755,12 +1756,16 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-zinc-300">Monto del carton</Label>
+                  <Label htmlFor="cardPrice" className="text-zinc-300">Precio por cartón</Label>
                   <Input
-                    id="amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Ej: $2.000"
+                    id="cardPrice"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={cardPrice}
+                    onChange={(e) => setCardPrice(e.target.value)}
+                    placeholder="Ej: 2000"
+                    required
                     className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                   />
                 </div>

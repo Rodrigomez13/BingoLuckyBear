@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { requireAdminPage } from '@/lib/auth/roles'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
+import { UserAdminEditor } from '@/components/admin/user-admin-editor'
 
 interface ProfileRow {
   id: string
@@ -44,7 +45,7 @@ interface CardCountRow {
 }
 
 export default async function AdminUsersPage() {
-  const { serviceClient } = await requireAdminPage()
+  const { user: currentUser, access, serviceClient } = await requireAdminPage()
 
   const { data: authUsersData, error: authUsersError } = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
   if (authUsersError) throw authUsersError
@@ -98,7 +99,7 @@ export default async function AdminUsersPage() {
     .map((user) => {
       const profile = profileById.get(user.id)
       const wallet = walletById.get(user.id)
-      const role = roleById.get(user.id) ?? 'player'
+      const role = roleById.get(user.id) ?? (user.id === currentUser.id ? access.role : 'player')
       const playerStats = statsById.get(user.id)
       const avatar = getCustomerAvatar(profile?.avatar_key)
       const cardCount = cardsByUser.get(user.id) ?? { total: 0, approved: 0, pending: 0, rejected: 0 }
@@ -109,6 +110,8 @@ export default async function AdminUsersPage() {
         email: user.email ?? profile?.email ?? 'sin-email',
         alias,
         fullName: profile?.full_name ?? '',
+        phone: profile?.phone ?? '',
+        dni: profile?.dni ?? '',
         role,
         avatar,
         emailConfirmed: Boolean(user.email_confirmed_at || user.confirmed_at),
@@ -184,6 +187,7 @@ export default async function AdminUsersPage() {
                       <th className="px-3 py-2 text-center">Truco</th>
                       <th className="px-3 py-2">Alta</th>
                       <th className="px-3 py-2">Último acceso</th>
+                      <th className="px-3 py-2 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -228,7 +232,10 @@ export default async function AdminUsersPage() {
                           <p className="mt-1 text-[10px] text-zinc-500">{row.rankingPoints} pts</p>
                         </td>
                         <td className="border-y border-white/10 px-3 py-3 text-xs text-zinc-400">{formatDate(row.createdAt)}</td>
-                        <td className="rounded-r-2xl border-y border-r border-white/10 px-3 py-3 text-xs text-zinc-400">{formatDate(row.lastSignInAt)}</td>
+                        <td className="border-y border-white/10 px-3 py-3 text-xs text-zinc-400">{formatDate(row.lastSignInAt)}</td>
+                        <td className="rounded-r-2xl border-y border-r border-white/10 px-3 py-3 text-right">
+                          <UserAdminEditor user={{ id: row.id, email: row.email, role: row.role, fullName: row.fullName, alias: row.alias, phone: row.phone, dni: row.dni }} />
+                        </td>
                       </tr>
                     ))}
                   </tbody>

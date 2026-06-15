@@ -25,6 +25,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  card_price?: number | null
   bundle_offers?: string[] | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null

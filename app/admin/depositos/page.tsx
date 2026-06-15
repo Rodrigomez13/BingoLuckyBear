@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { requireAdminPage } from '@/lib/auth/roles'
 import { DepositActionButton } from '@/components/admin/deposit-action-button'
+import { AdminEconomyNav } from '@/components/admin/admin-economy-nav'
 
 interface DepositRow {
   id: string
@@ -22,6 +23,7 @@ interface DepositRow {
   review_notes: string | null
   wallet_transaction_id: string | null
   created_at: string
+  game_purchases?: { id: string; status: string; purchase_type: string; quantity: number }[] | null
 }
 
 interface ProfileRow {
@@ -38,7 +40,7 @@ export default async function AdminDepositsPage() {
 
   const { data: deposits } = await serviceClient
     .from('payment_deposits')
-    .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, status, reviewed_at, review_notes, wallet_transaction_id, created_at')
+    .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, receipt_url, status, reviewed_at, review_notes, wallet_transaction_id, created_at, game_purchases(id, status, purchase_type, quantity)')
     .order('created_at', { ascending: false })
     .limit(120)
 
@@ -77,6 +79,8 @@ export default async function AdminDepositsPage() {
           </div>
         </div>
 
+        <AdminEconomyNav />
+
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Metric label="Pendientes" value={String(pending.length)} detail={formatARS(totalPending)} />
           <Metric label="Aprobados" value={String(approved.length)} detail="con revisión admin" />
@@ -110,6 +114,7 @@ export default async function AdminDepositsPage() {
                   ) : depositRows.map((deposit) => {
                     const profile = deposit.user_id ? profilesById.get(deposit.user_id) : null
                     const canReview = deposit.status === 'pending'
+                    const linkedPurchase = deposit.game_purchases?.[0] ?? null
                     return (
                       <tr key={deposit.id} className="bg-zinc-950/30 hover:bg-white/[0.03]">
                         <td className="px-4 py-4">
@@ -126,8 +131,8 @@ export default async function AdminDepositsPage() {
                           {deposit.receipt_url && <a href={deposit.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-300">Ver comprobante <ExternalLink className="h-3 w-3" /></a>}
                         </td>
                         <td className="px-4 py-4">
-                          <Badge className="bg-zinc-800 text-zinc-100 hover:bg-zinc-800">{deposit.wallet_kind === 'cash_credits' ? 'Cash credits' : 'LBB Points'}</Badge>
-                          <p className="mt-1 text-xs text-zinc-500">{deposit.wallet_transaction_id ? 'Acreditado' : 'Sin acreditar'}</p>
+                          <Badge className="bg-zinc-800 text-zinc-100 hover:bg-zinc-800">{linkedPurchase ? 'Compra de cartones' : deposit.wallet_kind === 'cash_credits' ? 'Cash Credits' : 'LBB Points'}</Badge>
+                          <p className="mt-1 text-xs text-zinc-500">{linkedPurchase ? `${linkedPurchase.quantity} cartón${linkedPurchase.quantity === 1 ? '' : 'es'} · ${linkedPurchase.status}` : deposit.wallet_transaction_id ? 'Acreditado' : 'Sin acreditar'}</p>
                         </td>
                         <td className="px-4 py-4"><StatusBadge status={deposit.status} />{deposit.review_notes && <p className="mt-1 max-w-[220px] text-xs text-zinc-500">{deposit.review_notes}</p>}</td>
                         <td className="px-4 py-4 text-xs text-zinc-400">{formatDate(deposit.created_at)}{deposit.reviewed_at && <p className="text-zinc-600">Rev. {formatDate(deposit.reviewed_at)}</p>}</td>

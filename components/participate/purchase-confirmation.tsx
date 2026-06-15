@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Download, CheckCircle2, FileDown } from 'lucide-react'
+import { CheckCircle2, FileDown } from 'lucide-react'
 import Link from 'next/link'
 
 interface BingoCard {
@@ -11,6 +11,7 @@ interface BingoCard {
   full_name: string
   created_at: string
   bingo_numbers: number[][]
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
 }
 
 interface PurchaseConfirmationProps {
@@ -20,7 +21,7 @@ interface PurchaseConfirmationProps {
     name: string
     draw_date?: string | null
   }
-  receiptUrl: string
+  receiptUrl?: string
   onContinue: () => void
 }
 
@@ -31,6 +32,8 @@ export function PurchaseConfirmation({
   onContinue 
 }: PurchaseConfirmationProps) {
   const handleDownloadReceipt = async () => {
+    if (!receiptUrl) return
+
     try {
       const response = await fetch(`/api/file?pathname=${encodeURIComponent(receiptUrl)}`)
       if (!response.ok) {
@@ -113,8 +116,7 @@ export function PurchaseConfirmation({
             </div>
           </div>
 
-          {/* Receipt Download */}
-          <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-500/10 p-4">
+          {receiptUrl && <div className="space-y-3 rounded-lg border border-amber-400/20 bg-amber-500/10 p-4">
             <p className="text-sm font-semibold text-amber-200">
               Tu comprobante de pago
             </p>
@@ -128,7 +130,7 @@ export function PurchaseConfirmation({
               <FileDown className="mr-2 h-4 w-4" />
               Descargar Comprobante
             </Button>
-          </div>
+          </div>}
 
           {/* Next Steps */}
           <div className="space-y-3 rounded-lg border border-blue-400/20 bg-blue-500/10 p-4">
@@ -136,7 +138,7 @@ export function PurchaseConfirmation({
             <ul className="space-y-2 text-xs text-zinc-300">
               <li className="flex items-start gap-2">
                 <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                <span>Tu carton ya esta participando en el sorteo.</span>
+                <span>{cards[0].payment_status === 'approved' ? 'Tu cartón ya está participando en el sorteo.' : 'Tu cartón participará cuando el comprobante sea aprobado.'}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-400 flex-shrink-0" />

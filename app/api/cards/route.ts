@@ -20,11 +20,6 @@ function normalizeQuantity(value: unknown) {
   return Number.isInteger(quantity) && quantity >= 1 && quantity <= 10 ? quantity : null
 }
 
-function normalizeAmount(value: unknown) {
-  const amount = Math.trunc(Number(value ?? 0))
-  return Number.isFinite(amount) && amount > 0 ? amount : null
-}
-
 async function createEconomyTrace(input: {
   supabase: Awaited<ReturnType<typeof createServiceClient>>
   email: string
@@ -98,7 +93,6 @@ export async function POST(request: Request) {
     } = body
     const quantity = normalizeQuantity(requestedQuantity)
     const normalizedPhone = normalizePhoneNumber(phone)
-    const receiptAmount = normalizeAmount(body.receipt_amount ?? body.amount)
 
     if (!raffle_id || !full_name || !dni || !address || !phone || !email || !payment_receipt_url || !session_token) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 })
@@ -145,7 +139,7 @@ export async function POST(request: Request) {
 
     const { data: raffle, error: raffleError } = await supabase
       .from('raffles')
-      .select('id, name, is_active, draw_date, draw_status, draw_started_at, drawn_numbers, prize, additional_prizes')
+      .select('id, name, is_active, draw_date, draw_status, draw_started_at, drawn_numbers, prize, additional_prizes, card_price')
       .eq('id', raffle_id)
       .eq('is_active', true)
       .single()
@@ -167,12 +161,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: messages[purchaseAvailability.reason ?? 'closed'] }, { status: 409 })
     }
 
+    const cardPrice = Math.trunc(Number(syncedRaffle.card_price ?? 0))
+    if (!Number.isFinite(cardPrice) || cardPrice <= 0) {
+      return NextResponse.json({ error: 'Este sorteo todavía no tiene un precio numérico por cartón' }, { status: 409 })
+    }
+
     const normalizedEmail = String(email).trim().toLowerCase()
     const economy = await createEconomyTrace({
       supabase,
       email: normalizedEmail,
       quantity,
-      amount: receiptAmount,
+      amount: cardPrice * quantity,
       paymentMethod: payment_method,
       paymentReference: payment_reference.trim(),
       paymentReceiptUrl: payment_receipt_url,
@@ -219,6 +218,7 @@ export async function POST(request: Request) {
         payment_receipt_url,
         payment_method,
         payment_reference: payment_reference.trim(),
+        receipt_amount: cardPrice,
         payout_account_kind,
         payout_account: buyerSnapshot.payout_account,
         payout_holder_name: buyerSnapshot.payout_holder_name,

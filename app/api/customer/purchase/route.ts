@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { generateBingoNumbers } from '@/lib/bingo'
-import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
-import { createGamePurchase, createPaymentDeposit } from '@/lib/economy/server'
 import { nanoid } from 'nanoid'
+import { NextRequest, NextResponse } from 'next/server'
+import { generateBingoNumbers } from '@/lib/bingo'
+import { createGamePurchase, createPaymentDeposit, debitWalletForPurchase } from '@/lib/economy/server'
+import type { WalletKind } from '@/lib/wallet/server'
+import { applyWalletTransaction, ensurePlayerAccount } from '@/lib/wallet/server'
+import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 function clean(value: unknown) {
   return String(value ?? '').trim()
@@ -14,9 +16,8 @@ function normalizeQuantity(value: unknown) {
   return Number.isInteger(quantity) && quantity >= 1 && quantity <= 10 ? quantity : null
 }
 
-function normalizeAmount(value: unknown) {
-  const amount = Math.trunc(Number(value ?? 0))
-  return Number.isFinite(amount) && amount > 0 ? amount : null
+function isWalletKind(value: unknown): value is WalletKind {
+  return value === 'cash_credits' || value === 'bonus_points'
 }
 
 function isProfileComplete(profile: Record<string, unknown> | null) {
@@ -33,61 +34,16 @@ function isProfileComplete(profile: Record<string, unknown> | null) {
   )
 }
 
-async function createEconomyTrace(input: {
-  serviceClient: Awaited<ReturnType<typeof createServiceClient>>
-  userId: string
-  email: string
-  quantity: number
-  amount: number | null
-  paymentMethod: string
-  paymentReference: string
-  paymentReceiptUrl: string
-  raffleId: string
-  raffleName: string
-}) {
-  try {
-    const deposit = await createPaymentDeposit(input.serviceClient, {
-      userId: input.userId,
-      customerEmail: input.email,
-      amount: input.amount ?? 1,
-      walletKind: 'cash_credits',
-      paymentMethod: input.paymentMethod,
-      paymentReference: input.paymentReference,
-      receiptUrl: input.paymentReceiptUrl,
-      metadata: {
-        source: 'account_bingo_purchase_legacy_receipt',
-        raffleId: input.raffleId,
-        raffleName: input.raffleName,
-        quantity: input.quantity,
-      },
-    })
-
-    const purchase = await createGamePurchase(input.serviceClient, {
-      userId: input.userId,
-      gameType: 'bingo',
-      purchaseType: 'bingo_card',
-      walletKind: 'cash_credits',
-      amount: input.amount ?? 0,
-      quantity: input.quantity,
-      status: 'pending',
-      depositId: deposit.id,
-      relatedType: 'raffle',
-      relatedId: input.raffleId,
-      description: `Compra de ${input.quantity} carton${input.quantity === 1 ? '' : 'es'} para ${input.raffleName}`,
-      metadata: {
-        source: 'account_purchase_form',
-        paymentReference: input.paymentReference,
-      },
-    })
-
-    return { depositId: deposit.id as string, purchaseId: purchase.id as string }
-  } catch (error) {
-    console.warn('Economy trace skipped for account purchase:', error)
-    return { depositId: null, purchaseId: null }
-  }
-}
-
 export async function POST(request: NextRequest) {
+  let walletPurchase: {
+    purchaseId: string
+    userId: string
+    walletKind: WalletKind
+    amount: number
+    debited: boolean
+  } | null = null
+  let receiptPurchase: { purchaseId: string; depositId: string } | null = null
+
   try {
     const authClient = await createClient()
     const {
@@ -100,23 +56,29 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const raffleId = clean(body.raffle_id)
+    const sessionToken = clean(body.session_token)
+    const quantity = normalizeQuantity(body.quantity)
+    const paymentSource = body.payment_source === 'wallet' ? 'wallet' : 'receipt'
+    const walletKind = isWalletKind(body.wallet_kind) ? body.wallet_kind : null
     const paymentReceiptUrl = clean(body.payment_receipt_url)
     const paymentMethod = clean(body.payment_method)
     const paymentReference = clean(body.payment_reference)
-    const sessionToken = clean(body.session_token)
-    const quantity = normalizeQuantity(body.quantity)
-    const receiptAmount = normalizeAmount(body.receipt_amount ?? body.amount)
 
-    if (!raffleId || !paymentReceiptUrl || !paymentMethod || !paymentReference || !sessionToken) {
-      return NextResponse.json({ error: 'Faltan datos de la compra o del comprobante.' }, { status: 400 })
+    if (!raffleId || !sessionToken || !quantity) {
+      return NextResponse.json({ error: 'Faltan datos de la compra o la cantidad no es válida.' }, { status: 400 })
     }
 
-    if (!quantity) {
-      return NextResponse.json({ error: 'La cantidad de cartones debe ser entre 1 y 10.' }, { status: 400 })
+    if (paymentSource === 'wallet' && !walletKind) {
+      return NextResponse.json({ error: 'Elegí con qué saldo querés pagar.' }, { status: 400 })
     }
 
-    if (!/^[a-zA-Z0-9 .:_-]{4,60}$/.test(paymentReference)) {
-      return NextResponse.json({ error: 'El numero de operacion debe tener entre 4 y 60 caracteres validos.' }, { status: 400 })
+    if (paymentSource === 'receipt') {
+      if (!paymentReceiptUrl || !paymentMethod || !paymentReference) {
+        return NextResponse.json({ error: 'Faltan datos de la compra o del comprobante.' }, { status: 400 })
+      }
+      if (!/^[a-zA-Z0-9 .:_-]{4,60}$/.test(paymentReference)) {
+        return NextResponse.json({ error: 'El número de operación debe tener entre 4 y 60 caracteres válidos.' }, { status: 400 })
+      }
     }
 
     const serviceClient = await createServiceClient()
@@ -126,53 +88,126 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profileError) {
-      return NextResponse.json({ error: 'No se pudo leer tu perfil.' }, { status: 500 })
-    }
-
+    if (profileError) return NextResponse.json({ error: 'No se pudo leer tu perfil.' }, { status: 500 })
     if (!isProfileComplete(profile)) {
       return NextResponse.json({ error: 'Completa tus datos de jugador antes de comprar cartones.' }, { status: 409 })
     }
 
     const { data: raffle, error: raffleError } = await serviceClient
       .from('raffles')
-      .select('id, name, is_active, draw_date, draw_status, draw_started_at, drawn_numbers, prize, additional_prizes')
+      .select('id, name, is_active, draw_date, draw_status, draw_started_at, drawn_numbers, prize, additional_prizes, card_price')
       .eq('id', raffleId)
       .eq('is_active', true)
       .single()
 
     if (raffleError || !raffle) {
-      return NextResponse.json({ error: 'El sorteo no esta disponible.' }, { status: 400 })
+      return NextResponse.json({ error: 'El sorteo no está disponible.' }, { status: 400 })
     }
 
     const syncedRaffle = await syncRaffleLifecycle(serviceClient, raffle)
     const availability = getPurchaseAvailability(syncedRaffle)
-
     if (!syncedRaffle.is_active || !availability.canPurchase) {
       const messages = {
         cutoff: 'La venta de cartones cierra 30 minutos antes del sorteo.',
-        running: 'El sorteo ya esta en curso y no permite nuevas compras.',
-        closed: 'El sorteo ya esta cerrado.',
-        missing_date: 'El sorteo todavia no tiene fecha confirmada.',
+        running: 'El sorteo ya está en curso y no permite nuevas compras.',
+        closed: 'El sorteo ya está cerrado.',
+        missing_date: 'El sorteo todavía no tiene fecha confirmada.',
       } as const
       return NextResponse.json({ error: messages[availability.reason ?? 'closed'] }, { status: 409 })
     }
 
-    const email = clean(profile.email || user.email).toLowerCase()
-    const economy = await createEconomyTrace({
-      serviceClient,
-      userId: user.id,
-      email,
-      quantity,
-      amount: receiptAmount,
-      paymentMethod,
-      paymentReference,
-      paymentReceiptUrl,
-      raffleId,
-      raffleName: raffle.name,
-    })
+    const cardPrice = Math.trunc(Number(syncedRaffle.card_price ?? 0))
+    if (!Number.isFinite(cardPrice) || cardPrice <= 0) {
+      return NextResponse.json({ error: 'Este sorteo todavía no tiene un precio numérico por cartón.' }, { status: 409 })
+    }
 
-    const seenCards = new Set<string>()
+    const totalAmount = cardPrice * quantity
+    const email = clean(profile.email || user.email).toLowerCase()
+    let depositId: string | null = null
+    let purchaseId: string
+    let walletTransactionId: string | null = null
+
+    if (paymentSource === 'receipt') {
+      const deposit = await createPaymentDeposit(serviceClient, {
+        userId: user.id,
+        customerEmail: email,
+        amount: totalAmount,
+        walletKind: 'cash_credits',
+        paymentMethod,
+        paymentReference,
+        receiptUrl: paymentReceiptUrl,
+        metadata: {
+          source: 'bingo_card_receipt_purchase',
+          raffleId,
+          raffleName: syncedRaffle.name,
+          quantity,
+          cardPrice,
+        },
+      })
+      depositId = deposit.id as string
+
+      const purchase = await createGamePurchase(serviceClient, {
+        userId: user.id,
+        gameType: 'bingo',
+        purchaseType: 'bingo_card',
+        walletKind: 'cash_credits',
+        amount: totalAmount,
+        quantity,
+        status: 'pending',
+        depositId,
+        relatedType: 'raffle',
+        relatedId: raffleId,
+        description: `Compra de ${quantity} cartón${quantity === 1 ? '' : 'es'} para ${syncedRaffle.name}`,
+        metadata: { source: 'account_purchase_form', cardPrice, paymentReference },
+      })
+      purchaseId = purchase.id as string
+      receiptPurchase = { purchaseId, depositId }
+    } else {
+      await ensurePlayerAccount(serviceClient, user)
+      const purchase = await createGamePurchase(serviceClient, {
+        userId: user.id,
+        gameType: 'bingo',
+        purchaseType: 'bingo_card',
+        walletKind: walletKind!,
+        amount: totalAmount,
+        quantity,
+        status: 'pending',
+        relatedType: 'raffle',
+        relatedId: raffleId,
+        description: `Compra directa de ${quantity} cartón${quantity === 1 ? '' : 'es'} para ${syncedRaffle.name}`,
+        metadata: { source: 'wallet_bingo_purchase', cardPrice },
+      })
+      purchaseId = purchase.id as string
+      walletPurchase = { purchaseId, userId: user.id, walletKind: walletKind!, amount: totalAmount, debited: false }
+
+      await debitWalletForPurchase(serviceClient, {
+        userId: user.id,
+        purchaseId,
+        walletKind: walletKind!,
+        transactionType: 'bingo_purchase',
+        amount: totalAmount,
+        description: `${quantity} cartón${quantity === 1 ? '' : 'es'} de ${syncedRaffle.name}`,
+        metadata: { raffleId, quantity, cardPrice },
+      })
+      walletPurchase.debited = true
+
+      const { data: transaction } = await serviceClient
+        .from('lbb_wallet_transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('transaction_type', 'bingo_purchase')
+        .eq('related_type', 'game_purchase')
+        .eq('related_id', purchaseId)
+        .maybeSingle()
+
+      walletTransactionId = transaction?.id ?? null
+      const { error: purchaseUpdateError } = await serviceClient
+        .from('game_purchases')
+        .update({ status: 'paid', wallet_transaction_id: walletTransactionId })
+        .eq('id', purchaseId)
+      if (purchaseUpdateError) throw purchaseUpdateError
+    }
+
     const buyerSnapshot = {
       user_id: user.id,
       full_name: clean(profile.full_name),
@@ -184,16 +219,15 @@ export async function POST(request: NextRequest) {
       payout_account: clean(profile.payout_account),
       payout_holder_name: clean(profile.payout_holder_name),
     }
-
+    const seenCards = new Set<string>()
+    const isPaid = paymentSource === 'wallet'
     const cardsToInsert = Array.from({ length: quantity }, () => {
       let bingoNumbers = generateBingoNumbers()
       let signature = JSON.stringify(bingoNumbers)
-
       while (seenCards.has(signature)) {
         bingoNumbers = generateBingoNumbers()
         signature = JSON.stringify(bingoNumbers)
       }
-
       seenCards.add(signature)
 
       return {
@@ -201,9 +235,9 @@ export async function POST(request: NextRequest) {
         raffle_id: raffleId,
         customer_id: user.id,
         user_id: user.id,
-        purchase_id: economy.purchaseId,
-        deposit_id: economy.depositId,
-        card_status: 'reserved',
+        purchase_id: purchaseId,
+        deposit_id: depositId,
+        card_status: isPaid ? 'active' : 'reserved',
         generated_seed: nanoid(14),
         buyer_snapshot: buyerSnapshot,
         full_name: buyerSnapshot.full_name,
@@ -212,45 +246,86 @@ export async function POST(request: NextRequest) {
         phone: buyerSnapshot.phone,
         email: buyerSnapshot.email,
         payment_receipt_url: paymentReceiptUrl,
-        payment_method: paymentMethod,
-        payment_reference: paymentReference,
+        payment_method: isPaid ? (walletKind === 'bonus_points' ? 'LBB Points' : 'Cash Credits') : paymentMethod,
+        payment_reference: isPaid ? walletTransactionId || purchaseId : paymentReference,
         payout_account_kind: buyerSnapshot.payout_account_kind,
         payout_account: buyerSnapshot.payout_account,
         payout_holder_name: buyerSnapshot.payout_holder_name,
         session_token: sessionToken,
         bingo_numbers: bingoNumbers,
-        payment_status: 'pending',
+        payment_status: isPaid ? 'approved' : 'pending',
+        receipt_amount: cardPrice,
+        issued_at: isPaid ? new Date().toISOString() : null,
       }
     })
 
-    let { data: cards, error: insertError } = await serviceClient
-      .from('bingo_cards')
-      .insert(cardsToInsert)
-      .select()
-
-    if (insertError && /(purchase_id|deposit_id|user_id|card_status|buyer_snapshot|generated_seed)/i.test(insertError.message)) {
-      const legacyPayload = cardsToInsert.map(({ user_id, purchase_id, deposit_id, card_status, generated_seed, buyer_snapshot, ...card }) => card)
+    let { data: cards, error: insertError } = await serviceClient.from('bingo_cards').insert(cardsToInsert).select()
+    if (insertError && /(purchase_id|deposit_id|user_id|card_status|buyer_snapshot|generated_seed|issued_at)/i.test(insertError.message)) {
+      const legacyPayload = cardsToInsert.map((card) => {
+        const legacyCard = { ...card } as Record<string, unknown>
+        for (const field of ['user_id', 'purchase_id', 'deposit_id', 'card_status', 'generated_seed', 'buyer_snapshot', 'issued_at']) {
+          delete legacyCard[field]
+        }
+        return legacyCard
+      })
       const fallback = await serviceClient.from('bingo_cards').insert(legacyPayload).select()
       cards = fallback.data
       insertError = fallback.error
     }
+    if (insertError) throw insertError
 
-    if (insertError) {
-      console.error('Customer purchase insert error:', insertError)
-      return NextResponse.json({ error: 'Error al crear los cartones.' }, { status: 500 })
-    }
-
+    walletPurchase = null
+    receiptPurchase = null
     return NextResponse.json({
       success: true,
       quantity,
-      status: 'pending',
-      deposit_id: economy.depositId,
-      purchase_id: economy.purchaseId,
-      message: 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
+      status: isPaid ? 'approved' : 'pending',
+      deposit_id: depositId,
+      purchase_id: purchaseId,
+      total_amount: totalAmount,
+      message: isPaid
+        ? 'Compra aprobada. Tus cartones ya están participando.'
+        : 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
       cards: cards ?? [],
     })
   } catch (error) {
+    if (walletPurchase) {
+      try {
+        const serviceClient = await createServiceClient()
+        if (walletPurchase.debited) {
+          await applyWalletTransaction(serviceClient, {
+            userId: walletPurchase.userId,
+            walletKind: walletPurchase.walletKind,
+            type: 'game_refund',
+            amount: walletPurchase.amount,
+            relatedType: 'game_purchase',
+            relatedId: walletPurchase.purchaseId,
+            description: 'Reintegro automático por compra de cartones no completada',
+          })
+          await serviceClient.from('game_purchases').update({ status: 'refunded' }).eq('id', walletPurchase.purchaseId)
+        } else {
+          await serviceClient.from('game_purchases').update({ status: 'failed' }).eq('id', walletPurchase.purchaseId)
+        }
+      } catch (refundError) {
+        console.error('Wallet purchase refund error:', refundError)
+      }
+    }
+
+    if (receiptPurchase) {
+      try {
+        const serviceClient = await createServiceClient()
+        await Promise.all([
+          serviceClient.from('game_purchases').update({ status: 'failed' }).eq('id', receiptPurchase.purchaseId),
+          serviceClient.from('payment_deposits').update({ status: 'cancelled', review_notes: 'Compra no completada al generar cartones' }).eq('id', receiptPurchase.depositId),
+        ])
+      } catch (cleanupError) {
+        console.error('Receipt purchase cleanup error:', cleanupError)
+      }
+    }
+
     console.error('Customer purchase error:', error)
-    return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Error interno del servidor.'
+    const status = /saldo|insuficiente|balance/i.test(message) ? 409 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }

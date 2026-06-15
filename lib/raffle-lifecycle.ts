@@ -29,6 +29,7 @@ interface RaffleForLifecycle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  card_price?: number | null
   draw_date?: string | null
   draw_status?: 'idle' | 'running' | 'finished' | null
   countdown_seconds?: number | null

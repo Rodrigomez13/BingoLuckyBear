@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BearLogo } from '@/components/bear-logo'
-import { WalletAdjustmentPanel } from '@/components/admin/wallet-adjustment-panel'
+import { AdminEconomyNav } from '@/components/admin/admin-economy-nav'
 import { requireAdminPage } from '@/lib/auth/roles'
 
 interface WalletRow {
@@ -32,10 +32,15 @@ interface TrucoRoomRow {
   created_at: string
 }
 
+interface DepositRow {
+  status: string
+  amount: number | null
+}
+
 export default async function AdminWalletOpsPage() {
   const { serviceClient } = await requireAdminPage()
 
-  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }] = await Promise.all([
+  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }, { data: deposits }] = await Promise.all([
     serviceClient.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').limit(500),
     serviceClient
       .from('lbb_wallet_transactions')
@@ -57,6 +62,11 @@ export default async function AdminWalletOpsPage() {
       .select('id, action, entity_type, entity_id, reason, created_at')
       .order('created_at', { ascending: false })
       .limit(12),
+    serviceClient
+      .from('payment_deposits')
+      .select('status, amount')
+      .order('created_at', { ascending: false })
+      .limit(500),
   ])
 
   const walletRows = (wallets ?? []) as WalletRow[]
@@ -64,9 +74,10 @@ export default async function AdminWalletOpsPage() {
   const trucoRoomRows = (trucoRooms ?? []) as TrucoRoomRow[]
   const cardRows = (cards ?? []) as { payment_status?: string | null; receipt_amount?: number | null }[]
   const auditRows = (auditLogs ?? []) as { id: string; action: string; entity_type?: string | null; entity_id?: string | null; reason?: string | null; created_at: string }[]
+  const depositRows = (deposits ?? []) as DepositRow[]
 
-  const pendingDeposits = transactionRows.filter((row) => row.transaction_type === 'deposit_pending')
-  const approvedDeposits = transactionRows.filter((row) => row.transaction_type === 'deposit_approved')
+  const pendingDeposits = depositRows.filter((row) => row.status === 'pending')
+  const approvedDeposits = depositRows.filter((row) => row.status === 'approved')
   const trucoEntryFees = transactionRows.filter((row) => row.transaction_type === 'truco_entry_fee')
   const trucoPrizes = transactionRows.filter((row) => row.transaction_type === 'truco_prize')
   const bingoPurchases = transactionRows.filter((row) => row.transaction_type === 'bingo_purchase')
@@ -91,15 +102,13 @@ export default async function AdminWalletOpsPage() {
           </Button>
         </div>
 
+        <AdminEconomyNav />
+
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <WalletMetric icon={<WalletCards className="h-5 w-5" />} label="Usuarios con saldo" value={String(walletRows.length)} detail="wallets creadas" />
           <WalletMetric icon={<Clock3 className="h-5 w-5" />} label="Recargas pendientes" value={String(pendingDeposits.length)} detail="requieren validación" />
           <WalletMetric icon={<Ticket className="h-5 w-5" />} label="Cartones aprobados" value={formatARS(approvedBingoAmount)} detail="ingreso confirmado" />
           <WalletMetric icon={<Trophy className="h-5 w-5" />} label="Pozo Truco activo" value={`${openTrucoRooms.reduce((total, room) => total + Number(room.prize_pool_points ?? 0), 0)} LBB`} detail={`${openTrucoRooms.length} mesa${openTrucoRooms.length !== 1 ? 's' : ''} abierta${openTrucoRooms.length !== 1 ? 's' : ''}`} />
-        </div>
-
-        <div className="mb-6">
-          <WalletAdjustmentPanel />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">

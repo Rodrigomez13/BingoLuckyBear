@@ -63,6 +63,8 @@ export async function POST(request: Request) {
         .from('bingo_cards')
         .update({
           payment_status: body.payment_status,
+          card_status: body.payment_status === 'approved' ? 'active' : body.payment_status === 'rejected' ? 'cancelled' : 'reserved',
+          issued_at: body.payment_status === 'approved' ? new Date().toISOString() : null,
           payment_reviewed_at: new Date().toISOString(),
           payment_reviewed_by: user.id,
         })

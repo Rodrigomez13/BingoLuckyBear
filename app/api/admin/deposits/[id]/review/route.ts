@@ -38,8 +38,49 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     if (action === 'approve') {
       let updated = deposit
+      const { data: purchases, error: purchasesError } = await serviceClient
+        .from('game_purchases')
+        .select('id')
+        .eq('deposit_id', id)
 
-      if (deposit.user_id) {
+      if (purchasesError) throw purchasesError
+      const purchaseIds = (purchases ?? []).map((purchase) => purchase.id)
+
+      if (purchaseIds.length > 0) {
+        const reviewedAt = new Date().toISOString()
+        const { data, error: updateError } = await serviceClient
+          .from('payment_deposits')
+          .update({
+            status: 'approved',
+            reviewed_by: user.id,
+            reviewed_at: reviewedAt,
+            review_notes: notes || 'Compra por comprobante aprobada',
+          })
+          .eq('id', id)
+          .select('*')
+          .single()
+
+        if (updateError) throw updateError
+        updated = data
+
+        const { error: purchaseUpdateError } = await serviceClient
+          .from('game_purchases')
+          .update({ status: 'paid' })
+          .in('id', purchaseIds)
+        if (purchaseUpdateError) throw purchaseUpdateError
+
+        const { error: cardsUpdateError } = await serviceClient
+          .from('bingo_cards')
+          .update({
+            payment_status: 'approved',
+            card_status: 'active',
+            issued_at: reviewedAt,
+            payment_reviewed_at: reviewedAt,
+            payment_reviewed_by: user.id,
+          })
+          .eq('deposit_id', id)
+        if (cardsUpdateError) throw cardsUpdateError
+      } else if (deposit.user_id) {
         updated = await approveDepositAndCreditWallet(serviceClient, {
           depositId: id,
           adminUserId: user.id,
@@ -89,6 +130,24 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       .single()
 
     if (updateError) throw updateError
+
+    const cancelledPurchaseStatus = 'cancelled'
+    const { error: purchaseUpdateError } = await serviceClient
+      .from('game_purchases')
+      .update({ status: cancelledPurchaseStatus })
+      .eq('deposit_id', id)
+    if (purchaseUpdateError) throw purchaseUpdateError
+
+    const { error: cardsUpdateError } = await serviceClient
+      .from('bingo_cards')
+      .update({
+        payment_status: 'rejected',
+        card_status: 'cancelled',
+        payment_reviewed_at: new Date().toISOString(),
+        payment_reviewed_by: user.id,
+      })
+      .eq('deposit_id', id)
+    if (cardsUpdateError) throw cardsUpdateError
 
     await logAdminAudit(serviceClient, {
       adminUserId: user.id,

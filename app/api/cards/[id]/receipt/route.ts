@@ -118,6 +118,8 @@ export async function PATCH(
     .from('bingo_cards')
     .update({
       payment_status: paymentStatus,
+      card_status: paymentStatus === 'approved' ? 'active' : paymentStatus === 'rejected' ? 'cancelled' : 'reserved',
+      issued_at: paymentStatus === 'approved' ? new Date().toISOString() : null,
       receipt_amount: receiptAmount,
       receipt_operation_number: String(body.receipt_operation_number ?? '').trim() || null,
       receipt_destination_account: String(body.receipt_destination_account ?? '').trim() || null,
@@ -167,6 +169,8 @@ export async function POST(
       .from('bingo_cards')
       .update({
         payment_status: validation.suggestedStatus,
+        card_status: validation.suggestedStatus === 'approved' ? 'active' : 'reserved',
+        issued_at: validation.suggestedStatus === 'approved' ? new Date().toISOString() : null,
         receipt_amount: parsed.amount,
         receipt_operation_number: parsed.operationNumber,
         receipt_destination_account: parsed.destinationAccount,
