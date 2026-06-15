@@ -32,7 +32,7 @@ function dbSetupHint(message: string) {
 
 function normalizePotPoints(value: unknown) {
   const amount = Number(value ?? 0)
-  return [0, 20, 100, 200].includes(amount) ? amount : null
+  return [0, 20, 100, 200, 500, 1000, 5000].includes(amount) ? amount : null
 }
 
 async function getAuthenticatedIdentity(
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     const rules = normalizeTrucoRules(body?.rules)
 
     if (potPoints === null) {
-      return NextResponse.json({ ok: false, error: 'El pozo debe ser 0, 20, 100 o 200.' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'El pozo debe ser 0, 20, 100, 200, 500, 1000 o 5000.' }, { status: 400 })
     }
 
     if (potPoints > 0 && !user) {

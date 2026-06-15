@@ -32,6 +32,9 @@ export interface StoredTrucoRoom {
   guest_user_id?: string | null
   entry_fee_points?: number | null
   prize_pool_points?: number | null
+  house_fee_rate?: number | null
+  house_fee_points?: number | null
+  prize_awarded_points?: number | null
   ranked?: boolean | null
   settled_at?: string | null
   host_name?: string | null
@@ -54,6 +57,9 @@ export interface PublicRoomSummary {
   version: number
   entryFeePoints: number
   prizePoolPoints: number
+  houseFeeRate: number
+  houseFeePoints: number
+  prizeAwardedPoints: number
   ranked: boolean
   rules: TrucoRules
   host: {
@@ -85,6 +91,9 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
     version: room.version,
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
+    houseFeeRate: Number(room.house_fee_rate ?? 0),
+    houseFeePoints: Number(room.house_fee_points ?? 0),
+    prizeAwardedPoints: Number(room.prize_awarded_points ?? 0),
     ranked: Boolean(room.ranked),
     rules: normalizeTrucoRules(room.state.rules),
     players: {
@@ -114,6 +123,9 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
     version: room.version,
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
+    houseFeeRate: Number(room.house_fee_rate ?? 0),
+    houseFeePoints: Number(room.house_fee_points ?? 0),
+    prizeAwardedPoints: Number(room.prize_awarded_points ?? 0),
     ranked: Boolean(room.ranked),
     rules: normalizeTrucoRules(room.state.rules),
     host: {

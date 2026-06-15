@@ -42,6 +42,9 @@ const POT_OPTIONS = [
   { total: 20, stake: 10, label: 'Pozo $20' },
   { total: 100, stake: 50, label: 'Pozo $100' },
   { total: 200, stake: 100, label: 'Pozo $200' },
+  { total: 500, stake: 250, label: 'Pozo $500' },
+  { total: 1000, stake: 500, label: 'Pozo $1000' },
+  { total: 5000, stake: 2500, label: 'Pozo $5000' },
 ] as const
 
 interface RoomLobbyProps {
@@ -423,6 +426,8 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {POT_OPTIONS.map((option) => {
                 const disabled = option.stake > 0 && !account.user
+                const houseFee = getHouseFee(option.total)
+                const netPrize = option.total - houseFee
                 return (
                   <button
                     key={option.total}
@@ -440,6 +445,11 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
                     <span className="mt-0.5 block text-[9px] opacity-70">
                       {option.stake > 0 ? `${option.stake} por jugador` : 'Sin descuento'}
                     </span>
+                    {option.stake > 0 && (
+                      <span className="mt-0.5 block text-[9px] opacity-70">
+                        Neto {formatAccountBalance(netPrize)}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -460,7 +470,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
           {selectedPot.stake > 0 && account.user && (
             <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
-              Se reservan {formatAccountBalance(selectedPot.stake)} ahora. Si cancelás antes de que entre un rival, se reintegran automáticamente.
+              Se reservan {formatAccountBalance(selectedPot.stake)} ahora. Premio neto estimado: {formatAccountBalance(selectedPot.total - getHouseFee(selectedPot.total))}. Si cancelás antes de que entre un rival, se reintegran automáticamente.
             </p>
           )}
 
@@ -709,6 +719,14 @@ function IconCopyButton({ onClick, copied, label }: { onClick: () => void; copie
       {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
     </Button>
   )
+}
+
+function getHouseFee(total: number) {
+  if (total <= 0) return 0
+  if (total <= 200) return Math.floor(total * 0.1)
+  if (total <= 1000) return Math.floor(total * 0.08)
+  if (total <= 5000) return Math.floor(total * 0.06)
+  return Math.floor(total * 0.05)
 }
 
 function QuickAction({

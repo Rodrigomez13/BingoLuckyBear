@@ -5,6 +5,8 @@ import {
   callFlor,
   callTruco,
   canCallFlor,
+  canRaiseEnvido,
+  canRaiseTruco,
   goToMazo,
   playCard,
   respondEnvido,
@@ -22,6 +24,15 @@ export function botAct(state: GameState): { state: GameState; phrase?: string } 
   // Resolve Envido before pending Truco. "El tanto está primero".
   if (state.envidoPending && state.envidoPending.by !== OPP) {
     const env = computeEnvido(state.hands[OPP])
+    if (env >= 32 && canRaiseEnvido(state, OPP, 'falta-envido') && Math.random() < 0.35) {
+      return { state: callEnvido(state, OPP, 'falta-envido'), phrase: '¡Falta Envido!' }
+    }
+    if (env >= 30 && canRaiseEnvido(state, OPP, 'real-envido') && Math.random() < 0.55) {
+      return { state: callEnvido(state, OPP, 'real-envido'), phrase: '¡Real Envido!' }
+    }
+    if (env >= 28 && canRaiseEnvido(state, OPP, 'envido') && Math.random() < 0.45) {
+      return { state: callEnvido(state, OPP, 'envido'), phrase: '¡Envido de nuevo!' }
+    }
     const accept = env >= 26
     return {
       state: respondEnvido(state, OPP, accept),
@@ -32,9 +43,9 @@ export function botAct(state: GameState): { state: GameState; phrase?: string } 
   // Respond to a pending Truco call from the player.
   if (state.trucoPending && state.trucoPending.by !== OPP) {
     const strength = handStrength(state.hands[OPP])
-    const accept = strength >= 0.42 + state.trucoLevel * 0.04
-    if (accept && strength > 0.7 && state.trucoLevel < 3) {
-      return { state: callTruco(respondToAcceptThenRaise(state), OPP), phrase: '¡Te subo la apuesta!' }
+    const accept = strength >= 0.42 + state.trucoPending.level * 0.04
+    if (strength > 0.72 && canRaiseTruco(state, OPP)) {
+      return { state: callTruco(state, OPP), phrase: '¡Te subo la apuesta!' }
     }
     return {
       state: respondTruco(state, OPP, accept),
@@ -74,10 +85,6 @@ export function botAct(state: GameState): { state: GameState; phrase?: string } 
   }
 
   return { state: chooseCard(state) }
-}
-
-function respondToAcceptThenRaise(state: GameState): GameState {
-  return respondTruco(state, OPP, true)
 }
 
 /** 0..1 estimate of how strong the bot's remaining hand is. */

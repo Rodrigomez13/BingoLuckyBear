@@ -78,6 +78,12 @@ function nextTrucoLabel(level: TrucoLevel): string {
   return ['Truco', 'Truco', 'Retruco', 'Vale Cuatro'][level] ?? 'Vale Cuatro'
 }
 
+export function nextTrucoRaiseLabel(state: GameState): string | null {
+  const baseLevel = state.trucoPending?.level ?? state.trucoLevel
+  if (baseLevel >= 3) return null
+  return nextTrucoLabel(baseLevel)
+}
+
 export function createGame(targetScore: 15 | 30, rules: TrucoRules = DEFAULT_TRUCO_RULES): GameState {
   const state: GameState = {
     phase: 'idle',
@@ -170,6 +176,21 @@ export function canCallEnvido(state: GameState, by: Player): boolean {
   if (state.trucoPending && state.trucoPending.by === by) return false
   if (state.trucoPending && state.trucoPending.by !== by) return !firstTrickComplete(state)
   return !state.played.some((played) => played.by === by)
+}
+
+export function canRaiseEnvido(state: GameState, by: Player, call: EnvidoCall): boolean {
+  const pending = state.envidoPending
+  if (state.phase !== 'playing' || state.envidoResolved || !pending || pending.by === by) return false
+  if (pending.calls.includes('falta-envido')) return false
+
+  const hasReal = pending.calls.includes('real-envido')
+  const envidoCount = pending.calls.filter((item) => item === 'envido').length
+  const lastCall = pending.calls[pending.calls.length - 1]
+
+  if (call === 'falta-envido') return true
+  if (call === 'real-envido') return !hasReal
+  if (call === 'envido') return lastCall === 'envido' && envidoCount < 2 && !hasReal
+  return false
 }
 
 /** Returns winner of a completed trick, or null if not complete. */
@@ -322,13 +343,34 @@ export function callFlor(state: GameState, by: Player): GameState {
 // ---------- Truco calls ----------
 
 export function callTruco(state: GameState, by: Player): GameState {
-  if (state.phase !== 'playing' || state.trucoPending || state.envidoPending) return state
-  if (state.trucoLevel >= 3) return state
-  if (state.trucoOwner === by) return state
+  if (state.phase !== 'playing' || state.envidoPending) return state
+
+  if (state.trucoPending) {
+    if (!canRaiseTruco(state, by)) return state
+    const newLevel = (state.trucoPending.level + 1) as TrucoLevel
+    let next = pushLog(state, by, nextTrucoLabel(state.trucoPending.level))
+    next = { ...next, trucoPending: { level: newLevel, by } }
+    return next
+  }
+
+  if (!canCallTruco(state, by)) return state
   const newLevel = (state.trucoLevel + 1) as TrucoLevel
   let next = pushLog(state, by, nextTrucoLabel(state.trucoLevel))
   next = { ...next, trucoPending: { level: newLevel, by } }
   return next
+}
+
+export function canCallTruco(state: GameState, by: Player): boolean {
+  if (state.phase !== 'playing' || state.trucoPending || state.envidoPending) return false
+  if (state.trucoLevel >= 3) return false
+  if (state.trucoOwner === by) return false
+  return true
+}
+
+export function canRaiseTruco(state: GameState, by: Player): boolean {
+  if (state.phase !== 'playing' || state.envidoPending || !state.trucoPending) return false
+  if (state.trucoPending.by === by) return false
+  return state.trucoPending.level < 3
 }
 
 export function respondTruco(state: GameState, by: Player, accept: boolean): GameState {
@@ -372,7 +414,7 @@ const ENVIDO_LABELS: Record<EnvidoCall, string> = {
 export function callEnvido(state: GameState, by: Player, call: EnvidoCall): GameState {
   if (!canCallEnvido(state, by) && !state.envidoPending) return state
   if (state.envidoPending) {
-    if (state.envidoPending.by === by) return state
+    if (!canRaiseEnvido(state, by, call)) return state
     const calls = [...state.envidoPending.calls, call]
     return { ...pushLog(state, by, ENVIDO_LABELS[call]), envidoPending: { calls, by } }
   }
