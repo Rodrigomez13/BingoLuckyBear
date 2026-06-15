@@ -13,6 +13,9 @@ export interface AuthoritativeRoomView {
   version: number
   entryFeePoints: number
   prizePoolPoints: number
+  houseFeeRate: number
+  houseFeePoints: number
+  prizeAwardedPoints: number
   ranked: boolean
   rules: TrucoRules
   players: {

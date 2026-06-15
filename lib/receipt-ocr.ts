@@ -19,10 +19,14 @@ const IMAGE_CONTENT_TYPES = new Set([
   'image/tiff',
 ])
 
-const OCR_TIMEOUT_MS = 22_000
+const OCR_TIMEOUT_MS = 20_000
 const PDF_TIMEOUT_MS = 12_000
 const SHARP_LOAD_ERROR_PATTERN = /(?:sharp|libvips|ERR_DLOPEN_FAILED|external module sharp|Could not load)/i
+const IMAGE_TOO_LARGE_ERROR_PATTERN = /(?:pixel limit|image.*too large|exceeds.*limit|Input image exceeds)/i
 const PUBLIC_ERROR_MAX_LENGTH = 420
+const LARGE_IMAGE_BYTES = 3_500_000
+const PRIMARY_IMAGE_LIMIT = { width: 1150, height: 1550 }
+const FAST_IMAGE_LIMIT = { width: 950, height: 1300 }
 
 type SharpFactory = typeof import('sharp').default
 
@@ -37,6 +41,10 @@ export function formatReceiptOcrError(error: unknown, fallback = 'No se pudo lee
 
   if (SHARP_LOAD_ERROR_PATTERN.test(message)) {
     return 'El OCR de imágenes no pudo iniciar porque faltan los binarios Linux de sharp/libvips en el deploy. Reinstalá dependencias y redeployá; mientras tanto, usá revisión manual.'
+  }
+
+  if (IMAGE_TOO_LARGE_ERROR_PATTERN.test(message)) {
+    return 'La imagen del comprobante es demasiado grande para el OCR automático en Vercel. Subí una captura recortada del comprobante o marcá revisión manual.'
   }
 
   return message.replace(/\s+/g, ' ').trim().slice(0, PUBLIC_ERROR_MAX_LENGTH) || fallback
@@ -306,16 +314,29 @@ async function extractPdfText(bytes: Buffer) {
 
 async function preprocessImage(bytes: Buffer, threshold = false) {
   const sharp = await loadSharp()
-  let pipeline = sharp(bytes)
+  const fastMode = threshold || bytes.byteLength > LARGE_IMAGE_BYTES
+  const limit = fastMode ? FAST_IMAGE_LIMIT : PRIMARY_IMAGE_LIMIT
+  const metadata = await withTimeout(
+    sharp(bytes, { limitInputPixels: 36_000_000 }).metadata(),
+    2_500,
+    'No se pudo inspeccionar la imagen a tiempo. Subí una captura JPG/PNG más liviana o marcá revisión manual.',
+  )
+  const shouldEnlarge = Number(metadata.width ?? 0) > 0 && Number(metadata.width ?? 0) < 700 && bytes.byteLength <= LARGE_IMAGE_BYTES
+
+  let pipeline = sharp(bytes, { limitInputPixels: 36_000_000 })
     .rotate()
     .flatten({ background: '#ffffff' })
-    .resize({ width: 1400, height: 1800, fit: 'inside', withoutEnlargement: false })
+    .resize({ ...limit, fit: 'inside', withoutEnlargement: !shouldEnlarge })
     .grayscale()
     .normalize()
-    .sharpen()
+    .sharpen({ sigma: fastMode ? 0.7 : 1 })
 
   if (threshold) pipeline = pipeline.threshold(178)
-  return withTimeout(pipeline.png({ compressionLevel: 6 }).toBuffer(), 7_000, 'La preparación de imagen demoró demasiado. Subí una captura más liviana o marcá revisión manual.')
+  return withTimeout(
+    pipeline.png({ compressionLevel: 9, palette: fastMode }).toBuffer(),
+    6_500,
+    'La preparación de imagen demoró demasiado. Subí una captura más liviana o marcá revisión manual.',
+  )
 }
 
 async function recognizeImage(bytes: Buffer) {

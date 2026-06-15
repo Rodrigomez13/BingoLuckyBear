@@ -13,6 +13,12 @@ import {
 } from '@/lib/truco/engine'
 import { Button } from '@/components/ui/button'
 
+const ENVIDO_RAISE_OPTIONS: { call: EnvidoCall; label: string }[] = [
+  { call: 'envido', label: 'Envido' },
+  { call: 'real-envido', label: 'Real' },
+  { call: 'falta-envido', label: 'Falta' },
+]
+
 interface ActionButtonsProps {
   state: GameState
   player?: Player
@@ -41,11 +47,7 @@ export function ActionButtons({
   const canFlor = canCallFlor(state, player)
 
   if (pendingEnvidoForPlayer) {
-    const raiseOptions: { call: EnvidoCall; label: string }[] = [
-      { call: 'envido', label: 'Envido' },
-      { call: 'real-envido', label: 'Real' },
-      { call: 'falta-envido', label: 'Falta' },
-    ].filter((option) => canRaiseEnvido(state, player, option.call))
+    const raiseOptions = ENVIDO_RAISE_OPTIONS.filter((option) => canRaiseEnvido(state, player, option.call))
     const pendingLabel = formatEnvidoSequence(state.envidoPending?.calls ?? [])
 
     return (

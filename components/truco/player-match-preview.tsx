@@ -33,6 +33,11 @@ export function PlayerMatchPreview({
   const rivalIdentity = isOnline ? roomView?.players[rival] : null
   const prizePool = roomView?.prizePoolPoints ?? 0
   const entryFee = roomView?.entryFeePoints ?? 0
+  const netPrize = roomView?.prizeAwardedPoints
+    ? roomView.prizeAwardedPoints
+    : prizePool > 0
+      ? prizePool - getHouseFee(prizePool)
+      : 0
   return (
     <div className="mb-2 grid gap-2 rounded-2xl border border-amber-300/20 bg-[#06140e]/85 p-2 shadow-xl shadow-black/30 sm:mb-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:p-3">
       <PlayerPill
@@ -47,6 +52,7 @@ export function PlayerMatchPreview({
       <div className="grid grid-cols-2 gap-1 rounded-xl border border-white/10 bg-black/25 px-2 py-2 text-center sm:min-w-[250px]">
         <Metric label="Saldo disponible" value={availableBalance === null ? 'Invitado' : formatAccountBalance(availableBalance)} />
         <Metric label="Pozo" value={prizePool ? formatAccountBalance(prizePool) : 'Sin pozo'} />
+        <Metric label="Premio neto" value={netPrize ? formatAccountBalance(netPrize) : 'Libre'} />
         <Metric label="Entrada" value={entryFee ? formatAccountBalance(entryFee) : 'Libre'} />
         <Metric label="Regla" value={florEnabled ? 'Con Flor' : 'Sin Flor'} />
         <div className="col-span-2 truncate pt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-100/45">
@@ -105,6 +111,14 @@ function PlayerPill({
       </div>
     </div>
   )
+}
+
+function getHouseFee(total: number) {
+  if (total <= 0) return 0
+  if (total <= 200) return Math.floor(total * 0.1)
+  if (total <= 1000) return Math.floor(total * 0.08)
+  if (total <= 5000) return Math.floor(total * 0.06)
+  return Math.floor(total * 0.05)
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
