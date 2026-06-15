@@ -164,71 +164,6 @@ export default function MyAccountPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handlePasswordAccess = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setIsAuthLoading(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      if (authMode === 'register') {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, alias: playerAlias, avatar_key: avatarKey }),
-        })
-        const data = await response.json()
-        if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo crear la cuenta')
-        if (data.requires_email_confirmation) {
-          setPassword('')
-          setAuthMode('login')
-          setMessage(data.message || 'Cuenta creada. Revisá tu correo y confirmá el enlace antes de iniciar sesión.')
-          return
-        }
-      }
-
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw signInError
-
-      const signedEmail = data.user?.email ?? email
-      setPassword('')
-      applyAuthenticatedEmail(signedEmail)
-      setMessage(authMode === 'register' ? 'Cuenta creada. Ya estás dentro.' : 'Sesión iniciada.')
-      router.refresh()
-
-      await wait(250)
-      await loadAccount(signedEmail)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo acceder a tu cuenta')
-    } finally {
-      setIsAuthLoading(false)
-    }
-  }
-
-  const handleGoogleAccess = async () => {
-    setIsGoogleLoading(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      const origin = window.location.origin
-      const { error: googleError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${origin}/auth/callback?next=/mi-cuenta`,
-          queryParams: {
-            prompt: 'select_account',
-          },
-        },
-      })
-
-      if (googleError) throw googleError
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión con Google')
-      setIsGoogleLoading(false)
-    }
-  }
-
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault()
     setIsSaving(true)
@@ -305,122 +240,23 @@ export default function MyAccountPage() {
           <Card className="mx-auto max-w-xl border-white/10 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/30">
             <CardHeader className="text-center">
               <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-300 text-zinc-950">
-                {authMode === 'login' ? <LockKeyhole className="h-7 w-7" /> : <UserPlus className="h-7 w-7" />}
+                <UserCircle2 className="h-7 w-7" />
               </div>
-              <CardTitle className="text-2xl text-white">{authMode === 'login' ? 'Entrar como jugador' : 'Crear cuenta de jugador'}</CardTitle>
+              <CardTitle className="text-2xl text-white">Ingresá a tu cuenta</CardTitle>
               <CardDescription className="text-zinc-400">
-                {authMode === 'login'
-                  ? 'Ingresá con correo y contraseña, o continuá con Google.'
-                  : 'Creá tu usuario, elegí avatar y administrá tu saldo desde una sola cuenta.'}
+                Entrá con correo y contraseña, registrate o continuá con Google para ver tus datos, saldo y cartones.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <Button
                 type="button"
-                onClick={handleGoogleAccess}
-                disabled={isGoogleLoading || isAuthLoading}
-                variant="outline"
-                className="mb-4 h-12 w-full rounded-full border-white/15 bg-white text-zinc-950 hover:bg-zinc-100"
+                onClick={() => setLoginOpen(true)}
+                className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200"
               >
-                {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleGlyph />}
-                Continuar con Google
+                <UserCircle2 className="mr-2 h-4 w-4" />
+                Ingresar o crear cuenta
               </Button>
-
-              <div className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
-                <span className="h-px flex-1 bg-white/10" />
-                <span>o</span>
-                <span className="h-px flex-1 bg-white/10" />
-              </div>
-
-              <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('login')}
-                  className={`rounded-xl px-3 py-2 text-xs font-black transition ${authMode === 'login' ? 'bg-amber-300 text-zinc-950' : 'text-zinc-400 hover:text-white'}`}
-                >
-                  Ingresar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('register')}
-                  className={`rounded-xl px-3 py-2 text-xs font-black transition ${authMode === 'register' ? 'bg-amber-300 text-zinc-950' : 'text-zinc-400 hover:text-white'}`}
-                >
-                  Registrarme
-                </button>
-              </div>
-
-              <form onSubmit={handlePasswordAccess} className="space-y-4">
-                {authMode === 'register' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Alias público</Label>
-                      <Input
-                        value={playerAlias}
-                        onChange={(event) => setPlayerAlias(event.target.value)}
-                        placeholder="Ej: LuckyRodri"
-                        className="border-zinc-700 bg-zinc-900 text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Elegí tu avatar</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {CUSTOMER_AVATARS.map((avatar) => (
-                          <button
-                            key={avatar.key}
-                            type="button"
-                            onClick={() => setAvatarKey(avatar.key)}
-                            className={`rounded-2xl border p-2 text-center transition ${avatarKey === avatar.key ? 'border-amber-300 bg-amber-300/10' : 'border-white/10 bg-black/20 hover:border-white/25'}`}
-                          >
-                            <AvatarPreview avatarKey={avatar.key} label={avatar.label} />
-                            <span className="mt-1 block text-[10px] font-bold text-zinc-300">{avatar.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Correo electrónico</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="tu-correo@ejemplo.com"
-                    required
-                    className="border-zinc-700 bg-zinc-900 text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      required
-                      minLength={6}
-                      className="border-zinc-700 bg-zinc-900 pr-11 text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((value) => !value)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-amber-200"
-                      aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" disabled={isAuthLoading || isGoogleLoading} className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-                  {isAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : authMode === 'login' ? <LockKeyhole className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                  {authMode === 'login' ? 'Entrar' : 'Crear cuenta'}
-                </Button>
-              </form>
-              <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
+              <p className="mt-4 text-xs leading-5 text-zinc-500">
                 Podés comprar como invitado, pero para Truco online, puntos, ranking e historial necesitás cuenta.
               </p>
             </CardContent>
@@ -548,6 +384,8 @@ export default function MyAccountPage() {
           </div>
         )}
       </section>
+
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onAuthenticated={() => void loadAccount()} />
     </main>
   )
 }
