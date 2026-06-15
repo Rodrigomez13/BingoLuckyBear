@@ -5,6 +5,22 @@ import { useRouter } from 'next/navigation'
 import { Bot, Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+async function readApiResponse(response: Response) {
+  const contentType = response.headers.get('content-type') ?? ''
+
+  if (contentType.includes('application/json')) {
+    return response.json()
+  }
+
+  const text = await response.text()
+  const snippet = text.replace(/\s+/g, ' ').slice(0, 180)
+  throw new Error(
+    `El servidor no devolvió JSON. Estado HTTP ${response.status}. `
+    + `Respuesta recibida: ${snippet || 'vacía'}. `
+    + 'Esto suele indicar una ruta API inexistente, un error HTML de Vercel/Next.js, sesión expirada o timeout del OCR.',
+  )
+}
+
 export function DepositOcrControls({
   id,
   disabled,
@@ -20,10 +36,10 @@ export function DepositOcrControls({
     try {
       const response = await fetch(`/api/admin/deposits/${id}/ocr`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(action === 'manual' ? { action: 'manual' } : {}),
       })
-      const data = await response.json()
+      const data = await readApiResponse(response)
       if (!response.ok) throw new Error(data.error || 'No se pudo revisar el comprobante')
       router.refresh()
     } catch (error) {
