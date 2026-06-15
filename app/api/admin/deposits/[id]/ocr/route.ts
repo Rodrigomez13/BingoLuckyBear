@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { requireAdminApi } from '@/lib/auth/roles'
+import { formatReceiptOcrError } from '@/lib/receipt-ocr'
 import { documentIdentityKeys, normalizeOperationNumber, validateParsedReceipt } from '@/lib/receipt-validation'
 
 export const runtime = 'nodejs'
@@ -214,9 +215,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       validation: { ...validation, warnings: [...new Set(warnings)], reviewRecommendation },
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'No se pudo leer el comprobante'
+    const rawMessage = err instanceof Error ? err.message : 'No se pudo leer el comprobante'
+    const message = formatReceiptOcrError(err)
     const stack = err instanceof Error ? err.stack : undefined
-    console.error('Admin deposit OCR failed:', { depositId: id, message, stack })
+    console.error('Admin deposit OCR failed:', { depositId: id, message: rawMessage, stack })
 
     const { data: current } = await serviceClient
       .from('payment_deposits')

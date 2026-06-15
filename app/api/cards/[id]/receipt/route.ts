@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
+import { formatReceiptOcrError, parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
 import { validateParsedReceipt, type PaymentStatus } from '@/lib/receipt-validation'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
 
@@ -171,7 +171,7 @@ export async function POST(
     if (error) throw error
     return NextResponse.json({ card: data, validation })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'No se pudo parsear el comprobante'
+    const message = formatReceiptOcrError(error, 'No se pudo parsear el comprobante')
     const { data } = await access.supabase
       .from('bingo_cards')
       .update({

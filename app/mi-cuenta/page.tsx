@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { LoginModal } from '@/components/auth/login-modal'
 import { SiteHeader } from '@/components/site-header'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
 import { Button } from '@/components/ui/button'
@@ -75,6 +76,7 @@ export default function MyAccountPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [profile, setProfile] = useState(emptyProfile)
   const [cards, setCards] = useState<CustomerCard[]>([])
+  const [loginOpen, setLoginOpen] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()

@@ -1,4 +1,3 @@
-import sharp from 'sharp'
 import { tmpdir } from 'node:os'
 import { type ParsedReceiptData, parseMoneyValue } from '@/lib/receipt-validation'
 
@@ -22,6 +21,39 @@ const IMAGE_CONTENT_TYPES = new Set([
 
 const OCR_TIMEOUT_MS = 22_000
 const PDF_TIMEOUT_MS = 12_000
+const SHARP_LOAD_ERROR_PATTERN = /(?:sharp|libvips|ERR_DLOPEN_FAILED|external module sharp|Could not load)/i
+const PUBLIC_ERROR_MAX_LENGTH = 420
+
+type SharpFactory = typeof import('sharp').default
+
+let sharpFactoryPromise: Promise<SharpFactory> | null = null
+
+export function formatReceiptOcrError(error: unknown, fallback = 'No se pudo leer el comprobante') {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : fallback
+
+  if (SHARP_LOAD_ERROR_PATTERN.test(message)) {
+    return 'El OCR de imágenes no pudo iniciar porque faltan los binarios Linux de sharp/libvips en el deploy. Reinstalá dependencias y redeployá; mientras tanto, usá revisión manual.'
+  }
+
+  return message.replace(/\s+/g, ' ').trim().slice(0, PUBLIC_ERROR_MAX_LENGTH) || fallback
+}
+
+async function loadSharp() {
+  if (!sharpFactoryPromise) {
+    sharpFactoryPromise = import('sharp')
+      .then((mod) => mod.default)
+      .catch((error) => {
+        sharpFactoryPromise = null
+        throw new Error(formatReceiptOcrError(error))
+      })
+  }
+
+  return sharpFactoryPromise
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
   return Promise.race<T>([
@@ -273,6 +305,7 @@ async function extractPdfText(bytes: Buffer) {
 }
 
 async function preprocessImage(bytes: Buffer, threshold = false) {
+  const sharp = await loadSharp()
   let pipeline = sharp(bytes)
     .rotate()
     .flatten({ background: '#ffffff' })
