@@ -49,6 +49,21 @@ export interface GameState {
   florResolved: boolean
   // Round result modal
   lastResult: string | null
+  // Epoch ms (server time) marking when the current decision window started.
+  // Used by online tables to run the per-turn 30s countdown. Optional so local
+  // (bot) games can ignore it.
+  turnStartedAt?: number
+}
+
+// Per-turn time budget for online tables.
+export const TURN_TIME_LIMIT_MS = 30_000
+
+// Returns the player currently "on the clock": whoever must respond to a
+// pending call, otherwise whoever has the turn.
+export function getActivePlayer(state: GameState): Player {
+  if (state.envidoPending) return other(state.envidoPending.by)
+  if (state.trucoPending) return other(state.trucoPending.by)
+  return state.turn
 }
 
 function uid() {
@@ -84,6 +99,7 @@ export function createGame(targetScore: 15 | 30, rules: TrucoRules = DEFAULT_TRU
     envidoValue: 0,
     florResolved: false,
     lastResult: null,
+    turnStartedAt: Date.now(),
   }
   return startRound(state, 'player')
 }
@@ -107,6 +123,7 @@ export function startRound(prev: GameState, mano: Player): GameState {
     envidoValue: 0,
     florResolved: false,
     lastResult: null,
+    turnStartedAt: Date.now(),
     log: [
       ...prev.log.slice(-30),
       { id: uid(), by: 'system', text: `Nueva mano. Es mano ${mano === 'player' ? 'vos' : 'el oso'}.` },
@@ -434,7 +451,10 @@ export function respondEnvido(state: GameState, by: Player, accept: boolean): Ga
 }
 
 export function nextRound(state: GameState): GameState {
-  if (state.phase === 'game-over') return state
+  // Only advance from a finished round. This makes the call idempotent so the
+  // automatic advance (which can fire from both clients in online mode) never
+  // re-deals an in-progress hand.
+  if (state.phase !== 'round-over') return state
   const newMano = other(state.hand)
   return startRound(state, newMano)
 }

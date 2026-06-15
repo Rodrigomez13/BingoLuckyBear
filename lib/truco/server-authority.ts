@@ -6,6 +6,7 @@ import {
   callFlor,
   callTruco,
   createGame,
+  getActivePlayer,
   goToMazo,
   nextRound,
   playCard,
@@ -146,6 +147,10 @@ export function applyAuthoritativeAction(state: GameState, actor: Player, action
       return state
     case 'go-maze':
       return goToMazo(state, actor)
+    case 'timeout':
+      // The player whose clock ran out folds, regardless of who reported it.
+      if (state.phase !== 'playing') return state
+      return goToMazo(state, getActivePlayer(state))
     case 'next-round':
       return nextRound(state)
     case 'restart':
@@ -172,6 +177,7 @@ export function validateActionShape(action: unknown): action is OnlineAction {
   if (type === 'call-truco') return true
   if (type === 'respond') return typeof (action as { accept?: unknown }).accept === 'boolean'
   if (type === 'go-maze') return true
+  if (type === 'timeout') return true
   if (type === 'next-round') return true
   if (type === 'restart') return false
 

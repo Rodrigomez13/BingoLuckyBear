@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { TURN_TIME_LIMIT_MS } from '@/lib/truco/engine'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/shared'
 import {
   applyAuthoritativeAction,
@@ -64,10 +65,25 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, error: 'La mesa ya no está activa' }, { status: 409 })
   }
 
-  const nextState = applyAuthoritativeAction(room.state, actor, action, room.target_score)
-  if (nextState === room.state) {
+  // A timeout can only be claimed once the 30s decision window has actually
+  // elapsed (server-side check, with a 1s tolerance for clock skew/latency).
+  // This prevents a player from forcing the rival to fold prematurely.
+  if (action.type === 'timeout') {
+    const startedAt = typeof room.state.turnStartedAt === 'number' ? room.state.turnStartedAt : null
+    const elapsed = startedAt === null ? Number.POSITIVE_INFINITY : Date.now() - startedAt
+    if (elapsed < TURN_TIME_LIMIT_MS - 1000) {
+      return NextResponse.json({ ok: false, error: 'El tiempo todavía no se agotó.' }, { status: 409 })
+    }
+  }
+
+  const appliedState = applyAuthoritativeAction(room.state, actor, action, room.target_score)
+  if (appliedState === room.state) {
     return NextResponse.json({ ok: false, error: 'Esa acción no está permitida en este momento.' }, { status: 409 })
   }
+
+  // Reset the per-turn clock on every successful action so the player who is
+  // now on the clock gets a fresh 30s window.
+  const nextState = appliedState.phase === 'playing' ? { ...appliedState, turnStartedAt: Date.now() } : appliedState
 
   const nextVersion = room.version + 1
   const nextStatus = nextState.phase === 'game-over' ? 'finished' : 'playing'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Clock, Hash, Maximize2, Minimize2, RotateCcw, Tally5 } from 'lucide-react'
 import {
   type EnvidoCall,
   type GameState,
@@ -10,11 +10,13 @@ import {
   callFlor,
   callTruco,
   createGame,
+  getActivePlayer,
   goToMazo,
   nextRound,
   playCard,
   respondEnvido,
   respondTruco,
+  TURN_TIME_LIMIT_MS,
 } from '@/lib/truco/engine'
 import { botAct } from '@/lib/truco/bot'
 import { type OnlineAction, type OnlineRole } from '@/lib/truco/online'
@@ -41,7 +43,7 @@ import { ActionButtons } from './action-buttons'
 import { RulesModal } from './rules-modal'
 import { PlayerMatchPreview } from './player-match-preview'
 import { GameHistoryPanel } from './game-history-panel'
-import { normalizeTrucoRules, type TrucoRules } from '@/lib/truco/rules'
+import { normalizeTrucoRules, type TrucoRules, type TrucoScoreStyle } from '@/lib/truco/rules'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
@@ -71,11 +73,17 @@ export function GameTable({
   const [exitBusy, setExitBusy] = useState(false)
   const [roomView, setRoomView] = useState<AuthoritativeRoomView | null>(null)
   const [availableBalance, setAvailableBalance] = useState<number | null>(null)
+  // Personal, visual-only score notation. Initialized from the table rule but
+  // can be switched at any time during play without affecting the rival.
+  const [scoreStyle, setScoreStyle] = useState<TrucoScoreStyle>(() => normalizeTrucoRules(rules).scoreStyle)
+  // Ticking clock used to render the per-turn countdown in online tables.
+  const [now, setNow] = useState(() => Date.now())
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const gameShellRef = useRef<HTMLDivElement | null>(null)
   const spriteWarmedRef = useRef(false)
   const lastVersionRef = useRef<number | null>(null)
+  const timeoutFiredVersionRef = useRef<number | null>(null)
 
   const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
@@ -87,6 +95,16 @@ export function GameTable({
       : roomView?.players.player.name ?? 'Rival'
   const waitingForRival = isOnline && onlineStatus === 'waiting'
   const activeRules = normalizeTrucoRules(state.rules ?? rules)
+
+  // Per-turn countdown (online tables only). The clock only runs once the game
+  // has actually started (status "connected"/playing), never while a table is
+  // still waiting for a rival.
+  const timerActive =
+    isOnline && onlineStatus === 'connected' && state.phase === 'playing' && typeof state.turnStartedAt === 'number'
+  const activePlayer = getActivePlayer(state)
+  const localIsActive = activePlayer === actor
+  const turnDeadline = (state.turnStartedAt ?? 0) + TURN_TIME_LIMIT_MS
+  const secondsLeft = timerActive ? Math.max(0, Math.ceil((turnDeadline - now) / 1000)) : null
 
   const loadBalance = useCallback(async () => {
     try {
@@ -252,12 +270,46 @@ export function GameTable({
   const handleTruco = () => void commitAction({ type: 'call-truco' })
   const handleMazo = () => void commitAction({ type: 'go-maze' })
   const handleRespond = (accept: boolean) => void commitAction({ type: 'respond', accept })
-  const handleNextRound = () => void commitAction({ type: 'next-round' })
   const handleRestart = () => {
     if (isOnline) return
     setBotPhrase(null)
     void commitAction({ type: 'restart' })
   }
+
+  // Tick the countdown clock twice a second while an online turn is live.
+  useEffect(() => {
+    if (!timerActive) return
+    setNow(Date.now())
+    const id = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [timerActive, state.turnStartedAt])
+
+  // Claim a timeout once the 30s window elapses. The player on the clock folds
+  // immediately at 0s; the waiting rival can claim ~3s later as a fallback in
+  // case the other client is closed. The server re-validates the deadline.
+  useEffect(() => {
+    if (!timerActive || actionBusy) return
+    const version = lastVersionRef.current
+    if (version === null || timeoutFiredVersionRef.current === version) return
+    const overdueBy = now - turnDeadline
+    const threshold = localIsActive ? 0 : 3000
+    if (overdueBy >= threshold) {
+      timeoutFiredVersionRef.current = version
+      void commitAction({ type: 'timeout' })
+    }
+  }, [timerActive, actionBusy, now, turnDeadline, localIsActive, commitAction])
+
+  // When a round finishes, briefly show who won and advance automatically.
+  // The player no longer needs to press "Siguiente mano". In online mode only
+  // the host drives the advance; the guest receives the new hand via polling.
+  useEffect(() => {
+    if (state.phase !== 'round-over') return
+    if (isOnline && (actor !== 'player' || onlineStatus !== 'connected' || actionBusy)) return
+    const t = setTimeout(() => {
+      void commitAction({ type: 'next-round' })
+    }, 1800)
+    return () => clearTimeout(t)
+  }, [state.phase, isOnline, actor, onlineStatus, actionBusy, commitAction])
 
   const handleExit = async () => {
     if (!isOnline || !roomCode || !onlineSecret) {
@@ -320,10 +372,37 @@ export function GameTable({
           <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 sm:px-4 sm:py-1.5">
             <span className={`h-2 w-2 shrink-0 rounded-full ${state.turn === actor ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
             <span className="truncate text-xs font-bold text-amber-100 sm:text-sm">{turnLabel}</span>
+            {secondsLeft !== null && (
+              <span
+                className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-black tabular-nums sm:text-sm ${
+                  secondsLeft <= 10 ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/15 text-emerald-200'
+                }`}
+                aria-label={localIsActive ? 'Tu tiempo restante' : `Tiempo restante de ${rivalLabel}`}
+              >
+                <Clock className="h-3 w-3" />
+                {secondsLeft}s
+              </span>
+            )}
           </div>
+          {secondsLeft !== null && (
+            <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">
+              {localIsActive ? 'Tenés 30s para jugar' : `Turno de ${rivalLabel}`}
+            </span>
+          )}
           {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
         <div className="flex gap-1.5">
+          <Button
+            onClick={() => setScoreStyle((value) => (value === 'numeric' ? 'traditional' : 'numeric'))}
+            variant="outline"
+            size="sm"
+            className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3"
+            aria-label={scoreStyle === 'numeric' ? 'Cambiar a anotación tradicional' : 'Cambiar a anotación numérica'}
+            title={scoreStyle === 'numeric' ? 'Anotación numérica' : 'Anotación tradicional'}
+          >
+            {scoreStyle === 'numeric' ? <Hash className="h-4 w-4" /> : <Tally5 className="h-4 w-4" />}
+            <span className="hidden sm:ml-1.5 sm:inline">{scoreStyle === 'numeric' ? 'Números' : 'Palitos'}</span>
+          </Button>
           <RulesModal compact />
           <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -369,7 +448,7 @@ export function GameTable({
           trickWinners={state.trickWinners}
           hand={state.hand}
           compact
-          scoreStyle={activeRules.scoreStyle}
+          scoreStyle={scoreStyle}
         />
       </div>
 
@@ -397,7 +476,7 @@ export function GameTable({
             rivalLabel={rivalLabel}
             trickWinners={state.trickWinners}
             hand={state.hand}
-            scoreStyle={activeRules.scoreStyle}
+            scoreStyle={scoreStyle}
           />
           <ActionButtons
             state={state}
@@ -450,20 +529,21 @@ export function GameTable({
               <p className="font-mono text-4xl font-black text-amber-300">{state.scores[rival]}</p>
             </div>
           </div>
-          <div className="flex justify-center gap-3">
-            {state.phase === 'game-over' ? (
+          {state.phase === 'game-over' ? (
+            <div className="flex justify-center gap-3">
               <Button onClick={handleRestart} className="bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
                 Jugar de nuevo
               </Button>
-            ) : (
-              <Button onClick={handleNextRound} className="bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
-                Siguiente mano
+              <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
+                Salir al menú
               </Button>
-            )}
-            <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" className="border-white/15 bg-transparent text-emerald-100">
-              Salir al menú
-            </Button>
-          </div>
+            </div>
+          ) : (
+            <p className="flex items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-100/50">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
+              Siguiente mano
+            </p>
+          )}
         </DialogContent>
       </Dialog>
     </div>
