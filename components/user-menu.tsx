@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, CreditCard, History, KeyRound, LogOut, ReceiptText, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
+import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 
@@ -111,6 +111,9 @@ export function UserMenu({ active = false }: { active?: boolean }) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="account-menu"
         className={`inline-flex max-w-[9rem] items-center gap-2 rounded-full border px-2 py-1.5 font-semibold transition sm:max-w-[13rem] ${
           active
             ? 'border-amber-300/30 bg-amber-300/10 text-amber-100'
@@ -118,15 +121,19 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         }`}
       >
         <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="sm" />
-        <span className="hidden truncate text-sm sm:block">{isAdmin ? 'Admin' : alias}</span>
+        <span className="hidden truncate text-sm sm:block">{alias}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[min(88vw,18rem)] overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
-          <div className="border-b border-white/10 p-4">
+        <div
+          id="account-menu"
+          role="menu"
+          className="absolute right-0 mt-2 w-[min(84vw,17rem)] overflow-hidden rounded-lg border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/50 backdrop-blur-xl"
+        >
+          <div className="border-b border-white/10 p-3">
             <div className="flex items-center gap-3">
-              <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="lg" />
+              <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="md" />
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
@@ -137,10 +144,9 @@ export function UserMenu({ active = false }: { active?: boolean }) {
           <div className="p-2">
             {isAdmin ? (
               <>
-                <MenuItem href="/admin" icon={<ShieldCheck className="h-4 w-4" />} label="Panel Admin" onClick={() => setOpen(false)} />
-                <MenuItem href="/admin/depositos" icon={<ReceiptText className="h-4 w-4" />} label="Depósitos" onClick={() => setOpen(false)} />
-                <MenuItem href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y pagos" onClick={() => setOpen(false)} />
-                <MenuItem href="/truco" icon={<History className="h-4 w-4" />} label="Mesas de Truco" onClick={() => setOpen(false)} />
+                <MenuItem href="/admin" icon={<ShieldCheck className="h-4 w-4" />} label="Abrir administración" onClick={() => setOpen(false)} emphasized />
+                <div className="my-2 border-t border-white/10" />
+                <MenuItem href="/mi-cuenta" icon={<Settings className="h-4 w-4" />} label="Mi cuenta" onClick={() => setOpen(false)} />
                 <MenuItem href="/mi-cuenta/seguridad" icon={<KeyRound className="h-4 w-4" />} label="Seguridad" onClick={() => setOpen(false)} />
               </>
             ) : (
@@ -167,17 +173,38 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   )
 }
 
-function AvatarBubble({ avatarKey, label, size }: { avatarKey: string; label: string; size: 'sm' | 'lg' }) {
+function AvatarBubble({ avatarKey, label, size }: { avatarKey: string; label: string; size: 'sm' | 'md' }) {
   return (
-    <span className={`${size === 'lg' ? 'h-12 w-12 rounded-2xl' : 'h-7 w-7 rounded-full'} flex shrink-0 items-center justify-center overflow-hidden border border-amber-300/25 bg-amber-300/10 shadow-inner`}>
+    <span className={`${size === 'md' ? 'h-10 w-10 rounded-lg' : 'h-7 w-7 rounded-full'} flex shrink-0 items-center justify-center overflow-hidden border border-amber-300/25 bg-amber-300/10 shadow-inner`}>
       <img src={getCustomerAvatarImageSrc(avatarKey)} alt={label} className="h-full w-full object-cover" />
     </span>
   )
 }
 
-function MenuItem({ href, icon, label, onClick }: { href: string; icon: React.ReactNode; label: string; onClick: () => void }) {
+function MenuItem({
+  href,
+  icon,
+  label,
+  onClick,
+  emphasized = false,
+}: {
+  href: string
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+  emphasized?: boolean
+}) {
   return (
-    <Link href={href} onClick={onClick} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-200 hover:bg-white/5 hover:text-amber-100">
+    <Link
+      href={href}
+      onClick={onClick}
+      role="menuitem"
+      className={`flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition ${
+        emphasized
+          ? 'bg-amber-300 text-zinc-950 hover:bg-amber-200'
+          : 'text-zinc-200 hover:bg-white/5 hover:text-amber-100'
+      }`}
+    >
       {icon}
       {label}
     </Link>

@@ -944,11 +944,15 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Panel</p>
           <nav className="grid gap-2">
             <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
-            <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Clientes" />
+            <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Compradores" />
             <AdminNavButton active={activeSection === 'sales'} onClick={() => setActiveSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
-            <AdminNavButton active={activeSection === 'paymentReviews'} onClick={() => setActiveSection('paymentReviews')} icon={<FileText className="h-4 w-4" />} label="Pagos" />
+            <AdminNavButton active={activeSection === 'paymentReviews'} onClick={() => setActiveSection('paymentReviews')} icon={<FileText className="h-4 w-4" />} label="Comprobantes" />
             <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
             <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
+            <div className="my-2 border-t border-white/10" />
+            <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">Gestión</p>
+            <AdminNavLink href="/admin/usuarios" icon={<Users className="h-4 w-4" />} label="Usuarios y roles" />
+            <AdminNavLink href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y movimientos" />
           </nav>
         </aside>
 
@@ -2475,6 +2479,18 @@ function AdminNavButton({
       {icon}
       <span>{label}</span>
     </button>
+  )
+}
+
+function AdminNavLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+    >
+      {icon}
+      <span>{label}</span>
+    </Link>
   )
 }
 
