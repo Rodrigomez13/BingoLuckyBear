@@ -20,6 +20,18 @@ const IMAGE_CONTENT_TYPES = new Set([
   'image/tiff',
 ])
 
+const OCR_TIMEOUT_MS = 22_000
+const PDF_TIMEOUT_MS = 12_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+  return Promise.race<T>([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms)
+    }),
+  ])
+}
+
 function normalizeText(value: string) {
   return value
     .normalize('NFKC')
@@ -181,7 +193,6 @@ function findIsoDate(text: string) {
     const minute = Number(match[5] ?? 0)
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2020 || hour > 23 || minute > 59) continue
 
-    // Receipt timestamps are interpreted in Argentina time (UTC-3).
     const date = new Date(Date.UTC(year, month - 1, day, hour + 3, minute))
     if (
       date.getUTCDate() === day
@@ -265,22 +276,22 @@ async function preprocessImage(bytes: Buffer, threshold = false) {
   let pipeline = sharp(bytes)
     .rotate()
     .flatten({ background: '#ffffff' })
-    .resize({ width: 1800, height: 2400, fit: 'inside', withoutEnlargement: false })
+    .resize({ width: 1400, height: 1800, fit: 'inside', withoutEnlargement: false })
     .grayscale()
     .normalize()
     .sharpen()
 
   if (threshold) pipeline = pipeline.threshold(178)
-  return pipeline.png({ compressionLevel: 6 }).toBuffer()
+  return withTimeout(pipeline.png({ compressionLevel: 6 }).toBuffer(), 7_000, 'La preparación de imagen demoró demasiado. Subí una captura más liviana o marcá revisión manual.')
 }
 
 async function recognizeImage(bytes: Buffer) {
   const { createWorker, PSM } = await import('tesseract.js')
-  const worker = await createWorker('spa+eng', 1, {
+  const worker = await withTimeout(createWorker('spa+eng', 1, {
     cachePath: tmpdir(),
     cacheMethod: 'write',
     logger: () => undefined,
-  })
+  }), 8_000, 'El motor OCR no inició a tiempo en Vercel. Marcá revisión manual o usá una imagen más liviana.')
 
   try {
     await worker.setParameters({
@@ -288,12 +299,21 @@ async function recognizeImage(bytes: Buffer) {
       preserve_interword_spaces: '1',
       user_defined_dpi: '300',
     })
-    const primary = await worker.recognize(await preprocessImage(bytes))
+
+    const primary = await withTimeout(
+      worker.recognize(await preprocessImage(bytes)),
+      OCR_TIMEOUT_MS,
+      'El OCR demoró demasiado y se cortó antes del timeout de Vercel. Subí una captura JPG/PNG más liviana o marcá revisión manual.',
+    )
     let best = primary
 
     if (primary.data.confidence < 58 || primary.data.text.trim().length < 45) {
       await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT })
-      const fallback = await worker.recognize(await preprocessImage(bytes, true))
+      const fallback = await withTimeout(
+        worker.recognize(await preprocessImage(bytes, true)),
+        12_000,
+        'El OCR de respaldo demoró demasiado. Marcá revisión manual.',
+      )
       if (fallback.data.confidence > primary.data.confidence || fallback.data.text.length > primary.data.text.length * 1.25) {
         best = fallback
       }
@@ -304,7 +324,7 @@ async function recognizeImage(bytes: Buffer) {
       confidence: Number.isFinite(best.data.confidence) ? best.data.confidence / 100 : null,
     }
   } finally {
-    await worker.terminate()
+    await worker.terminate().catch(() => undefined)
   }
 }
 
@@ -326,7 +346,11 @@ export async function parseReceiptWithFreeOcr(input: ReceiptOcrInput): Promise<P
   const isPdf = contentType === 'application/pdf' || input.filename.toLowerCase().endsWith('.pdf')
 
   if (isPdf) {
-    const text = await extractPdfText(input.bytes)
+    const text = await withTimeout(
+      extractPdfText(input.bytes),
+      PDF_TIMEOUT_MS,
+      'La lectura del PDF demoró demasiado. Marcá revisión manual o subí una captura JPG/PNG/WebP.',
+    )
     if (text.length < 30) {
       throw new Error('El PDF no contiene texto seleccionable. Abrilo y marcá revisión manual, o subí una captura JPG/PNG/WebP.')
     }
