@@ -13,6 +13,7 @@ import {
   respondTruco,
 } from './engine'
 import { generateRoomCode, normalizeRoomCode, type OnlineAction } from './shared'
+import { normalizeTrucoRules, type TrucoRules } from './rules'
 
 export type RoomVisibility = 'private' | 'public'
 
@@ -53,6 +54,7 @@ export interface PublicRoomSummary {
   entryFeePoints: number
   prizePoolPoints: number
   ranked: boolean
+  rules: TrucoRules
   host: {
     name: string
     avatarKey: string
@@ -62,8 +64,8 @@ export interface PublicRoomSummary {
   canJoin: boolean
 }
 
-export function createInitialRoomState(target: 15 | 30): GameState {
-  return createGame(target)
+export function createInitialRoomState(target: 15 | 30, rules: TrucoRules): GameState {
+  return createGame(target, rules)
 }
 
 export function makeRoomCode(candidate?: string) {
@@ -83,6 +85,7 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
     ranked: Boolean(room.ranked),
+    rules: normalizeTrucoRules(room.state.rules),
     players: {
       player: {
         name: room.host_name?.trim() || 'Jugador',
@@ -111,6 +114,7 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
     entryFeePoints: Number(room.entry_fee_points ?? 0),
     prizePoolPoints: Number(room.prize_pool_points ?? 0),
     ranked: Boolean(room.ranked),
+    rules: normalizeTrucoRules(room.state.rules),
     host: {
       name: room.host_name?.trim() || 'Jugador',
       avatarKey: room.host_avatar_key || 'golden_bear',
@@ -145,7 +149,7 @@ export function applyAuthoritativeAction(state: GameState, actor: Player, action
     case 'next-round':
       return nextRound(state)
     case 'restart':
-      return createGame(target)
+      return createGame(target, normalizeTrucoRules(state.rules))
     default:
       return state
   }

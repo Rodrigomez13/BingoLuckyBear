@@ -7,11 +7,13 @@ import {
   Coins,
   Copy,
   Globe2,
+  Hash,
   Link2,
   Loader2,
   Lock,
   LogIn,
   Play,
+  Sparkles,
   UserCircle2,
   Users,
 } from 'lucide-react'
@@ -31,30 +33,34 @@ import {
 import { PublicRoomsPanel } from './public-rooms-panel'
 import { RulesModal } from './rules-modal'
 import { TrucoLoadingOverlay } from './truco-loading-overlay'
+import { formatAccountBalance } from '@/lib/economy/format'
+import { DEFAULT_TRUCO_RULES, type TrucoRules, type TrucoScoreStyle } from '@/lib/truco/rules'
 
 const GUEST_IDENTITY_KEY = 'lbb-truco-guest-identity'
 const POT_OPTIONS = [
   { total: 0, stake: 0, label: 'Sin apuesta' },
-  { total: 20, stake: 10, label: 'Pozo 20' },
-  { total: 100, stake: 50, label: 'Pozo 100' },
-  { total: 200, stake: 100, label: 'Pozo 200' },
+  { total: 20, stake: 10, label: 'Pozo $20' },
+  { total: 100, stake: 50, label: 'Pozo $100' },
+  { total: 200, stake: 100, label: 'Pozo $200' },
 ] as const
 
 interface RoomLobbyProps {
   initialRoomCode?: string | null
-  onPlayBot: (target: 15 | 30) => void
-  onPlayOnline: (config: { target: 15 | 30; roomCode: string; role: OnlineRole; secret: string }) => void
+  onPlayBot: (target: 15 | 30, rules: TrucoRules) => void
+  onPlayOnline: (config: { target: 15 | 30; rules: TrucoRules; roomCode: string; role: OnlineRole; secret: string }) => void
 }
 
 interface AccountState {
   loading: boolean
   user: { id: string; email?: string | null } | null
   player: { alias?: string | null; avatar_key?: string | null } | null
-  points: number
+  balance: number
 }
 
 export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobbyProps) {
   const [target, setTarget] = useState<15 | 30>(30)
+  const [florEnabled, setFlorEnabled] = useState(DEFAULT_TRUCO_RULES.florEnabled)
+  const [scoreStyle, setScoreStyle] = useState<TrucoScoreStyle>(DEFAULT_TRUCO_RULES.scoreStyle)
   const [mode, setMode] = useState<'home' | 'create' | 'join'>('home')
   const [visibility, setVisibility] = useState<RoomVisibility>('public')
   const [potPoints, setPotPoints] = useState(0)
@@ -62,7 +68,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   const [joinCode, setJoinCode] = useState('')
   const [guestName, setGuestName] = useState('')
   const [guestAvatarKey, setGuestAvatarKey] = useState<CustomerAvatarKey>('golden_bear')
-  const [account, setAccount] = useState<AccountState>({ loading: true, user: null, player: null, points: 0 })
+  const [account, setAccount] = useState<AccountState>({ loading: true, user: null, player: null, balance: 0 })
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
   const [roomsLoading, setRoomsLoading] = useState(false)
@@ -91,10 +97,10 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
         loading: false,
         user: playerData.user ?? walletData.user ?? null,
         player: playerData.player ?? null,
-        points: Number(walletData.wallet?.bonus_points_balance ?? 0),
+        balance: Number(walletData.wallet?.total_balance ?? walletData.wallet?.general_balance ?? 0),
       })
     } catch {
-      setAccount({ loading: false, user: null, player: null, points: 0 })
+      setAccount({ loading: false, user: null, player: null, balance: 0 })
     }
   }, [])
 
@@ -143,6 +149,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   const selectedPublicRoom = publicRooms.find((room) => room.roomCode === normalizeRoomCode(joinCode))
   const currentAvatar = getCustomerAvatar(account.player?.avatar_key)
   const currentName = account.player?.alias || account.user?.email?.split('@')[0] || 'Jugador'
+  const rules = useMemo<TrucoRules>(() => ({ florEnabled, scoreStyle }), [florEnabled, scoreStyle])
 
   const copyText = async (text: string) => {
     await navigator.clipboard?.writeText(text)
@@ -167,8 +174,8 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       setError('Las mesas con pozo requieren iniciar sesión.')
       return
     }
-    if (selectedPot.stake > account.points) {
-      setError(`Necesitás ${selectedPot.stake} LBB y tu saldo actual es ${account.points}.`)
+    if (selectedPot.stake > account.balance) {
+      setError(`Necesitás ${formatAccountBalance(selectedPot.stake)} y tu saldo actual es ${formatAccountBalance(account.balance)}.`)
       return
     }
 
@@ -181,6 +188,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
         roomCode,
         visibility,
         potPoints,
+        rules,
         identity: account.user ? null : guestIdentity,
       })
       if (!result.ok || !result.room || !result.secret || !result.room.role) {
@@ -190,7 +198,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       saveRoomSecret(result.room.roomCode, result.secret)
       setRoomCode(result.room.roomCode)
       await loadPublicRooms()
-      onPlayOnline({ target: result.room.target, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
+      onPlayOnline({ target: result.room.target, rules: result.room.rules, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la mesa')
     } finally {
@@ -208,13 +216,13 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
     const listedRoom = publicRooms.find((room) => room.roomCode === normalized)
     if (!account.user && listedRoom && listedRoom.entryFeePoints > 0) {
-      setError('Esta mesa tiene pozo. Iniciá sesión para usar tu saldo LBB.')
+      setError('Esta mesa tiene pozo. Iniciá sesión para usar tu saldo de cuenta.')
       setJoinCode(normalized)
       setMode('join')
       return
     }
-    if (listedRoom && listedRoom.entryFeePoints > account.points) {
-      setError(`Necesitás ${listedRoom.entryFeePoints} LBB para entrar y tu saldo es ${account.points}.`)
+    if (listedRoom && listedRoom.entryFeePoints > account.balance) {
+      setError(`Necesitás ${formatAccountBalance(listedRoom.entryFeePoints)} para entrar y tu saldo es ${formatAccountBalance(account.balance)}.`)
       setJoinCode(normalized)
       setMode('join')
       return
@@ -233,7 +241,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       }
       saveRoomSecret(result.room.roomCode, result.secret)
       await loadPublicRooms()
-      onPlayOnline({ target: result.room.target, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
+      onPlayOnline({ target: result.room.target, rules: result.room.rules, roomCode: result.room.roomCode, role: result.room.role, secret: result.secret })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo entrar a la mesa')
     } finally {
@@ -248,7 +256,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
     if (!account.user && (room.entryFeePoints > 0 || !guestIdentity)) {
       setMode('join')
       setError(room.entryFeePoints > 0
-        ? 'Esta mesa tiene pozo. Iniciá sesión para usar tu saldo LBB.'
+        ? 'Esta mesa tiene pozo. Iniciá sesión para usar tu saldo de cuenta.'
         : 'Completá tu nombre y avatar para entrar como invitado.')
       return
     }
@@ -258,7 +266,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   const quickRoom = publicRooms.find((room) =>
     room.canJoin
     && (room.entryFeePoints === 0 || Boolean(account.user))
-    && room.entryFeePoints <= account.points,
+    && room.entryFeePoints <= account.balance,
   )
 
   const quickPlay = () => {
@@ -267,7 +275,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       openPublicRoom(quickRoom)
       return
     }
-    onPlayBot(target)
+    onPlayBot(target, rules)
   }
 
   return (
@@ -290,7 +298,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
               </h1>
               <p className="mt-1 text-xs text-emerald-100/60">
                 Entrá a una mesa disponible o creá una partida
-                <span className="hidden sm:inline"> gratis o con pozo LBB</span>.
+                <span className="hidden sm:inline"> gratis o con pozo desde tu saldo</span>.
               </p>
             </div>
 
@@ -379,6 +387,37 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
             <ChoiceButton active={visibility === 'private'} onClick={() => setVisibility('private')} icon={<Lock className="mx-auto mb-1 h-4 w-4" />} label="Privada" />
           </div>
 
+          <div className="mt-4 space-y-3">
+            <p className="text-left text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/80">Preferencias de partida</p>
+            <GamePreference
+              icon={<Coins className="h-4 w-4" />}
+              label="Puntos"
+              detail="La partida termina cuando un jugador alcanza el objetivo."
+              options={[
+                { label: 'A 15', active: target === 15, onClick: () => setTarget(15) },
+                { label: 'A 30', active: target === 30, onClick: () => setTarget(30) },
+              ]}
+            />
+            <GamePreference
+              icon={<Sparkles className="h-4 w-4" />}
+              label="Flor"
+              detail="Habilita el canto de Flor cuando las tres cartas son del mismo palo."
+              options={[
+                { label: 'Sí', active: florEnabled, onClick: () => setFlorEnabled(true) },
+                { label: 'No', active: !florEnabled, onClick: () => setFlorEnabled(false) },
+              ]}
+            />
+            <GamePreference
+              icon={<Hash className="h-4 w-4" />}
+              label="Anotación"
+              detail="Elegí números o el tanteador tradicional de palitos."
+              options={[
+                { label: 'Numérica', active: scoreStyle === 'numeric', onClick: () => setScoreStyle('numeric') },
+                { label: 'Tradicional', active: scoreStyle === 'traditional', onClick: () => setScoreStyle('traditional') },
+              ]}
+            />
+          </div>
+
           <div className="mt-4">
             <p className="mb-2 text-left text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/80">Pozo de la mesa</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -421,7 +460,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
           {selectedPot.stake > 0 && account.user && (
             <p className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
-              Se reservan {selectedPot.stake} LBB ahora. Si cancelás antes de que entre un rival, se reintegran automáticamente.
+              Se reservan {formatAccountBalance(selectedPot.stake)} ahora. Si cancelás antes de que entre un rival, se reintegran automáticamente.
             </p>
           )}
 
@@ -433,7 +472,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Button
-              disabled={busy || account.loading || (!account.user && !guestIdentity) || selectedPot.stake > account.points}
+              disabled={busy || account.loading || (!account.user && !guestIdentity) || selectedPot.stake > account.balance}
               onClick={createRoom}
               className="flex-1 bg-amber-300 font-bold text-amber-950 hover:bg-amber-200 disabled:opacity-40"
             >
@@ -478,7 +517,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
               Anfitrión: <span className="font-bold text-white">{selectedPublicRoom.host.name}</span>
               {' · '}
               {selectedPublicRoom.entryFeePoints > 0
-                ? `Aporte para entrar: ${selectedPublicRoom.entryFeePoints} LBB`
+                ? `Aporte para entrar: ${formatAccountBalance(selectedPublicRoom.entryFeePoints)}`
                 : 'Mesa sin apuesta'}
             </div>
           )}
@@ -544,7 +583,46 @@ function AccountBadge({
       <span className={`flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br ${avatar.gradient} text-base`}>{avatar.emoji}</span>
       <div>
         <p className="text-xs font-bold text-white">{name}</p>
-        <p className="flex items-center gap-1 text-[9px] font-bold text-amber-200"><Coins className="h-3 w-3" /> {account.points} LBB</p>
+        <p className="flex items-center gap-1 text-[9px] font-bold text-amber-200"><Coins className="h-3 w-3" /> {formatAccountBalance(account.balance)}</p>
+      </div>
+    </div>
+  )
+}
+
+function GamePreference({
+  icon,
+  label,
+  detail,
+  options,
+}: {
+  icon: React.ReactNode
+  label: string
+  detail: string
+  options: Array<{ label: string; active: boolean; onClick: () => void }>
+}) {
+  return (
+    <div className="grid gap-3 rounded-md border border-white/10 bg-black/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="flex min-w-0 gap-2 text-left">
+        <span className="mt-0.5 text-amber-300">{icon}</span>
+        <div>
+          <p className="text-xs font-black text-white">{label}</p>
+          <p className="text-[10px] leading-4 text-emerald-100/55">{detail}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 rounded-md border border-white/10 bg-black/30 p-1">
+        {options.map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            onClick={option.onClick}
+            aria-pressed={option.active}
+            className={`h-8 rounded px-3 text-[10px] font-black transition ${
+              option.active ? 'bg-amber-300 text-amber-950' : 'text-emerald-100/60 hover:text-white'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -573,7 +651,7 @@ function GuestIdentityEditor({
         aria-label="Nombre o alias de invitado"
         className="mt-2 border-white/15 bg-black/30 text-white"
       />
-      <div className="mt-3 grid grid-cols-6 gap-1.5">
+      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
         {CUSTOMER_AVATARS.map((avatar) => (
           <button
             key={avatar.key}
@@ -581,7 +659,7 @@ function GuestIdentityEditor({
             onClick={() => onAvatarChange(avatar.key)}
             title={avatar.label}
             aria-label={avatar.label}
-            className={`flex aspect-square items-center justify-center rounded-xl border bg-gradient-to-br text-xl transition ${
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border bg-gradient-to-br text-lg transition ${
               avatar.gradient
             } ${avatarKey === avatar.key ? 'border-white ring-2 ring-amber-300' : 'border-white/10 opacity-65 hover:opacity-100'}`}
           >

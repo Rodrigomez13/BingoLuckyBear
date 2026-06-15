@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         userId: user.id,
         customerEmail: user.email,
         amount,
-        walletKind: 'cash_credits',
+        walletKind: 'general',
         paymentMethod,
         paymentReference,
         receiptUrl,

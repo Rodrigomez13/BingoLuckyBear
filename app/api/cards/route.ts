@@ -35,7 +35,7 @@ async function createEconomyTrace(input: {
     const deposit = await createPaymentDeposit(input.supabase, {
       customerEmail: input.email,
       amount: input.amount ?? 1,
-      walletKind: 'cash_credits',
+      walletKind: 'general',
       paymentMethod: input.paymentMethod,
       paymentReference: input.paymentReference,
       receiptUrl: input.paymentReceiptUrl,
@@ -50,7 +50,7 @@ async function createEconomyTrace(input: {
     const purchase = await createGamePurchase(input.supabase, {
       gameType: 'bingo',
       purchaseType: 'bingo_card',
-      walletKind: 'cash_credits',
+      walletKind: 'general',
       amount: input.amount ?? 0,
       quantity: input.quantity,
       status: 'pending',

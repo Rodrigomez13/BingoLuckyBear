@@ -22,7 +22,7 @@ const featureCards = [
   },
   {
     icon: <Coins className="h-5 w-5" />,
-    title: 'LBB Points',
+    title: 'Saldo compartido',
     text: 'Usá puntos internos para jugar, torneos y futuras promociones dentro de la plataforma.',
   },
 ]
@@ -46,7 +46,7 @@ export function TrucoPromoSection() {
             Truco argentino con la estética Lucky Bear.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-7 text-slate-300 lg:mx-0">
-            Además del bingo, ahora podés jugar Truco contra el oso, crear mesas online, competir por ranking y preparar partidas con LBB Points. Todo desde la misma cuenta.
+            Además del bingo, ahora podés jugar Truco contra el oso, crear mesas online, competir por ranking y usar el mismo saldo de tu cuenta. Todo desde un solo lugar.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">

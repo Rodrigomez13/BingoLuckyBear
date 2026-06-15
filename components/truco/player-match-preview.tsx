@@ -3,6 +3,7 @@
 import type { Player } from '@/lib/truco/engine'
 import type { AuthoritativeRoomView } from '@/lib/truco/server-client'
 import { getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
+import { formatAccountBalance } from '@/lib/economy/format'
 
 interface PlayerMatchPreviewProps {
   roomView: AuthoritativeRoomView | null
@@ -12,6 +13,8 @@ interface PlayerMatchPreviewProps {
   rivalLabel: string
   statusLabel: string
   isOnline: boolean
+  availableBalance: number | null
+  florEnabled: boolean
 }
 
 export function PlayerMatchPreview({
@@ -22,14 +25,14 @@ export function PlayerMatchPreview({
   rivalLabel,
   statusLabel,
   isOnline,
+  availableBalance,
+  florEnabled,
 }: PlayerMatchPreviewProps) {
   const rival = perspective === 'player' ? 'opponent' : 'player'
   const selfIdentity = isOnline ? roomView?.players[perspective] : null
   const rivalIdentity = isOnline ? roomView?.players[rival] : null
   const prizePool = roomView?.prizePoolPoints ?? 0
   const entryFee = roomView?.entryFeePoints ?? 0
-  const ltv = scores[perspective] - scores[rival]
-
   return (
     <div className="mb-2 grid gap-2 rounded-2xl border border-amber-300/20 bg-[#06140e]/85 p-2 shadow-xl shadow-black/30 sm:mb-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:p-3">
       <PlayerPill
@@ -41,11 +44,12 @@ export function PlayerMatchPreview({
         accent="emerald"
       />
 
-      <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-black/25 px-2 py-2 text-center sm:min-w-[210px]">
-        <Metric label="Pozo" value={prizePool ? `${prizePool} LBB` : 'Sin pozo'} />
-        <Metric label="Entrada" value={entryFee ? `${entryFee} LBB` : 'Libre'} />
-        <Metric label="Racha" value={`${ltv >= 0 ? '+' : ''}${ltv}`} />
-        <div className="col-span-3 truncate pt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-100/45">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-white/10 bg-black/25 px-2 py-2 text-center sm:min-w-[250px]">
+        <Metric label="Saldo disponible" value={availableBalance === null ? 'Invitado' : formatAccountBalance(availableBalance)} />
+        <Metric label="Pozo" value={prizePool ? formatAccountBalance(prizePool) : 'Sin pozo'} />
+        <Metric label="Entrada" value={entryFee ? formatAccountBalance(entryFee) : 'Libre'} />
+        <Metric label="Regla" value={florEnabled ? 'Con Flor' : 'Sin Flor'} />
+        <div className="col-span-2 truncate pt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-100/45">
           {statusLabel}
         </div>
       </div>

@@ -12,6 +12,7 @@ import {
   type RoomVisibility,
   type StoredTrucoRoom,
 } from '@/lib/truco/server-authority'
+import { normalizeTrucoRules } from '@/lib/truco/rules'
 
 function missingSupabaseEnv() {
   const missing: string[] = []
@@ -98,9 +99,10 @@ export async function POST(request: Request) {
     const target: 15 | 30 = body?.target === 15 ? 15 : 30
     const visibility: RoomVisibility = body?.visibility === 'public' ? 'public' : 'private'
     const potPoints = normalizePotPoints(body?.potPoints)
+    const rules = normalizeTrucoRules(body?.rules)
 
     if (potPoints === null) {
-      return NextResponse.json({ ok: false, error: 'El pozo debe ser 0, 20, 100 o 200 LBB.' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'El pozo debe ser 0, 20, 100 o 200.' }, { status: 400 })
     }
 
     if (potPoints > 0 && !user) {
@@ -121,7 +123,7 @@ export async function POST(request: Request) {
     for (let attempt = 0; attempt < 5; attempt++) {
       const roomCode = makeRoomCode(attempt === 0 ? body?.roomCode : undefined)
       const hostSecret = randomUUID()
-      const state = createInitialRoomState(target)
+      const state = createInitialRoomState(target, rules)
 
       const { data, error } = await supabase.rpc('lbb_create_truco_room', {
         p_room_code: roomCode,

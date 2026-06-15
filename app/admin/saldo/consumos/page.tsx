@@ -95,7 +95,7 @@ export default async function AdminGameConsumptionPage() {
 function GameMetric({ label, amount }: { label: string; amount: number }) { return <div className="border border-white/10 bg-zinc-950/80 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</p><p className="mt-1 font-mono text-3xl font-black text-white">{formatNumber(amount)}</p><p className="mt-1 text-xs text-zinc-500">unidades de saldo consumidas</p></div> }
 function formatNumber(value: number) { return new Intl.NumberFormat('es-AR').format(value) }
 function formatDate(value: string) { return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }
-function walletLabel(kind: string) { return kind === 'bonus_points' ? 'LBB Points' : 'Cash Credits' }
+function walletLabel(kind: string) { return kind === 'general' ? 'Saldo general' : 'Histórico' }
 function gameLabel(game: string) { return game === 'bingo' ? 'Bingo' : game === 'truco' ? 'Truco' : 'Torneo' }
 function gameClass(game: string) { return game === 'bingo' ? 'bg-amber-300 text-zinc-950 hover:bg-amber-300' : game === 'truco' ? 'bg-emerald-500 text-white hover:bg-emerald-500' : 'bg-sky-400 text-zinc-950 hover:bg-sky-400' }
 function purchaseLabel(type: string) { const labels: Record<string, string> = { bingo_card: 'Cartones', truco_entry_fee: 'Entrada a partida', tournament_entry: 'Entrada a torneo', pack: 'Paquete', manual: 'Consumo manual' }; return labels[type] ?? type }

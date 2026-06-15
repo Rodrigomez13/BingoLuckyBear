@@ -153,7 +153,7 @@ export default async function AdminDepositsPage() {
                           {deposit.receipt_parse_error && <p className="mt-1 max-w-[240px] text-xs text-rose-200">{deposit.receipt_parse_error}</p>}
                         </td>
                         <td className="px-4 py-4">
-                          <Badge className="bg-zinc-800 text-zinc-100 hover:bg-zinc-800">{linkedPurchase ? 'Compra de cartones' : deposit.wallet_kind === 'cash_credits' ? 'Cash Credits' : 'LBB Points'}</Badge>
+                          <Badge className="bg-zinc-800 text-zinc-100 hover:bg-zinc-800">{linkedPurchase ? 'Compra de cartones' : deposit.wallet_kind === 'general' ? 'Saldo general' : 'Saldo histórico'}</Badge>
                           <p className="mt-1 text-xs text-zinc-500">{linkedPurchase ? `${linkedPurchase.quantity} cartón${linkedPurchase.quantity === 1 ? '' : 'es'} · ${linkedPurchase.status}` : deposit.wallet_transaction_id ? 'Acreditado' : 'Sin acreditar'}</p>
                         </td>
                         <td className="px-4 py-4"><StatusBadge status={deposit.status} />{deposit.review_notes && <p className="mt-1 max-w-[220px] text-xs text-zinc-500">{deposit.review_notes}</p>}</td>

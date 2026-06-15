@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, Banknote, FileText, Image as ImageIcon, Loader2, ShieldCheck, Sparkles, WalletCards } from 'lucide-react'
+import { AlertTriangle, Banknote, FileText, Image as ImageIcon, Loader2, ShieldCheck, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import { PurchaseConfirmation } from '@/components/participate/purchase-confirma
 import { PAYMENT_METHODS } from '@/lib/payment'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
+import { formatAccountBalance } from '@/lib/economy/format'
 
 const MAX_RECEIPT_SIZE = 8 * 1024 * 1024
 const MIN_RECEIPT_SIZE = 10 * 1024
@@ -54,7 +55,7 @@ export function AccountPurchaseForm({
   onCardsCreated: (cards: BingoCard[]) => void
 }) {
   const [quantity, setQuantity] = useState('1')
-  const [paymentSource, setPaymentSource] = useState<'receipt' | 'cash_credits' | 'bonus_points'>('receipt')
+  const [paymentSource, setPaymentSource] = useState<'receipt' | 'balance'>('receipt')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [paymentReference, setPaymentReference] = useState('')
   const [acceptedLegal, setAcceptedLegal] = useState(false)
@@ -66,7 +67,7 @@ export function AccountPurchaseForm({
   const [confirmedCards, setConfirmedCards] = useState<BingoCard[]>([])
   const [receiptUrl, setReceiptUrl] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [wallet, setWallet] = useState({ cash_credits_balance: 0, bonus_points_balance: 0 })
+  const [wallet, setWallet] = useState({ total_balance: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prizeAmounts = getPrizeAmounts(raffle.prize, raffle.additional_prizes)
   const prizeSchedule = getPrizeSchedule(prizeAmounts)
@@ -74,6 +75,7 @@ export function AccountPurchaseForm({
   const cardPrice = Number(raffle.card_price ?? 0)
   const parsedQuantity = Math.max(1, Number(quantity) || 1)
   const totalAmount = cardPrice * parsedQuantity
+  const maxAffordableCards = cardPrice > 0 ? Math.min(10, Math.floor(wallet.total_balance / cardPrice)) : 0
   const cardAmount = cardPrice > 0
     ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(cardPrice)
     : formatMoneyAmount(raffle.amount, 'Precio pendiente')
@@ -139,8 +141,7 @@ export function AccountPurchaseForm({
         }
         if (!file) throw new Error('Debes subir el comprobante de pago')
       } else {
-        const available = paymentSource === 'cash_credits' ? wallet.cash_credits_balance : wallet.bonus_points_balance
-        if (available < totalAmount) throw new Error('No tenés saldo suficiente para esta compra')
+        if (wallet.total_balance < totalAmount) throw new Error('No tenés saldo suficiente para esta compra')
       }
 
       if (!acceptedLegal) {
@@ -164,7 +165,7 @@ export function AccountPurchaseForm({
           raffle_id: raffle.id,
           quantity: parsedQuantity,
           payment_source: paymentSource === 'receipt' ? 'receipt' : 'wallet',
-          wallet_kind: paymentSource === 'receipt' ? null : paymentSource,
+          wallet_kind: paymentSource === 'receipt' ? null : 'general',
           payment_method: paymentMethod,
           payment_reference: paymentReference,
           payment_receipt_url: uploadedPath,
@@ -180,11 +181,7 @@ export function AccountPurchaseForm({
       setConfirmedCards(purchaseData.cards ?? [])
       setReceiptUrl(uploadedPath)
       if (purchaseData.status === 'approved') {
-        setWallet((current) => ({
-          ...current,
-          [paymentSource === 'cash_credits' ? 'cash_credits_balance' : 'bonus_points_balance']:
-            Math.max(0, (paymentSource === 'cash_credits' ? current.cash_credits_balance : current.bonus_points_balance) - totalAmount),
-        }))
+        setWallet((current) => ({ total_balance: Math.max(0, current.total_balance - totalAmount) }))
       }
       setShowConfirmation(true)
     } catch (err) {
@@ -248,15 +245,27 @@ export function AccountPurchaseForm({
                 </div>
               </div>
               <Label htmlFor="quantity">Cartones</Label>
-              <Input id="quantity" type="number" min="1" max="10" value={quantity} onChange={(event) => setQuantity(event.target.value)} className="mt-2 border-zinc-700 bg-zinc-900 text-white" />
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={paymentSource === 'balance' ? Math.max(1, maxAffordableCards) : 10}
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+                className="mt-2 border-zinc-700 bg-zinc-900 text-white"
+              />
+              {paymentSource === 'balance' && (
+                <p className="mt-2 text-xs text-emerald-100/65">
+                  Tu saldo permite comprar hasta {maxAffordableCards} cartón{maxAffordableCards === 1 ? '' : 'es'} en este sorteo.
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">
               <Label>Forma de pago</Label>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <PaymentChoice active={paymentSource === 'receipt'} onClick={() => setPaymentSource('receipt')} icon={<Banknote className="h-4 w-4" />} label="Transferencia" detail="Requiere aprobación" />
-                <PaymentChoice active={paymentSource === 'cash_credits'} onClick={() => setPaymentSource('cash_credits')} icon={<WalletCards className="h-4 w-4" />} label="Cash Credits" detail={`Disponible: ${wallet.cash_credits_balance}`} />
-                <PaymentChoice active={paymentSource === 'bonus_points'} onClick={() => setPaymentSource('bonus_points')} icon={<Sparkles className="h-4 w-4" />} label="LBB Points" detail={`Disponible: ${wallet.bonus_points_balance}`} />
+                <PaymentChoice active={paymentSource === 'balance'} onClick={() => setPaymentSource('balance')} icon={<WalletCards className="h-4 w-4" />} label="Saldo de cuenta" detail={`Disponible: ${formatAccountBalance(wallet.total_balance)}`} />
               </div>
             </div>
 
@@ -324,7 +333,7 @@ export function AccountPurchaseForm({
 
             <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-full bg-amber-300 text-base font-black text-zinc-950 hover:bg-amber-200">
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-              {isLoading ? 'Registrando compra...' : paymentSource === 'receipt' ? 'Enviar compra para aprobación' : `Comprar por ${totalAmount}`}
+              {isLoading ? 'Registrando compra...' : paymentSource === 'receipt' ? 'Enviar compra para aprobación' : `Comprar por ${formatAccountBalance(totalAmount)}`}
             </Button>
           </form>
         </CardContent>

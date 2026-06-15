@@ -38,7 +38,7 @@ import { UserAdminEditor } from '@/components/admin/user-admin-editor'
 import { WithdrawalActionButton } from '@/components/admin/withdrawal-action-button'
 
 type Role = 'admin' | 'operator' | 'player'
-type WalletKind = 'bonus_points' | 'cash_credits'
+type WalletKind = 'general' | 'bonus_points' | 'cash_credits'
 type Direction = 'credit' | 'debit'
 type DepositAction = 'approve' | 'reject'
 
@@ -56,8 +56,7 @@ export interface AdminUserRow {
   emailConfirmed: boolean
   createdAt: string | null
   lastSignInAt: string | null
-  bonus: number
-  cash: number
+  balance: number
   cards: { total: number; approved: number; pending: number; rejected: number }
   matchesPlayed: number
   matchesWon: number
@@ -346,8 +345,8 @@ export function UserManagementTable({
                     <p className="mt-1 text-[10px] text-zinc-500">{row.emailConfirmed ? 'Verificado' : 'Sin verificar'}</p>
                   </td>
                   <td className="border-y border-white/10 px-3 py-3 text-right">
-                    <p className="font-mono font-black text-amber-300">{row.bonus} LBB</p>
-                    <p className="text-xs text-zinc-500">Cash {formatNumber(row.cash)}</p>
+                    <p className="font-mono font-black text-amber-300">{formatMoney(row.balance, 'ARS')}</p>
+                    <p className="text-xs text-zinc-500">Saldo general</p>
                   </td>
                   <td className="border-y border-white/10 px-3 py-3 text-center">
                     {pendingDeposits.length + pendingWithdrawals.length > 0 ? (
@@ -439,7 +438,7 @@ export function UserManagementTable({
         rows={rows}
         busy={busy}
         onClose={() => setAdjustment(null)}
-        onSubmit={async (walletKind, amount, reason) => {
+        onSubmit={async (amount, reason) => {
           if (!adjustment) return
           setBusy(true)
           setFeedback(null)
@@ -448,7 +447,7 @@ export function UserManagementTable({
               const response = await fetch('/api/admin/wallet/adjust', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier: userId, wallet_kind: walletKind, direction: adjustment.direction, amount, reason }),
+                body: JSON.stringify({ identifier: userId, direction: adjustment.direction, amount, reason }),
               })
               const data = await response.json()
               if (!response.ok) throw new Error(data.error || 'No se pudo ajustar un saldo')
@@ -529,9 +528,8 @@ function WalletAdjustmentDialog({
   rows: AdminUserRow[]
   busy: boolean
   onClose: () => void
-  onSubmit: (walletKind: WalletKind, amount: number, reason: string) => Promise<void>
+  onSubmit: (amount: number, reason: string) => Promise<void>
 }) {
-  const [walletKind, setWalletKind] = useState<WalletKind>('cash_credits')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const targets = rows.filter((row) => target?.userIds.includes(row.id))
@@ -552,18 +550,9 @@ function WalletAdjustmentDialog({
             {targets.slice(0, 4).map((row) => row.alias).join(', ')}
             {targets.length > 4 ? ` y ${targets.length - 4} más` : ''}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Saldo</Label>
-              <select value={walletKind} onChange={(event) => setWalletKind(event.target.value as WalletKind)} className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white">
-                <option value="bonus_points">LBB Points</option>
-                <option value="cash_credits">Créditos cash</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Monto por usuario</Label>
-              <Input type="number" min={1} step={1} value={amount} onChange={(event) => setAmount(event.target.value)} className="border-zinc-700 bg-zinc-900 text-white" />
-            </div>
+          <div className="space-y-2">
+            <Label>Monto por usuario</Label>
+            <Input type="number" min={1} step={1} value={amount} onChange={(event) => setAmount(event.target.value)} className="border-zinc-700 bg-zinc-900 text-white" />
           </div>
           <div className="space-y-2">
             <Label>Motivo</Label>
@@ -574,7 +563,7 @@ function WalletAdjustmentDialog({
           <Button variant="outline" onClick={onClose} className="border-white/15 bg-transparent text-zinc-200">Cancelar</Button>
           <Button
             disabled={busy || Number(amount) <= 0 || reason.trim().length < 4}
-            onClick={() => onSubmit(walletKind, Math.trunc(Number(amount)), reason.trim())}
+            onClick={() => onSubmit(Math.trunc(Number(amount)), reason.trim())}
             className={target?.direction === 'credit' ? 'bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300' : 'bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200'}
           >
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -610,9 +599,8 @@ function ActivityDialog({
         </DialogHeader>
         {user && (
           <div className="grid gap-5">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Summary label="LBB Points" value={formatNumber(user.bonus)} />
-              <Summary label="Créditos cash" value={formatNumber(user.cash)} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Summary label="Saldo total" value={formatMoney(user.balance, 'ARS')} />
               <Summary label="Pendientes" value={String(pendingDeposits.length + pendingWithdrawals.length)} />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -674,7 +662,7 @@ function ActivityDialog({
                     </div>
                     <div className="text-right">
                       <p className={`font-mono font-black ${transaction.amount >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{transaction.amount >= 0 ? '+' : ''}{formatNumber(transaction.amount)}</p>
-                      <p className="text-[10px] text-zinc-500">{transaction.walletKind === 'bonus_points' ? 'LBB' : 'Cash'} · saldo {formatNumber(transaction.balanceAfter ?? 0)}</p>
+                      <p className="text-[10px] text-zinc-500">{transaction.walletKind === 'general' ? 'Saldo general' : 'Movimiento histórico'} · saldo {formatNumber(transaction.balanceAfter ?? 0)}</p>
                     </div>
                   </div>
                 ))}

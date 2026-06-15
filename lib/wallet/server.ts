@@ -2,7 +2,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { getCustomerAvatar, isCustomerAvatarKey } from '@/lib/customer/avatars'
 import type { GameState, Player } from '@/lib/truco/engine'
 
-export type WalletKind = 'bonus_points' | 'cash_credits'
+export type WalletKind = 'general' | 'bonus_points' | 'cash_credits'
 export type WalletTransactionType =
   | 'signup_bonus'
   | 'admin_credit'
@@ -24,6 +24,7 @@ export type WalletTransactionType =
 
 export interface WalletSnapshot {
   user_id: string
+  general_balance: number
   bonus_points_balance: number
   cash_credits_balance: number
 }
@@ -73,7 +74,7 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: A
 
   const { data: existingWallet, error: walletReadError } = await serviceClient
     .from('lbb_wallets')
-    .select('user_id, bonus_points_balance, cash_credits_balance')
+    .select('user_id, general_balance, bonus_points_balance, cash_credits_balance')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -84,7 +85,8 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: A
       .from('lbb_wallets')
       .insert({
         user_id: user.id,
-        bonus_points_balance: 500,
+        general_balance: 500,
+        bonus_points_balance: 0,
         cash_credits_balance: 0,
       })
       .select('user_id')
@@ -95,7 +97,7 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: A
     if (insertedWallet) {
       const { error: signupTransactionError } = await serviceClient.from('lbb_wallet_transactions').insert({
         user_id: user.id,
-        wallet_kind: 'bonus_points',
+        wallet_kind: 'general',
         transaction_type: 'signup_bonus',
         amount: 500,
         balance_after: 500,
@@ -116,7 +118,7 @@ export async function ensurePlayerAccount(serviceClient: SupabaseClient, user: A
 export async function getWalletSnapshot(serviceClient: SupabaseClient, userId: string): Promise<WalletSnapshot> {
   const { data, error } = await serviceClient
     .from('lbb_wallets')
-    .select('user_id, bonus_points_balance, cash_credits_balance')
+    .select('user_id, general_balance, bonus_points_balance, cash_credits_balance')
     .eq('user_id', userId)
     .single()
 
@@ -156,12 +158,12 @@ export async function chargeTrucoEntryFee(serviceClient: SupabaseClient, roomId:
   if (amount <= 0) return
   await applyWalletTransaction(serviceClient, {
     userId,
-    walletKind: 'bonus_points',
+    walletKind: 'general',
     type: 'truco_entry_fee',
     amount: -Math.abs(amount),
     relatedType: 'truco_room',
     relatedId: roomId,
-    description: `Entrada a mesa de Truco (${amount} LBB)`,
+    description: `Entrada a mesa de Truco (${amount} ARS)`,
   })
 }
 

@@ -89,10 +89,10 @@ export default async function AdminWalletMovementsPage({
   const credits = rows.filter((row) => Number(row.amount) > 0).reduce((sum, row) => sum + Number(row.amount), 0)
   const debits = rows.filter((row) => Number(row.amount) < 0).reduce((sum, row) => sum + Math.abs(Number(row.amount)), 0)
   const income = rows
-    .filter((row) => row.wallet_kind === 'cash_credits' && ['deposit_approved', 'admin_credit'].includes(row.transaction_type) && Number(row.amount) > 0)
+    .filter((row) => ['deposit_approved', 'admin_credit'].includes(row.transaction_type) && Number(row.amount) > 0)
     .reduce((sum, row) => sum + Number(row.amount), 0)
   const outflow = rows
-    .filter((row) => row.wallet_kind === 'cash_credits' && ['withdrawal_pending', 'admin_debit'].includes(row.transaction_type) && Number(row.amount) < 0)
+    .filter((row) => ['withdrawal_pending', 'admin_debit'].includes(row.transaction_type) && Number(row.amount) < 0)
     .reduce((sum, row) => sum + Math.abs(Number(row.amount)), 0)
   const payments = withdrawalRows
     .filter((row) => row.status === 'approved')
@@ -170,7 +170,7 @@ function Metric({ label, value, positive = false, icon }: { label: string; value
   return <div className="border border-white/10 bg-zinc-950/80 p-4"><div className="mb-2 flex items-center gap-2 text-amber-300">{icon}<p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</p></div><p className={`font-mono text-3xl font-black ${positive ? 'text-emerald-300' : 'text-white'}`}>{value}</p></div>
 }
 
-function walletLabel(kind: string) { return kind === 'bonus_points' ? 'LBB Points' : 'Cash Credits' }
+function walletLabel(kind: string) { return kind === 'general' ? 'Saldo general' : 'Histórico' }
 function formatNumber(value: number) { return new Intl.NumberFormat('es-AR').format(value) }
 function formatARS(value: number) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value) }
 function formatDate(value: string) { return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }

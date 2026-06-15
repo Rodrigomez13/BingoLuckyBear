@@ -16,7 +16,7 @@ export async function GET() {
   const [{ data: wallet, error: walletError }, { data: transactions }, { data: stats }, { data: history }] = await Promise.all([
     serviceClient
       .from('lbb_wallets')
-      .select('bonus_points_balance, cash_credits_balance, updated_at')
+      .select('general_balance, updated_at')
       .eq('user_id', user.id)
       .single(),
     serviceClient
@@ -42,7 +42,7 @@ export async function GET() {
 
   return NextResponse.json({
     user: { id: user.id, email: user.email },
-    wallet,
+    wallet: wallet ? { ...wallet, total_balance: Number(wallet.general_balance ?? 0) } : null,
     transactions: transactions ?? [],
     stats,
     trucoHistory: history ?? [],

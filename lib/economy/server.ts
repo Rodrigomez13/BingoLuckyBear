@@ -23,7 +23,7 @@ export async function createPaymentDeposit(serviceClient: SupabaseClient, input:
       customer_email: input.customerEmail?.toLowerCase() ?? null,
       amount,
       currency: cleanText(input.currency || 'ARS', 8) || 'ARS',
-      wallet_kind: input.walletKind ?? 'cash_credits',
+      wallet_kind: input.walletKind ?? 'general',
       payment_method: cleanText(input.paymentMethod, 80),
       payment_reference: cleanText(input.paymentReference, 80) || null,
       receipt_url: cleanText(input.receiptUrl, 600) || null,
@@ -52,7 +52,7 @@ export async function createGamePurchase(serviceClient: SupabaseClient, input: G
       user_id: input.userId ?? null,
       game_type: input.gameType,
       purchase_type: input.purchaseType,
-      wallet_kind: input.walletKind ?? 'cash_credits',
+      wallet_kind: input.walletKind ?? 'general',
       amount,
       quantity,
       status: input.status ?? 'pending',
@@ -75,7 +75,7 @@ export async function debitWalletForPurchase(
   input: {
     userId: string
     purchaseId: string
-    walletKind?: 'cash_credits' | 'bonus_points'
+    walletKind?: 'general' | 'cash_credits' | 'bonus_points'
     transactionType?: 'bingo_purchase' | 'truco_entry_fee' | 'tournament_entry' | 'game_purchase'
     amount: number
     description: string
@@ -87,7 +87,7 @@ export async function debitWalletForPurchase(
 
   return applyWalletTransaction(serviceClient, {
     userId: input.userId,
-    walletKind: input.walletKind ?? 'cash_credits',
+    walletKind: input.walletKind ?? 'general',
     type: input.transactionType ?? 'game_purchase',
     amount: -amount,
     relatedType: 'game_purchase',
@@ -119,7 +119,7 @@ export async function approveDepositAndCreditWallet(
 
   const balanceAfter = await applyWalletTransaction(serviceClient, {
     userId: deposit.user_id,
-    walletKind: deposit.wallet_kind,
+    walletKind: 'general',
     type: 'deposit_approved',
     amount: Number(deposit.amount),
     relatedType: 'payment_deposit',

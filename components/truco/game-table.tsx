@@ -41,12 +41,14 @@ import { ActionButtons } from './action-buttons'
 import { RulesModal } from './rules-modal'
 import { PlayerMatchPreview } from './player-match-preview'
 import { GameHistoryPanel } from './game-history-panel'
+import { normalizeTrucoRules, type TrucoRules } from '@/lib/truco/rules'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
 
 export function GameTable({
   target,
+  rules,
   onExit,
   mode = 'bot',
   roomCode,
@@ -54,19 +56,21 @@ export function GameTable({
   onlineSecret,
 }: {
   target: 15 | 30
+  rules: TrucoRules
   onExit: () => void
   mode?: GameMode
   roomCode?: string
   onlineRole?: OnlineRole
   onlineSecret?: string
 }) {
-  const [state, setState] = useState<GameState>(() => createGame(target))
+  const [state, setState] = useState<GameState>(() => createGame(target, rules))
   const [botPhrase, setBotPhrase] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState<OnlineStatus>('idle')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
   const [exitBusy, setExitBusy] = useState(false)
   const [roomView, setRoomView] = useState<AuthoritativeRoomView | null>(null)
+  const [availableBalance, setAvailableBalance] = useState<number | null>(null)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const gameShellRef = useRef<HTMLDivElement | null>(null)
@@ -82,6 +86,21 @@ export function GameTable({
       ? roomView?.players.opponent?.name ?? 'Rival'
       : roomView?.players.player.name ?? 'Rival'
   const waitingForRival = isOnline && onlineStatus === 'waiting'
+  const activeRules = normalizeTrucoRules(state.rules ?? rules)
+
+  const loadBalance = useCallback(async () => {
+    try {
+      const response = await fetch('/api/customer/wallet', { cache: 'no-store' })
+      const data = await response.json()
+      setAvailableBalance(data.wallet ? Number(data.wallet.total_balance ?? data.wallet.general_balance ?? 0) : null)
+    } catch {
+      setAvailableBalance(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadBalance()
+  }, [loadBalance, state.phase])
 
   const updateOnlineStatus = useCallback((status?: string) => {
     if (status === 'waiting') setOnlineStatus('waiting')
@@ -215,9 +234,9 @@ export function GameTable({
         return
       }
 
-      setState((prev) => applyLocalAction(prev, actor, action, target))
+      setState((prev) => applyLocalAction(prev, actor, action, target, rules))
     },
-    [actionBusy, actor, isOnline, onlineSecret, roomCode, target, updateOnlineStatus],
+    [actionBusy, actor, isOnline, onlineSecret, roomCode, rules, target, updateOnlineStatus],
   )
 
   const canInteractOnline = !isOnline || onlineStatus === 'connected'
@@ -337,6 +356,8 @@ export function GameTable({
         rivalLabel={rivalLabel}
         statusLabel={statusLabel}
         isOnline={isOnline}
+        availableBalance={availableBalance}
+        florEnabled={activeRules.florEnabled}
       />
 
       <div className="mb-2 lg:hidden">
@@ -348,6 +369,7 @@ export function GameTable({
           trickWinners={state.trickWinners}
           hand={state.hand}
           compact
+          scoreStyle={activeRules.scoreStyle}
         />
       </div>
 
@@ -375,6 +397,7 @@ export function GameTable({
             rivalLabel={rivalLabel}
             trickWinners={state.trickWinners}
             hand={state.hand}
+            scoreStyle={activeRules.scoreStyle}
           />
           <ActionButtons
             state={state}
@@ -447,7 +470,7 @@ export function GameTable({
   )
 }
 
-function applyLocalAction(state: GameState, actor: Player, action: OnlineAction, target: 15 | 30): GameState {
+function applyLocalAction(state: GameState, actor: Player, action: OnlineAction, target: 15 | 30, rules: TrucoRules): GameState {
   switch (action.type) {
     case 'play-card':
       return playCard(state, actor, action.cardId)
@@ -466,7 +489,7 @@ function applyLocalAction(state: GameState, actor: Player, action: OnlineAction,
     case 'next-round':
       return nextRound(state)
     case 'restart':
-      return createGame(target)
+      return createGame(target, normalizeTrucoRules(state.rules ?? rules))
     default:
       return state
   }

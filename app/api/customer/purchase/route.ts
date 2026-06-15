@@ -2,7 +2,6 @@ import { nanoid } from 'nanoid'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateBingoNumbers } from '@/lib/bingo'
 import { createGamePurchase, createPaymentDeposit, debitWalletForPurchase } from '@/lib/economy/server'
-import type { WalletKind } from '@/lib/wallet/server'
 import { applyWalletTransaction, ensurePlayerAccount } from '@/lib/wallet/server'
 import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
@@ -14,10 +13,6 @@ function clean(value: unknown) {
 function normalizeQuantity(value: unknown) {
   const quantity = Number(value ?? 1)
   return Number.isInteger(quantity) && quantity >= 1 && quantity <= 10 ? quantity : null
-}
-
-function isWalletKind(value: unknown): value is WalletKind {
-  return value === 'cash_credits' || value === 'bonus_points'
 }
 
 function isProfileComplete(profile: Record<string, unknown> | null) {
@@ -38,7 +33,6 @@ export async function POST(request: NextRequest) {
   let walletPurchase: {
     purchaseId: string
     userId: string
-    walletKind: WalletKind
     amount: number
     debited: boolean
   } | null = null
@@ -59,17 +53,12 @@ export async function POST(request: NextRequest) {
     const sessionToken = clean(body.session_token)
     const quantity = normalizeQuantity(body.quantity)
     const paymentSource = body.payment_source === 'wallet' ? 'wallet' : 'receipt'
-    const walletKind = isWalletKind(body.wallet_kind) ? body.wallet_kind : null
     const paymentReceiptUrl = clean(body.payment_receipt_url)
     const paymentMethod = clean(body.payment_method)
     const paymentReference = clean(body.payment_reference)
 
     if (!raffleId || !sessionToken || !quantity) {
       return NextResponse.json({ error: 'Faltan datos de la compra o la cantidad no es válida.' }, { status: 400 })
-    }
-
-    if (paymentSource === 'wallet' && !walletKind) {
-      return NextResponse.json({ error: 'Elegí con qué saldo querés pagar.' }, { status: 400 })
     }
 
     if (paymentSource === 'receipt') {
@@ -132,7 +121,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         customerEmail: email,
         amount: totalAmount,
-        walletKind: 'cash_credits',
+        walletKind: 'general',
         paymentMethod,
         paymentReference,
         receiptUrl: paymentReceiptUrl,
@@ -150,7 +139,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         gameType: 'bingo',
         purchaseType: 'bingo_card',
-        walletKind: 'cash_credits',
+        walletKind: 'general',
         amount: totalAmount,
         quantity,
         status: 'pending',
@@ -168,7 +157,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         gameType: 'bingo',
         purchaseType: 'bingo_card',
-        walletKind: walletKind!,
+        walletKind: 'general',
         amount: totalAmount,
         quantity,
         status: 'pending',
@@ -178,12 +167,12 @@ export async function POST(request: NextRequest) {
         metadata: { source: 'wallet_bingo_purchase', cardPrice },
       })
       purchaseId = purchase.id as string
-      walletPurchase = { purchaseId, userId: user.id, walletKind: walletKind!, amount: totalAmount, debited: false }
+      walletPurchase = { purchaseId, userId: user.id, amount: totalAmount, debited: false }
 
       await debitWalletForPurchase(serviceClient, {
         userId: user.id,
         purchaseId,
-        walletKind: walletKind!,
+        walletKind: 'general',
         transactionType: 'bingo_purchase',
         amount: totalAmount,
         description: `${quantity} cartón${quantity === 1 ? '' : 'es'} de ${syncedRaffle.name}`,
@@ -246,7 +235,7 @@ export async function POST(request: NextRequest) {
         phone: buyerSnapshot.phone,
         email: buyerSnapshot.email,
         payment_receipt_url: paymentReceiptUrl,
-        payment_method: isPaid ? (walletKind === 'bonus_points' ? 'LBB Points' : 'Cash Credits') : paymentMethod,
+        payment_method: isPaid ? 'Saldo de cuenta' : paymentMethod,
         payment_reference: isPaid ? walletTransactionId || purchaseId : paymentReference,
         payout_account_kind: buyerSnapshot.payout_account_kind,
         payout_account: buyerSnapshot.payout_account,
@@ -295,7 +284,7 @@ export async function POST(request: NextRequest) {
         if (walletPurchase.debited) {
           await applyWalletTransaction(serviceClient, {
             userId: walletPurchase.userId,
-            walletKind: walletPurchase.walletKind,
+            walletKind: 'general',
             type: 'game_refund',
             amount: walletPurchase.amount,
             relatedType: 'game_purchase',

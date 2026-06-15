@@ -34,11 +34,18 @@ export async function GET() {
   await ensurePlayerAccount(serviceClient, user)
 
   const access = await getUserAccess(user)
-  const { data: profile } = await serviceClient
-    .from('customer_profiles')
-    .select('alias, avatar_key, full_name')
-    .eq('id', user.id)
-    .maybeSingle()
+  const [{ data: profile }, { data: wallet }] = await Promise.all([
+    serviceClient
+      .from('customer_profiles')
+      .select('alias, avatar_key, full_name')
+      .eq('id', user.id)
+      .maybeSingle(),
+    serviceClient
+      .from('lbb_wallets')
+      .select('general_balance')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ])
 
   const avatar = getCustomerAvatar(profile?.avatar_key)
   const alias = profile?.alias || profile?.full_name || user.email?.split('@')[0] || 'Jugador'
@@ -53,6 +60,7 @@ export async function GET() {
       avatar_label: avatar.label,
       avatar_image_src: getCustomerAvatarImageSrc(avatar.key),
     },
+    wallet: { total_balance: Number(wallet?.general_balance ?? 0) },
     access,
   })
 }

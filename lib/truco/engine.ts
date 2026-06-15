@@ -5,6 +5,7 @@ import {
   dealHands,
   envidoCardValue,
 } from './cards'
+import { DEFAULT_TRUCO_RULES, normalizeTrucoRules, type TrucoRules } from './rules'
 
 export type Player = 'player' | 'opponent'
 export type Phase = 'idle' | 'playing' | 'round-over' | 'game-over'
@@ -27,6 +28,7 @@ export interface LogEntry {
 export interface GameState {
   phase: Phase
   targetScore: 15 | 30
+  rules?: TrucoRules
   scores: Record<Player, number>
   hands: Record<Player, TrucoCard[]>
   played: PlayedCard[]
@@ -61,10 +63,11 @@ function nextTrucoLabel(level: TrucoLevel): string {
   return ['Truco', 'Truco', 'Retruco', 'Vale Cuatro'][level] ?? 'Vale Cuatro'
 }
 
-export function createGame(targetScore: 15 | 30): GameState {
+export function createGame(targetScore: 15 | 30, rules: TrucoRules = DEFAULT_TRUCO_RULES): GameState {
   const state: GameState = {
     phase: 'idle',
     targetScore,
+    rules: normalizeTrucoRules(rules),
     scores: { player: 0, opponent: 0 },
     hands: { player: [], opponent: [] },
     played: [],
@@ -134,6 +137,7 @@ export function computeFlor(cards: TrucoCard[]): number {
 }
 
 export function canCallFlor(state: GameState, by: Player): boolean {
+  if (!normalizeTrucoRules(state.rules).florEnabled) return false
   if (state.phase !== 'playing' || state.florResolved || state.currentTrick !== 0) return false
   if (state.played.some((played) => played.by === by)) return false
   return hasFlor(cardsForPlayer(state, by))
@@ -435,6 +439,6 @@ export function nextRound(state: GameState): GameState {
   return startRound(state, newMano)
 }
 
-export function resetGame(targetScore: 15 | 30): GameState {
-  return createGame(targetScore)
+export function resetGame(targetScore: 15 | 30, rules: TrucoRules = DEFAULT_TRUCO_RULES): GameState {
+  return createGame(targetScore, rules)
 }

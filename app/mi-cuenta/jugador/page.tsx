@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Coins, Loader2, Save, Trophy, UserCircle2, WalletCards } from 'lucide-react'
+import { Loader2, Save, Trophy, UserCircle2, WalletCards } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,11 +12,12 @@ import { Badge } from '@/components/ui/badge'
 import { CUSTOMER_AVATARS, getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { PlayerGamification } from '@/components/customer/player-gamification'
 import { FundsPanel } from '@/components/customer/funds-panel'
+import { formatAccountBalance } from '@/lib/economy/format'
 
 interface WalletData {
   wallet: {
-    bonus_points_balance: number
-    cash_credits_balance: number
+    general_balance: number
+    total_balance: number
   } | null
   transactions: Array<{
     id: string
@@ -128,7 +129,7 @@ export default function PlayerAccountPage() {
             </Badge>
             <h1 className="font-mono text-4xl font-black text-white sm:text-6xl">Perfil, saldo y ranking</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300">
-              Usá tu alias y avatar para competir en Truco. Los LBB Points son puntos internos no retirables para partidas y torneos.
+              Usá tu alias y avatar para competir en Truco. Tu saldo de cuenta sirve para cartones, mesas con pozo, cargas y retiros.
             </p>
           </div>
           <Button asChild variant="outline" className="border-white/15 bg-transparent text-zinc-100">
@@ -195,9 +196,8 @@ export default function PlayerAccountPage() {
             </Card>
 
             <div className="space-y-5">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Metric icon={<Coins className="h-5 w-5" />} label="LBB Points" value={String(wallet?.bonus_points_balance ?? 0)} />
-                <Metric icon={<WalletCards className="h-5 w-5" />} label="Créditos cash" value={String(wallet?.cash_credits_balance ?? 0)} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Metric icon={<WalletCards className="h-5 w-5" />} label="Saldo total" value={formatAccountBalance(wallet?.total_balance ?? 0)} />
                 <Metric icon={<Trophy className="h-5 w-5" />} label="Ranking" value={String(stats?.ranking_points ?? 1000)} />
               </div>
 
@@ -207,7 +207,7 @@ export default function PlayerAccountPage() {
                 matches={walletData?.trucoHistory ?? []}
               />
 
-              <FundsPanel cashBalance={wallet?.cash_credits_balance ?? 0} onChanged={load} />
+              <FundsPanel cashBalance={wallet?.total_balance ?? 0} onChanged={load} />
 
               <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">
                 <CardHeader>

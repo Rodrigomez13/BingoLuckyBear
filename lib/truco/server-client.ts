@@ -2,6 +2,7 @@ import type { GameState, Player } from './engine'
 import type { TrucoIdentity } from './identity'
 import type { OnlineAction, OnlineRole } from './online'
 import type { PublicRoomSummary, RoomVisibility } from './server-authority'
+import type { TrucoRules } from './rules'
 
 export interface AuthoritativeRoomView {
   roomCode: string
@@ -13,6 +14,7 @@ export interface AuthoritativeRoomView {
   entryFeePoints: number
   prizePoolPoints: number
   ranked: boolean
+  rules: TrucoRules
   players: {
     player: TrucoIdentity
     opponent: TrucoIdentity | null
@@ -72,17 +74,19 @@ export async function createAuthoritativeRoom({
   visibility = 'private',
   potPoints = 0,
   identity,
+  rules,
 }: {
   target: 15 | 30
   roomCode?: string
   visibility?: RoomVisibility
   potPoints?: number
   identity?: TrucoIdentity | null
+  rules: TrucoRules
 }) {
   const response = await fetch('/api/truco/rooms', {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ target, roomCode, visibility, potPoints, identity }),
+    body: JSON.stringify({ target, roomCode, visibility, potPoints, identity, rules }),
   })
   return readApiResponse(response)
 }

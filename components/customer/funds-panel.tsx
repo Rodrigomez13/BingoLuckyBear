@@ -124,7 +124,7 @@ export function FundsPanel({
 
   const submitWithdrawal = async () => {
     if (parsedAmount <= 0) throw new Error('Ingresá el monto a retirar')
-    if (parsedAmount > cashBalance) throw new Error('No tenés Cash Credits suficientes')
+    if (parsedAmount > cashBalance) throw new Error('No tenés saldo suficiente')
     const response = await fetch('/api/customer/funds', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -181,7 +181,7 @@ export function FundsPanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-white"><Landmark className="h-5 w-5 text-amber-300" /> Cargar o retirar saldo</CardTitle>
-            <CardDescription className="mt-1 text-zinc-400">Las operaciones de dinero usan Cash Credits. Los LBB Points no son retirables.</CardDescription>
+            <CardDescription className="mt-1 text-zinc-400">Las cargas, retiros y consumos de juego usan el saldo general de tu cuenta.</CardDescription>
           </div>
           <Button type="button" size="icon" variant="outline" onClick={() => void load()} className="border-white/15 bg-transparent text-zinc-200" aria-label="Actualizar solicitudes">
             <RefreshCw className="h-4 w-4" />

@@ -20,8 +20,7 @@ interface ProfileRow {
 
 interface WalletRow {
   user_id: string
-  bonus_points_balance: number | null
-  cash_credits_balance: number | null
+  general_balance: number | null
 }
 
 interface RoleRow {
@@ -51,7 +50,7 @@ interface DepositRow {
   customer_email: string | null
   amount: number
   currency: string
-  wallet_kind: 'bonus_points' | 'cash_credits'
+  wallet_kind: 'general' | 'bonus_points' | 'cash_credits'
   payment_method: string
   payment_reference: string | null
   status: string
@@ -61,7 +60,7 @@ interface DepositRow {
 interface TransactionRow {
   id: string
   user_id: string
-  wallet_kind: 'bonus_points' | 'cash_credits'
+  wallet_kind: 'general' | 'bonus_points' | 'cash_credits'
   transaction_type: string
   amount: number
   balance_after: number | null
@@ -96,7 +95,7 @@ export default async function AdminUsersPage() {
       ? serviceClient.from('customer_profiles').select('id, email, full_name, alias, avatar_key, phone, dni, created_at').in('id', userIds)
       : Promise.resolve({ data: [] as ProfileRow[] }),
     userIds.length
-      ? serviceClient.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').in('user_id', userIds)
+      ? serviceClient.from('lbb_wallets').select('user_id, general_balance').in('user_id', userIds)
       : Promise.resolve({ data: [] as WalletRow[] }),
     userIds.length
       ? serviceClient.from('lbb_user_roles').select('user_id, role').in('user_id', userIds)
@@ -244,8 +243,7 @@ export default async function AdminUsersPage() {
         emailConfirmed: Boolean(user.email_confirmed_at || user.confirmed_at),
         createdAt: user.created_at ?? null,
         lastSignInAt: user.last_sign_in_at ?? null,
-        bonus: Number(wallet?.bonus_points_balance ?? 0),
-        cash: Number(wallet?.cash_credits_balance ?? 0),
+        balance: Number(wallet?.general_balance ?? 0),
         cards: cardCount,
         matchesPlayed: Number(playerStats?.matches_played ?? 0),
         matchesWon: Number(playerStats?.matches_won ?? 0),
@@ -261,7 +259,7 @@ export default async function AdminUsersPage() {
   const totalUsers = rows.length
   const adminUsers = rows.filter((row) => row.role === 'admin' || row.role === 'operator').length
   const verifiedUsers = rows.filter((row) => row.emailConfirmed).length
-  const totalBonus = rows.reduce((sum, row) => sum + row.bonus, 0)
+  const totalBalance = rows.reduce((sum, row) => sum + row.balance, 0)
 
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
@@ -290,7 +288,7 @@ export default async function AdminUsersPage() {
           <Metric icon={<UserCircle2 className="h-5 w-5" />} label="Usuarios totales" value={String(totalUsers)} detail="auth.users" />
           <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Admins / operadores" value={String(adminUsers)} detail="roles activos" />
           <Metric icon={<Mail className="h-5 w-5" />} label="Emails verificados" value={String(verifiedUsers)} detail={`${totalUsers - verifiedUsers} sin verificar`} />
-          <Metric icon={<WalletCards className="h-5 w-5" />} label="LBB Points" value={`${totalBonus}`} detail="saldo total visible" />
+          <Metric icon={<WalletCards className="h-5 w-5" />} label="Saldo de jugadores" value={formatMoney(totalBalance)} detail="billetera general" />
         </div>
 
         <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">
@@ -332,4 +330,8 @@ function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: 
 
 function normalizeDni(value?: string | null) {
   return String(value ?? '').replace(/\D/g, '')
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value)
 }

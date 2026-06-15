@@ -4,6 +4,11 @@ Lista priorizada después de revisar el flujo propio y la experiencia pública d
 
 ## P0 - Dinero y seguridad
 
+- [x] Unificar cargas, retiros y consumos en un saldo general por jugador.
+- [x] Mostrar el saldo total en el header y el saldo disponible dentro del juego.
+- [x] Comprar varios cartones de Bingo con límite según precio y saldo disponible.
+- [x] Gestionar ajustes individuales o masivos desde la lista de usuarios.
+- [ ] Definir si el bono inicial puede retirarse o sólo consumirse antes de activar dinero real.
 - [ ] Integrar conciliación bancaria por webhook, API o archivo CSV del proveedor.
 - [ ] Mantener el OCR como asistente de revisión, nunca como autorización automática.
 - [ ] Agregar una restricción única normalizada para números de operación confirmados.
@@ -24,6 +29,11 @@ Lista priorizada después de revisar el flujo propio y la experiencia pública d
 
 ## P1 - Jugabilidad
 
+- [x] Configurar partidas a 15 o 30 puntos al crear la mesa.
+- [x] Permitir mesas con Flor habilitada o deshabilitada.
+- [x] Elegir marcador numérico o tanteador tradicional de palitos.
+- [ ] Implementar Contra Flor y Contra Flor al Resto como reglas opcionales.
+- [ ] Configurar si la Falta Envido se calcula al partido o a las buenas.
 - [ ] Implementar matchmaking para "Partida rápida" por puntaje objetivo y pozo.
 - [ ] Mostrar cantidad de jugadores conectados y tiempo estimado de espera.
 - [ ] Permitir reconectar desde cualquier dispositivo con sesión autenticada.
@@ -31,6 +41,7 @@ Lista priorizada después de revisar el flujo propio y la experiencia pública d
 - [ ] Revisar piso mínimo de ranking para evitar puntajes negativos sin límite.
 - [ ] Agregar protección contra rivales repetidos, colusión y partidas anormalmente cortas.
 - [ ] Aplicar rate limiting a creación de mesas, unión y acciones.
+- [ ] Agregar Pica Pica únicamente cuando existan partidas por equipos 3 contra 3.
 
 ## P1 - Experiencia
 

@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 
 export function WalletAdjustmentPanel() {
   const [identifier, setIdentifier] = useState('')
-  const [walletKind, setWalletKind] = useState<'bonus_points' | 'cash_credits'>('cash_credits')
   const [direction, setDirection] = useState<'credit' | 'debit'>('credit')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -27,7 +26,7 @@ export function WalletAdjustmentPanel() {
       const response = await fetch('/api/admin/wallet/adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, wallet_kind: walletKind, direction, amount: Number(amount), reason }),
+        body: JSON.stringify({ identifier, direction, amount: Number(amount), reason }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'No se pudo ajustar el saldo')
@@ -62,18 +61,6 @@ export function WalletAdjustmentPanel() {
               required
               className="border-zinc-700 bg-zinc-900 text-white"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Wallet</Label>
-            <select
-              value={walletKind}
-              onChange={(event) => setWalletKind(event.target.value as 'bonus_points' | 'cash_credits')}
-              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
-            >
-              <option value="bonus_points">LBB Points</option>
-              <option value="cash_credits">Créditos cash</option>
-            </select>
           </div>
 
           <div className="space-y-2">

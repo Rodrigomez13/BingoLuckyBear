@@ -9,8 +9,7 @@ import { requireAdminPage } from '@/lib/auth/roles'
 
 interface WalletRow {
   user_id: string
-  bonus_points_balance: number | null
-  cash_credits_balance: number | null
+  general_balance: number | null
 }
 
 interface TransactionRow {
@@ -46,7 +45,7 @@ export default async function AdminWalletOpsPage() {
   const { serviceClient } = await requireAdminPage()
 
   const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }, { data: deposits }, { data: withdrawals }] = await Promise.all([
-    serviceClient.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').limit(500),
+    serviceClient.from('lbb_wallets').select('user_id, general_balance').limit(500),
     serviceClient
       .from('lbb_wallet_transactions')
       .select('id, user_id, wallet_kind, transaction_type, amount, balance_after, description, created_at')
@@ -121,7 +120,7 @@ export default async function AdminWalletOpsPage() {
           <WalletMetric icon={<WalletCards className="h-5 w-5" />} label="Usuarios con saldo" value={String(walletRows.length)} detail="wallets creadas" />
           <WalletMetric icon={<Clock3 className="h-5 w-5" />} label="Pendientes" value={String(pendingDeposits.length + pendingWithdrawals.length)} detail={`${pendingDeposits.length} cargas · ${pendingWithdrawals.length} retiros`} />
           <WalletMetric icon={<Ticket className="h-5 w-5" />} label="Cartones aprobados" value={formatARS(approvedBingoAmount)} detail="ingreso confirmado" />
-          <WalletMetric icon={<Trophy className="h-5 w-5" />} label="Pozo Truco activo" value={`${openTrucoRooms.reduce((total, room) => total + Number(room.prize_pool_points ?? 0), 0)} LBB`} detail={`${openTrucoRooms.length} mesa${openTrucoRooms.length !== 1 ? 's' : ''} abierta${openTrucoRooms.length !== 1 ? 's' : ''}`} />
+          <WalletMetric icon={<Trophy className="h-5 w-5" />} label="Pozo Truco activo" value={formatARS(openTrucoRooms.reduce((total, room) => total + Number(room.prize_pool_points ?? 0), 0))} detail={`${openTrucoRooms.length} mesa${openTrucoRooms.length !== 1 ? 's' : ''} abierta${openTrucoRooms.length !== 1 ? 's' : ''}`} />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
@@ -130,13 +129,13 @@ export default async function AdminWalletOpsPage() {
               <CardTitle className="flex items-center gap-2 text-white">
                 <ShieldCheck className="h-5 w-5 text-emerald-300" /> Flujo controlado de saldo
               </CardTitle>
-              <p className="text-sm text-zinc-400">Este flujo separa dinero real, puntos LBB y permisos de juego para evitar errores de acreditación.</p>
+              <p className="text-sm text-zinc-400">Un único saldo alimenta depósitos, retiros y consumos; cada movimiento conserva su origen y referencia para auditoría.</p>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 md:grid-cols-2">
                 <ProcessStep step="1" title="Solicitud de recarga" text="El usuario carga comprobante y monto. Se registra como deposit_pending sin habilitar saldo automático." />
-                <ProcessStep step="2" title="Validación admin" text="El panel compara monto, operación, destino y titular. Recién al aprobar se acredita cash_credits o bonus_points." />
-                <ProcessStep step="3" title="Uso de saldo" text="Cartones, torneos y entrada a mesas descuentan wallet con una transacción trazable." />
+                <ProcessStep step="2" title="Validación admin" text="El panel compara monto, operación, destino y titular. Recién al aprobar se acredita el saldo general." />
+                <ProcessStep step="3" title="Uso de saldo" text="Cartones, torneos y entrada a mesas descuentan la misma cuenta con una transacción trazable." />
                 <ProcessStep step="4" title="Liquidación" text="Premios de Truco o bingo generan transacciones separadas, con referencia a sala, cartón o torneo." />
               </div>
             </CardContent>
@@ -183,7 +182,7 @@ export default async function AdminWalletOpsPage() {
             <OperationBox label="Premios Truco pagados" value={String(trucoPrizes.length)} />
             <OperationBox label="Compras bingo con wallet" value={String(bingoPurchases.length)} />
             <OperationBox label="Mesas Truco recientes" value={String(trucoRoomRows.length)} />
-            <OperationBox label="Saldo LBB circulante" value={`${walletRows.reduce((total, row) => total + Number(row.bonus_points_balance ?? 0), 0)} LBB`} />
+            <OperationBox label="Saldo total circulante" value={formatARS(walletRows.reduce((total, row) => total + Number(row.general_balance ?? 0), 0))} />
           </div>
 
           <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">

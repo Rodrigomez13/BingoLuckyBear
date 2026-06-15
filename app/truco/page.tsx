@@ -5,14 +5,15 @@ import { SiteHeader } from '@/components/site-header'
 import { RoomLobby } from '@/components/truco/room-lobby'
 import { GameTable } from '@/components/truco/game-table'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
+import { DEFAULT_TRUCO_RULES, type TrucoRules } from '@/lib/truco/rules'
 
 type GameConfig =
-  | { active: false; target: 15 | 30; mode: 'bot' }
-  | { active: true; target: 15 | 30; mode: 'bot' }
-  | { active: true; target: 15 | 30; mode: 'online'; roomCode: string; role: OnlineRole; secret: string }
+  | { active: false; target: 15 | 30; rules: TrucoRules; mode: 'bot' }
+  | { active: true; target: 15 | 30; rules: TrucoRules; mode: 'bot' }
+  | { active: true; target: 15 | 30; rules: TrucoRules; mode: 'online'; roomCode: string; role: OnlineRole; secret: string }
 
 export default function TrucoPage() {
-  const [game, setGame] = useState<GameConfig>({ active: false, target: 30, mode: 'bot' })
+  const [game, setGame] = useState<GameConfig>({ active: false, target: 30, rules: DEFAULT_TRUCO_RULES, mode: 'bot' })
   const [initialRoomCode, setInitialRoomCode] = useState<string | null>(null)
 
   useEffect(() => {
@@ -30,18 +31,19 @@ export default function TrucoPage() {
         {game.active ? (
           <GameTable
             target={game.target}
+            rules={game.rules}
             mode={game.mode}
             roomCode={game.mode === 'online' ? game.roomCode : undefined}
             onlineRole={game.mode === 'online' ? game.role : undefined}
             onlineSecret={game.mode === 'online' ? game.secret : undefined}
-            onExit={() => setGame({ active: false, target: game.target, mode: 'bot' })}
+            onExit={() => setGame({ active: false, target: game.target, rules: game.rules, mode: 'bot' })}
           />
         ) : (
           <RoomLobby
             initialRoomCode={initialRoomCode}
-            onPlayBot={(target) => setGame({ active: true, target, mode: 'bot' })}
-            onPlayOnline={({ target, roomCode, role, secret }) =>
-              setGame({ active: true, target, mode: 'online', roomCode, role, secret })
+            onPlayBot={(target, rules) => setGame({ active: true, target, rules, mode: 'bot' })}
+            onPlayOnline={({ target, rules, roomCode, role, secret }) =>
+              setGame({ active: true, target, rules, mode: 'online', roomCode, role, secret })
             }
           />
         )}

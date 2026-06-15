@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation'
 import { ChevronDown, CreditCard, History, KeyRound, LogOut, Settings, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
+import { formatAccountBalance } from '@/lib/economy/format'
 
 interface AuthPayload {
   authenticated?: boolean
   user: { id: string; email?: string | null } | null
   player: { alias?: string | null; avatar_key?: string | null; avatar_image_src?: string | null } | null
+  wallet?: { total_balance?: number | null } | null
   access?: { role?: 'admin' | 'operator' | 'player'; isAdmin?: boolean; dashboardPath?: string } | null
 }
 
@@ -28,6 +30,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   const isAdmin = Boolean(access?.isAdmin)
   const avatar = getCustomerAvatar(player?.avatar_key)
   const alias = player?.alias || user?.email?.split('@')[0] || 'Jugador'
+  const totalBalance = Number(payload?.wallet?.total_balance ?? 0)
 
   const load = async () => {
     try {
@@ -114,14 +117,17 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="account-menu"
-        className={`inline-flex max-w-[9rem] items-center gap-2 rounded-full border px-2 py-1.5 font-semibold transition sm:max-w-[13rem] ${
+        className={`inline-flex max-w-[11rem] items-center gap-2 rounded-full border px-2 py-1 font-semibold transition sm:max-w-[16rem] ${
           active
             ? 'border-amber-300/30 bg-amber-300/10 text-amber-100'
             : 'border-white/10 bg-white/5 text-slate-200 hover:border-amber-300/30 hover:text-amber-100'
         }`}
       >
         <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="sm" />
-        <span className="hidden truncate text-sm sm:block">{alias}</span>
+        <span className="hidden min-w-0 text-left sm:block">
+          <span className="block truncate text-sm leading-tight">{alias}</span>
+          <span className="block truncate text-[9px] font-bold leading-tight text-amber-300">{formatAccountBalance(totalBalance)}</span>
+        </span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -137,6 +143,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
+                <p className="mt-1 text-xs font-black text-emerald-300">Saldo total: {formatAccountBalance(totalBalance)}</p>
                 {isAdmin && <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{access?.role === 'operator' ? 'Operador' : 'Administrador'}</p>}
               </div>
             </div>

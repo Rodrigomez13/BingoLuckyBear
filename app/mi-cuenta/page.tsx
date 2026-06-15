@@ -311,7 +311,7 @@ export default function MyAccountPage() {
               <CardDescription className="text-zinc-400">
                 {authMode === 'login'
                   ? 'Ingresá con correo y contraseña, o continuá con Google.'
-                  : 'Creá tu usuario, elegí avatar y recibí tus LBB Points iniciales.'}
+                  : 'Creá tu usuario, elegí avatar y administrá tu saldo desde una sola cuenta.'}
               </CardDescription>
             </CardHeader>
             <CardContent>

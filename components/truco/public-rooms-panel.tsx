@@ -5,6 +5,7 @@ import { CircleDot, RefreshCcw, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
+import { formatAccountBalance } from '@/lib/economy/format'
 
 export function PublicRoomsPanel({
   rooms,
@@ -86,7 +87,7 @@ function RoomRow({ room, onJoin }: { room: PublicRoomSummary; onJoin: (room: Pub
             </span>
           </div>
           <p className="truncate text-[10px] font-semibold text-emerald-100/55">
-            A {room.target} · {isWaiting ? 'Esperando rival' : 'En juego'} · {room.entryFeePoints > 0 ? `Pozo ${room.entryFeePoints * 2} LBB` : 'Sin apuesta'}
+            A {room.target} · {room.rules.florEnabled ? 'Con Flor' : 'Sin Flor'} · {isWaiting ? 'Esperando rival' : 'En juego'} · {room.entryFeePoints > 0 ? `Pozo ${formatAccountBalance(room.entryFeePoints * 2)}` : 'Sin apuesta'}
           </p>
         </div>
       </div>

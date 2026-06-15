@@ -1,4 +1,4 @@
-export type WalletKind = 'cash_credits' | 'bonus_points'
+export type WalletKind = 'general' | 'cash_credits' | 'bonus_points'
 export type DepositStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 export type GameType = 'bingo' | 'truco' | 'tournament'
 export type PurchaseType = 'bingo_card' | 'truco_entry_fee' | 'tournament_entry' | 'pack' | 'manual'
