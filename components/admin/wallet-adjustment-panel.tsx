@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 
 export function WalletAdjustmentPanel() {
   const [identifier, setIdentifier] = useState('')
-  const [walletKind, setWalletKind] = useState<'bonus_points' | 'cash_credits'>('bonus_points')
+  const [walletKind, setWalletKind] = useState<'bonus_points' | 'cash_credits'>('cash_credits')
   const [direction, setDirection] = useState<'credit' | 'debit'>('credit')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -45,10 +45,10 @@ export function WalletAdjustmentPanel() {
     <Card className="border-amber-300/20 bg-zinc-950/85 text-zinc-100">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
-          <WalletCards className="h-5 w-5 text-amber-300" /> Ajustar saldo de usuario
+          <WalletCards className="h-5 w-5 text-amber-300" /> Agregar o retirar saldo
         </CardTitle>
         <CardDescription className="text-zinc-400">
-          Acredita o debita saldo con transacción trazable y registro de auditoría. No edita balances en crudo.
+          Aplica un movimiento administrativo trazable. Retirar saldo aquí no realiza una transferencia bancaria.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -83,8 +83,8 @@ export function WalletAdjustmentPanel() {
               onChange={(event) => setDirection(event.target.value as 'credit' | 'debit')}
               className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
             >
-              <option value="credit">Acreditar</option>
-              <option value="debit">Debitar</option>
+              <option value="credit">Agregar saldo</option>
+              <option value="debit">Retirar saldo</option>
             </select>
           </div>
 
@@ -106,7 +106,7 @@ export function WalletAdjustmentPanel() {
             <Input
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Ej: recarga aprobada / ajuste operativo"
+              placeholder="Ej: premio manual / corrección de saldo"
               required
               minLength={4}
               className="border-zinc-700 bg-zinc-900 text-white"
@@ -115,7 +115,7 @@ export function WalletAdjustmentPanel() {
 
           <Button disabled={busy} className="h-11 rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 md:col-span-2">
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Aplicar movimiento
+            {direction === 'credit' ? 'Agregar saldo' : 'Retirar saldo'}
           </Button>
         </form>
 

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { BearLogo } from '@/components/bear-logo'
 import { CUSTOMER_AVATARS, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
+import { formatPhoneInput } from '@/lib/phone'
 import { CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, LogOut, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
 
 interface CustomerProfile {
@@ -444,7 +445,15 @@ export default function MyAccountPage() {
                   <Field label="Nombre completo" value={profile.full_name} onChange={(value) => setProfile({ ...profile, full_name: value })} />
                   <Field label="DNI" value={profile.dni} onChange={(value) => setProfile({ ...profile, dni: value })} />
                   <Field label="Dirección" value={profile.address} onChange={(value) => setProfile({ ...profile, address: value })} />
-                  <Field label="Teléfono" value={profile.phone} onChange={(value) => setProfile({ ...profile, phone: value })} />
+                  <Field
+                    label="Teléfono"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="+54 9 11 1234-5678"
+                    value={profile.phone}
+                    onChange={(value) => setProfile({ ...profile, phone: value })}
+                    onBlur={() => setProfile((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
+                  />
                   <Field label="Email de contacto" type="email" value={profile.email} onChange={(value) => setProfile({ ...profile, email: value })} />
 
                   <div className="rounded-xl border border-sky-300/20 bg-sky-400/10 p-4">
@@ -559,14 +568,33 @@ function AvatarPreview({ avatarKey, label }: { avatarKey: string; label: string 
   )
 }
 
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  onBlur,
+  type = 'text',
+  inputMode,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  onBlur?: () => void
+  type?: string
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  placeholder?: string
+}) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Input
         type={type}
+        inputMode={inputMode}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
+        placeholder={placeholder}
         className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
       />
     </div>

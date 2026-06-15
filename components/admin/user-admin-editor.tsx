@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatPhoneInput } from '@/lib/phone'
 
 type Role = 'admin' | 'operator' | 'player'
 
@@ -85,7 +86,7 @@ export function UserAdminEditor({
             <div className="space-y-2"><Label>Rol</Label><select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as Role }))} className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white"><option value="player">Jugador</option><option value="operator">Operador</option><option value="admin">Administrador</option></select></div>
             <div className="space-y-2"><Label>Alias</Label><Input value={form.alias} onChange={(event) => setForm((current) => ({ ...current, alias: event.target.value }))} className="border-zinc-700 bg-zinc-900 text-white" /></div>
             <div className="space-y-2 sm:col-span-2"><Label>Nombre completo</Label><Input value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} className="border-zinc-700 bg-zinc-900 text-white" /></div>
-            <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} className="border-zinc-700 bg-zinc-900 text-white" /></div>
+            <div className="space-y-2"><Label>Teléfono</Label><Input type="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} onBlur={() => setForm((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))} placeholder="+54 9 11 1234-5678" className="border-zinc-700 bg-zinc-900 text-white" /></div>
             <div className="space-y-2"><Label>DNI</Label><Input value={form.dni} onChange={(event) => setForm((current) => ({ ...current, dni: event.target.value }))} className="border-zinc-700 bg-zinc-900 text-white" /></div>
             {error && <p className="rounded-md border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-100 sm:col-span-2">{error}</p>}
             <Button disabled={busy} className="bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 sm:col-span-2">{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Guardar cambios</Button>

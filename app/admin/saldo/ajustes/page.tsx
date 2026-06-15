@@ -19,7 +19,7 @@ export default async function AdminWalletAdjustmentsPage() {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-300">Economía</p>
               <h1 className="font-mono text-2xl font-black text-white sm:text-4xl">Ajustes de saldo</h1>
-              <p className="mt-1 text-sm text-zinc-400">Créditos y débitos manuales con motivo y auditoría.</p>
+              <p className="mt-1 text-sm text-zinc-400">Agrega o retira saldo manualmente con motivo y auditoría.</p>
             </div>
           </div>
           <Button asChild variant="outline" className="border-white/15 bg-transparent text-amber-200 hover:bg-amber-300/10">
@@ -30,7 +30,7 @@ export default async function AdminWalletAdjustmentsPage() {
         <AdminEconomyNav />
         <div className="mb-4 flex items-center gap-2 text-sm text-zinc-400">
           <SlidersHorizontal className="h-4 w-4 text-amber-300" />
-          Los balances no se editan directamente: cada cambio genera un movimiento.
+          Cada cambio genera un movimiento. Los pagos solicitados por jugadores se gestionan en Retiros.
         </div>
         <WalletAdjustmentPanel />
       </section>

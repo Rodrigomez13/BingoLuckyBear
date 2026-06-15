@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { requireAdminApi, type UserRole } from '@/lib/auth/roles'
-import { normalizePhoneNumber } from '@/lib/phone'
+import { isReasonablePhone, normalizePhoneNumber } from '@/lib/phone'
 
 function isRole(value: unknown): value is UserRole {
   return value === 'admin' || value === 'operator' || value === 'player'
@@ -38,6 +38,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const alias = clean(body.alias, 24).replace(/[^a-zA-Z0-9_\-.]/g, '')
     const phone = normalizePhoneNumber(clean(body.phone, 40))
     const dni = clean(body.dni, 20)
+    if (phone && !isReasonablePhone(phone)) {
+      return NextResponse.json({ error: 'Ingresá un teléfono válido con código de área' }, { status: 400 })
+    }
 
     const { error: roleError } = await serviceClient.from('lbb_user_roles').upsert({
       user_id: id,

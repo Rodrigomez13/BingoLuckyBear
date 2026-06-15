@@ -433,7 +433,7 @@ export function ParticipationForm({ raffle, sessionToken, onCardsCreated, title 
                   value={formData.phone}
                   onChange={handleInputChange}
                   onBlur={() => setFormData((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
-                  placeholder="+54 11 1234-5678"
+                  placeholder="+54 9 11 1234-5678"
                   required
                   className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
                 />

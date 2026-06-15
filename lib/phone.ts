@@ -1,37 +1,32 @@
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, '')
+import { parsePhoneNumberFromString } from 'libphonenumber-js/core'
+import metadata from 'libphonenumber-js/metadata.min.json'
+
+function parsePhone(value?: string | null) {
+  const trimmed = (value ?? '').trim()
+  if (!trimmed) return null
+
+  const digits = trimmed.replace(/\D/g, '')
+  const input = !trimmed.startsWith('+') && digits.startsWith('54') ? `+${digits}` : trimmed
+  const parsed = parsePhoneNumberFromString(input, 'AR', metadata)
+  if (!parsed) return null
+
+  // Keep explicitly international non-Argentine numbers intact.
+  if (parsed.country && parsed.country !== 'AR') return parsed
+
+  const nationalNumber = String(parsed.nationalNumber).replace(/^9(?=\d{10}$)/, '')
+  return parsePhoneNumberFromString(`+549${nationalNumber}`, metadata)
+}
+
+function formatWithHyphen(value: string) {
+  return value.replace(/ (\d{4})$/, '-$1')
 }
 
 export function formatPhoneInput(value?: string | null) {
   const trimmed = (value ?? '').trim()
-  const digits = onlyDigits(trimmed)
+  if (!trimmed) return ''
 
-  if (!digits) return ''
-
-  if (digits.startsWith('549') && digits.length >= 12) {
-    const area = digits.slice(3, digits.length - 8)
-    const number = digits.slice(-8)
-    return `+54 9 ${area} ${number.slice(0, 4)}-${number.slice(4)}`
-  }
-
-  if (digits.startsWith('54') && digits.length >= 11) {
-    const area = digits.slice(2, digits.length - 8)
-    const number = digits.slice(-8)
-    return `+54 ${area} ${number.slice(0, 4)}-${number.slice(4)}`
-  }
-
-  if (digits.length >= 10) {
-    const areaLength = digits.length === 10 ? 2 : digits.length - 8
-    const area = digits.slice(0, areaLength)
-    const number = digits.slice(areaLength)
-    return `${area} ${number.slice(0, 4)}-${number.slice(4, 8)}${number.length > 8 ? ` ${number.slice(8)}` : ''}`.trim()
-  }
-
-  if (digits.length > 4) {
-    return `${digits.slice(0, -4)}-${digits.slice(-4)}`
-  }
-
-  return digits
+  const parsed = parsePhone(trimmed)
+  return parsed ? formatWithHyphen(parsed.formatInternational()) : trimmed
 }
 
 export function normalizePhoneNumber(value?: string | null) {
@@ -39,6 +34,10 @@ export function normalizePhoneNumber(value?: string | null) {
 }
 
 export function isReasonablePhone(value?: string | null) {
-  const digits = onlyDigits(value ?? '')
-  return digits.length >= 8 && digits.length <= 15
+  const parsed = parsePhone(value)
+  return Boolean(parsed?.isPossible())
+}
+
+export function phoneNumberForWhatsApp(value?: string | null) {
+  return parsePhone(value)?.number.replace(/^\+/, '') ?? ''
 }

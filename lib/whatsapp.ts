@@ -1,3 +1,5 @@
+import { phoneNumberForWhatsApp } from '@/lib/phone'
+
 export interface WinnerWhatsAppPayload {
   to: string
   fullName: string
@@ -5,10 +7,6 @@ export interface WinnerWhatsAppPayload {
   prizeLabel: string
   amount: string
   cardNumber: string
-}
-
-function normalizePhoneNumber(value: string) {
-  return value.replace(/[^\d]/g, '')
 }
 
 export function buildWinnerMessage(payload: WinnerWhatsAppPayload) {
@@ -21,7 +19,7 @@ export function buildWinnerMessage(payload: WinnerWhatsAppPayload) {
 }
 
 export function buildWinnerWhatsAppUrl(payload: WinnerWhatsAppPayload) {
-  const to = normalizePhoneNumber(payload.to)
+  const to = phoneNumberForWhatsApp(payload.to)
   const message = encodeURIComponent(buildWinnerMessage(payload))
 
   return to ? `https://wa.me/${to}?text=${message}` : `https://wa.me/?text=${message}`
@@ -37,7 +35,7 @@ export async function sendWinnerWhatsApp(payload: WinnerWhatsAppPayload) {
     return { sent: false, reason: 'missing_config' }
   }
 
-  const to = normalizePhoneNumber(payload.to)
+  const to = phoneNumberForWhatsApp(payload.to)
 
   if (to.length < 8) {
     return { sent: false, reason: 'invalid_phone' }

@@ -275,10 +275,10 @@ export function UserManagementTable({
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => setAdjustment({ userIds: selectedIds, direction: 'credit' })} className="bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300">
-              <CircleDollarSign className="mr-2 h-4 w-4" /> Acreditar
+              <CircleDollarSign className="mr-2 h-4 w-4" /> Agregar saldo
             </Button>
             <Button size="sm" variant="outline" onClick={() => setAdjustment({ userIds: selectedIds, direction: 'debit' })} className="border-amber-300/40 bg-transparent text-amber-100 hover:bg-amber-300/10">
-              <BadgeDollarSign className="mr-2 h-4 w-4" /> Debitar
+              <BadgeDollarSign className="mr-2 h-4 w-4" /> Retirar saldo
             </Button>
             {selectedPendingDeposits > 0 && (
               <>
@@ -379,10 +379,10 @@ export function UserManagementTable({
                           <History className="h-4 w-4" /> Ver movimientos
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => setAdjustment({ userIds: [row.id], direction: 'credit' })} className="focus:bg-white/10 focus:text-white">
-                          <CircleDollarSign className="h-4 w-4" /> Acreditar saldo
+                          <CircleDollarSign className="h-4 w-4" /> Agregar saldo
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => setAdjustment({ userIds: [row.id], direction: 'debit' })} className="focus:bg-white/10 focus:text-white">
-                          <BadgeDollarSign className="h-4 w-4" /> Debitar saldo
+                          <BadgeDollarSign className="h-4 w-4" /> Retirar saldo
                         </DropdownMenuItem>
                         {pendingDeposits.length > 0 && (
                           <>
@@ -531,7 +531,7 @@ function WalletAdjustmentDialog({
   onClose: () => void
   onSubmit: (walletKind: WalletKind, amount: number, reason: string) => Promise<void>
 }) {
-  const [walletKind, setWalletKind] = useState<WalletKind>('bonus_points')
+  const [walletKind, setWalletKind] = useState<WalletKind>('cash_credits')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const targets = rows.filter((row) => target?.userIds.includes(row.id))
@@ -540,9 +540,11 @@ function WalletAdjustmentDialog({
     <Dialog open={Boolean(target)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="border-white/10 bg-zinc-950 text-zinc-100">
         <DialogHeader>
-          <DialogTitle>{target?.direction === 'credit' ? 'Acreditar saldo' : 'Debitar saldo'}</DialogTitle>
+          <DialogTitle>{target?.direction === 'credit' ? 'Agregar saldo' : 'Retirar saldo'}</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            El movimiento se aplicará a {targets.length} usuario{targets.length !== 1 ? 's' : ''} y generará una transacción individual auditada.
+            {target?.direction === 'credit'
+              ? `Se agregará saldo a ${targets.length} usuario${targets.length !== 1 ? 's' : ''} con una transacción individual auditada.`
+              : `Se reducirá el saldo interno de ${targets.length} usuario${targets.length !== 1 ? 's' : ''}. Esto no realiza una transferencia bancaria; las solicitudes se pagan desde Retiros.`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -565,7 +567,7 @@ function WalletAdjustmentDialog({
           </div>
           <div className="space-y-2">
             <Label>Motivo</Label>
-            <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Ej: transferencia verificada / corrección operativa" className="border-zinc-700 bg-zinc-900 text-white" />
+            <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Ej: premio manual / corrección de saldo" className="border-zinc-700 bg-zinc-900 text-white" />
           </div>
         </div>
         <DialogFooter>
@@ -575,7 +577,8 @@ function WalletAdjustmentDialog({
             onClick={() => onSubmit(walletKind, Math.trunc(Number(amount)), reason.trim())}
             className={target?.direction === 'credit' ? 'bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300' : 'bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200'}
           >
-            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Aplicar movimiento
+            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {target?.direction === 'credit' ? 'Agregar saldo' : 'Retirar saldo'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -613,8 +616,8 @@ function ActivityDialog({
               <Summary label="Pendientes" value={String(pendingDeposits.length + pendingWithdrawals.length)} />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => onAdjust('credit')} className="bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300"><CircleDollarSign className="mr-2 h-4 w-4" /> Acreditar</Button>
-              <Button size="sm" variant="outline" onClick={() => onAdjust('debit')} className="border-amber-300/40 bg-transparent text-amber-100"><BadgeDollarSign className="mr-2 h-4 w-4" /> Debitar</Button>
+              <Button size="sm" onClick={() => onAdjust('credit')} className="bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300"><CircleDollarSign className="mr-2 h-4 w-4" /> Agregar saldo</Button>
+              <Button size="sm" variant="outline" onClick={() => onAdjust('debit')} className="border-amber-300/40 bg-transparent text-amber-100"><BadgeDollarSign className="mr-2 h-4 w-4" /> Retirar saldo</Button>
               {pendingDeposits.length > 0 && (
                 <>
                   <Button size="sm" variant="outline" onClick={() => onReview('approve')} className="border-emerald-400/40 bg-transparent text-emerald-200"><CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar pendientes</Button>
