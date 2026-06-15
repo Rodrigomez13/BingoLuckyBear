@@ -65,7 +65,7 @@ export function BingoCardArtboard({
         : { label: 'Pendiente de aprobación', className: 'bg-amber-300 text-amber-950 hover:bg-amber-300', icon: <ShieldAlert className="mr-1 h-3.5 w-3.5" /> }
 
   return (
-    <div className="mx-auto w-[min(94vw,960px)] max-w-[960px]">
+    <div className="mx-auto w-full max-w-[960px] [container-type:inline-size]">
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: '960 / 420' }}>
         <div
           data-bingo-artboard="true"
@@ -73,7 +73,7 @@ export function BingoCardArtboard({
             'absolute left-1/2 top-0 h-[420px] w-[960px] origin-top -translate-x-1/2 overflow-hidden rounded-[30px] border border-amber-300/30 bg-[#06100c] shadow-2xl shadow-black/40',
             !isApproved && 'opacity-95',
           )}
-          style={{ transform: 'translateX(-50%) scale(var(--bingo-90-scale, 1))' }}
+          style={{ transform: 'translateX(-50%) scale(min(1, calc(100cqw / 960)))' }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(245,190,70,0.28),transparent_32%),radial-gradient(circle_at_0%_100%,rgba(16,185,129,0.18),transparent_42%),linear-gradient(180deg,#0b1b14_0%,#07100c_54%,#030806_100%)]" />
           <div className="absolute inset-[16px] rounded-[24px] border border-amber-300/25" />
@@ -152,16 +152,6 @@ export function BingoCardArtboard({
           </div>
         </div>
       </div>
-      <style jsx>{`
-        div[style] > [data-bingo-artboard='true'] {
-          --bingo-90-scale: min(1, calc(94vw / 960));
-        }
-        @media (min-width: 1024px) {
-          div[style] > [data-bingo-artboard='true'] {
-            --bingo-90-scale: 1;
-          }
-        }
-      `}</style>
     </div>
   )
 }

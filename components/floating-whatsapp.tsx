@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { CONTACT_LINKS } from '@/lib/contact'
 
@@ -17,16 +16,11 @@ export function FloatingWhatsApp() {
       href={CONTACT_LINKS.whatsappUrl}
       target="_blank"
       rel="noreferrer"
-      aria-label="Unirse al WhatsApp de Lucky Bingo Bear"
-      className="fixed bottom-[6.25rem] right-4 z-[55] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-[#25d366] text-white shadow-2xl shadow-black/40 transition hover:scale-105 hover:bg-[#30e17b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#04f77c] md:bottom-5 md:right-5 md:h-auto md:w-auto md:gap-3 md:rounded-lg md:px-4 md:py-3"
+      aria-label="Escribinos por WhatsApp"
+      title="WhatsApp"
+      className="fixed bottom-[6.25rem] right-4 z-[55] flex h-12 w-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-lg shadow-black/30 ring-1 ring-black/10 transition hover:scale-105 hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#04f77c] md:bottom-5 md:right-5"
     >
-      <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#25d366]">
-        <WhatsAppLogo className="h-6 w-6" />
-        <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-zinc-950">
-          <Image src="/logo-solo.svg" alt="" width={18} height={18} className="h-4 w-4 object-contain" />
-        </span>
-      </span>
-      <span className="hidden text-sm font-bold text-zinc-950 md:inline">WhatsApp</span>
+      <WhatsAppLogo className="h-7 w-7" />
     </Link>
   )
 }
