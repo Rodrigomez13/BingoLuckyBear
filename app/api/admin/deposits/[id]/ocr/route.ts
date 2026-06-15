@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { requireAdminApi } from '@/lib/auth/roles'
 import { documentIdentityKeys, normalizeOperationNumber, validateParsedReceipt } from '@/lib/receipt-validation'
-import { getPrivateReceiptFile } from '@/lib/receipt-file'
-import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -20,10 +18,14 @@ function identitiesMatch(left?: string | null, right?: string | null) {
   return leftKeys.some((key) => rightKeys.includes(key))
 }
 
+function apiError(message: string, status = 500, details?: unknown) {
+  return NextResponse.json({ error: message, details }, { status })
+}
+
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { user, serviceClient, error } = await requireAdminApi()
   if (error) return error
-  if (!user || !serviceClient) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!user || !serviceClient) return apiError('No autorizado', 401)
 
   const { id } = await context.params
   const body = await request.json().catch(() => ({}))
@@ -37,7 +39,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     if (depositError || !deposit) throw depositError ?? new Error('Depósito no encontrado')
     if (deposit.status !== 'pending') {
-      return NextResponse.json({ error: 'Solo se revisan comprobantes de depósitos pendientes' }, { status: 409 })
+      return apiError('Solo se revisan comprobantes de depósitos pendientes', 409)
     }
 
     if (body.action === 'manual') {
@@ -75,7 +77,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     if (!deposit.receipt_url) {
-      return NextResponse.json({ error: 'El depósito no tiene comprobante adjunto' }, { status: 400 })
+      return apiError('El depósito no tiene comprobante adjunto', 400)
     }
 
     const [{ data: accounts }, { data: currentProfile }, { data: profiles }, { data: otherDeposits }] = await Promise.all([
@@ -99,6 +101,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const destinationAccounts = (accounts ?? [])
       .flatMap((account) => [account.alias, account.cbu])
       .filter(Boolean)
+
+    const [{ getPrivateReceiptFile }, { parseReceiptWithFreeOcr }] = await Promise.all([
+      import('@/lib/receipt-file'),
+      import('@/lib/receipt-ocr'),
+    ])
+
     const file = await getPrivateReceiptFile(deposit.receipt_url)
     const parsed = await parseReceiptWithFreeOcr({
       ...file,
@@ -131,12 +139,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       : []
     const warnings = [...validation.warnings]
 
-    if (matchingProfiles.length > 1) {
-      warnings.push('El documento coincide con más de un usuario. No se vinculó automáticamente.')
-    }
-    if (duplicateDepositIds.length > 0) {
-      warnings.push('El número de operación ya aparece en otro depósito.')
-    }
+    if (matchingProfiles.length > 1) warnings.push('El documento coincide con más de un usuario. No se vinculó automáticamente.')
+    if (duplicateDepositIds.length > 0) warnings.push('El número de operación ya aparece en otro depósito.')
 
     const reviewRecommendation = duplicateDepositIds.length > 0 || matchingProfiles.length > 1
       ? 'mismatch'
@@ -211,11 +215,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'No se pudo leer el comprobante'
+    const stack = err instanceof Error ? err.stack : undefined
+    console.error('Admin deposit OCR failed:', { depositId: id, message, stack })
+
     const { data: current } = await serviceClient
       .from('payment_deposits')
       .select('metadata')
       .eq('id', id)
       .maybeSingle()
+
     await serviceClient
       .from('payment_deposits')
       .update({
@@ -232,6 +240,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         },
       })
       .eq('id', id)
-    return NextResponse.json({ error: message }, { status: 500 })
+
+    return apiError(message, 500, process.env.NODE_ENV === 'development' ? stack : undefined)
   }
 }
