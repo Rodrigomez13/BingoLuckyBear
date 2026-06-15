@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { CUSTOMER_AVATARS, getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { PlayerGamification } from '@/components/customer/player-gamification'
+import { FundsPanel } from '@/components/customer/funds-panel'
 
 interface WalletData {
   wallet: {
@@ -205,6 +206,8 @@ export default function PlayerAccountPage() {
                 stats={stats}
                 matches={walletData?.trucoHistory ?? []}
               />
+
+              <FundsPanel cashBalance={wallet?.cash_credits_balance ?? 0} onChanged={load} />
 
               <Card className="border-white/10 bg-zinc-950/85 text-zinc-100">
                 <CardHeader>

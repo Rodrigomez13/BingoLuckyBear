@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, Gamepad2, ListChecks, ReceiptText, SlidersHorizontal } from 'lucide-react'
+import { BarChart3, Gamepad2, Landmark, ListChecks, ReceiptText, SlidersHorizontal } from 'lucide-react'
 
 const items = [
   { href: '/admin/saldo', label: 'Resumen', icon: BarChart3 },
   { href: '/admin/depositos', label: 'Depósitos', icon: ReceiptText },
+  { href: '/admin/retiros', label: 'Retiros', icon: Landmark },
   { href: '/admin/saldo/movimientos', label: 'Movimientos', icon: ListChecks },
   { href: '/admin/saldo/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
   { href: '/admin/saldo/consumos', label: 'Consumos por juego', icon: Gamepad2 },

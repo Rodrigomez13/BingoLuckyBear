@@ -69,6 +69,19 @@ interface TransactionRow {
   created_at: string
 }
 
+interface WithdrawalRow {
+  id: string
+  user_id: string | null
+  amount: number
+  currency: string
+  payout_account_kind: string
+  payout_account: string
+  payout_holder_name: string
+  status: string
+  settlement_reference: string | null
+  created_at: string
+}
+
 export default async function AdminUsersPage() {
   const { user: currentUser, access, serviceClient } = await requireAdminPage()
 
@@ -78,7 +91,7 @@ export default async function AdminUsersPage() {
   const authUsers = authUsersData.users ?? []
   const userIds = authUsers.map((user) => user.id)
 
-  const [profilesResult, walletsResult, rolesResult, statsResult, cardsResult, depositsResult, transactionsResult] = await Promise.allSettled([
+  const [profilesResult, walletsResult, rolesResult, statsResult, cardsResult, depositsResult, withdrawalsResult, transactionsResult] = await Promise.allSettled([
     userIds.length
       ? serviceClient.from('customer_profiles').select('id, email, full_name, alias, avatar_key, phone, dni, created_at').in('id', userIds)
       : Promise.resolve({ data: [] as ProfileRow[] }),
@@ -102,6 +115,11 @@ export default async function AdminUsersPage() {
       .order('created_at', { ascending: false })
       .limit(1000),
     serviceClient
+      .from('payment_withdrawals')
+      .select('id, user_id, amount, currency, payout_account_kind, payout_account, payout_holder_name, status, settlement_reference, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1000),
+    serviceClient
       .from('lbb_wallet_transactions')
       .select('id, user_id, wallet_kind, transaction_type, amount, balance_after, description, created_at')
       .order('created_at', { ascending: false })
@@ -114,6 +132,7 @@ export default async function AdminUsersPage() {
   const stats = resultData<StatsRow>(statsResult)
   const cards = resultData<CardCountRow>(cardsResult)
   const deposits = resultData<DepositRow>(depositsResult)
+  const withdrawals = resultData<WithdrawalRow>(withdrawalsResult)
   const transactions = resultData<TransactionRow>(transactionsResult)
 
   const profileById = new Map(profiles.map((row) => [row.id, row]))
@@ -183,6 +202,24 @@ export default async function AdminUsersPage() {
     transactionsByUser.set(transaction.user_id, current)
   }
 
+  const withdrawalsByUser = new Map<string, NonNullable<AdminUserRow['withdrawals']>>()
+  for (const withdrawal of withdrawals) {
+    if (!withdrawal.user_id) continue
+    const current = withdrawalsByUser.get(withdrawal.user_id) ?? []
+    current.push({
+      id: withdrawal.id,
+      amount: Number(withdrawal.amount ?? 0),
+      currency: withdrawal.currency || 'ARS',
+      payoutAccountKind: withdrawal.payout_account_kind,
+      payoutAccount: withdrawal.payout_account,
+      payoutHolderName: withdrawal.payout_holder_name,
+      status: withdrawal.status,
+      settlementReference: withdrawal.settlement_reference,
+      createdAt: withdrawal.created_at,
+    })
+    withdrawalsByUser.set(withdrawal.user_id, current)
+  }
+
   const rows: AdminUserRow[] = authUsers
     .map((user) => {
       const profile = profileById.get(user.id)
@@ -215,6 +252,7 @@ export default async function AdminUsersPage() {
         matchesLost: Number(playerStats?.matches_lost ?? 0),
         rankingPoints: Number(playerStats?.ranking_points ?? 1000),
         deposits: depositsByUser.get(user.id) ?? [],
+        withdrawals: withdrawalsByUser.get(user.id) ?? [],
         transactions: transactionsByUser.get(user.id) ?? [],
       }
     })

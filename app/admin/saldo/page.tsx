@@ -37,10 +37,15 @@ interface DepositRow {
   amount: number | null
 }
 
+interface WithdrawalRow {
+  status: string
+  amount: number | null
+}
+
 export default async function AdminWalletOpsPage() {
   const { serviceClient } = await requireAdminPage()
 
-  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }, { data: deposits }] = await Promise.all([
+  const [{ data: wallets }, { data: transactions }, { data: trucoRooms }, { data: cards }, { data: auditLogs }, { data: deposits }, { data: withdrawals }] = await Promise.all([
     serviceClient.from('lbb_wallets').select('user_id, bonus_points_balance, cash_credits_balance').limit(500),
     serviceClient
       .from('lbb_wallet_transactions')
@@ -67,6 +72,11 @@ export default async function AdminWalletOpsPage() {
       .select('status, amount')
       .order('created_at', { ascending: false })
       .limit(500),
+    serviceClient
+      .from('payment_withdrawals')
+      .select('status, amount')
+      .order('created_at', { ascending: false })
+      .limit(500),
   ])
 
   const walletRows = (wallets ?? []) as WalletRow[]
@@ -75,9 +85,12 @@ export default async function AdminWalletOpsPage() {
   const cardRows = (cards ?? []) as { payment_status?: string | null; receipt_amount?: number | null }[]
   const auditRows = (auditLogs ?? []) as { id: string; action: string; entity_type?: string | null; entity_id?: string | null; reason?: string | null; created_at: string }[]
   const depositRows = (deposits ?? []) as DepositRow[]
+  const withdrawalRows = (withdrawals ?? []) as WithdrawalRow[]
 
   const pendingDeposits = depositRows.filter((row) => row.status === 'pending')
   const approvedDeposits = depositRows.filter((row) => row.status === 'approved')
+  const pendingWithdrawals = withdrawalRows.filter((row) => row.status === 'pending')
+  const approvedWithdrawals = withdrawalRows.filter((row) => row.status === 'approved')
   const trucoEntryFees = transactionRows.filter((row) => row.transaction_type === 'truco_entry_fee')
   const trucoPrizes = transactionRows.filter((row) => row.transaction_type === 'truco_prize')
   const bingoPurchases = transactionRows.filter((row) => row.transaction_type === 'bingo_purchase')
@@ -106,7 +119,7 @@ export default async function AdminWalletOpsPage() {
 
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <WalletMetric icon={<WalletCards className="h-5 w-5" />} label="Usuarios con saldo" value={String(walletRows.length)} detail="wallets creadas" />
-          <WalletMetric icon={<Clock3 className="h-5 w-5" />} label="Recargas pendientes" value={String(pendingDeposits.length)} detail="requieren validación" />
+          <WalletMetric icon={<Clock3 className="h-5 w-5" />} label="Pendientes" value={String(pendingDeposits.length + pendingWithdrawals.length)} detail={`${pendingDeposits.length} cargas · ${pendingWithdrawals.length} retiros`} />
           <WalletMetric icon={<Ticket className="h-5 w-5" />} label="Cartones aprobados" value={formatARS(approvedBingoAmount)} detail="ingreso confirmado" />
           <WalletMetric icon={<Trophy className="h-5 w-5" />} label="Pozo Truco activo" value={`${openTrucoRooms.reduce((total, room) => total + Number(room.prize_pool_points ?? 0), 0)} LBB`} detail={`${openTrucoRooms.length} mesa${openTrucoRooms.length !== 1 ? 's' : ''} abierta${openTrucoRooms.length !== 1 ? 's' : ''}`} />
         </div>
@@ -165,6 +178,7 @@ export default async function AdminWalletOpsPage() {
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="grid gap-4 md:grid-cols-3">
             <OperationBox label="Recargas aprobadas" value={String(approvedDeposits.length)} />
+            <OperationBox label="Retiros pagados" value={String(approvedWithdrawals.length)} />
             <OperationBox label="Entradas Truco debitadas" value={String(trucoEntryFees.length)} />
             <OperationBox label="Premios Truco pagados" value={String(trucoPrizes.length)} />
             <OperationBox label="Compras bingo con wallet" value={String(bingoPurchases.length)} />

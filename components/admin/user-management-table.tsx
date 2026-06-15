@@ -35,6 +35,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { UserAdminEditor } from '@/components/admin/user-admin-editor'
+import { WithdrawalActionButton } from '@/components/admin/withdrawal-action-button'
 
 type Role = 'admin' | 'operator' | 'player'
 type WalletKind = 'bonus_points' | 'cash_credits'
@@ -72,6 +73,17 @@ export interface AdminUserRow {
     status: string
     createdAt: string
     matchedBy: 'user_id' | 'email' | 'dni'
+  }>
+  withdrawals?: Array<{
+    id: string
+    amount: number
+    currency: string
+    payoutAccountKind: string
+    payoutAccount: string
+    payoutHolderName: string
+    status: string
+    settlementReference: string | null
+    createdAt: string
   }>
   transactions: Array<{
     id: string
@@ -128,6 +140,10 @@ export function UserManagementTable({
   const allVisibleSelected = filteredRows.length > 0 && filteredRows.every((row) => selectedIds.includes(row.id))
   const selectedPendingDeposits = selectedRows.reduce(
     (total, row) => total + row.deposits.filter((deposit) => deposit.status === 'pending').length,
+    0,
+  )
+  const selectedPendingWithdrawals = selectedRows.reduce(
+    (total, row) => total + (row.withdrawals ?? []).filter((withdrawal) => withdrawal.status === 'pending').length,
     0,
   )
 
@@ -255,7 +271,7 @@ export function UserManagementTable({
         <div className="mb-4 flex flex-col gap-3 rounded-md border border-amber-400/25 bg-amber-400/10 p-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="font-bold text-amber-50">{selectedRows.length} usuario{selectedRows.length !== 1 ? 's' : ''} seleccionado{selectedRows.length !== 1 ? 's' : ''}</p>
-            <p className="text-xs text-amber-100/65">{selectedPendingDeposits} depósito{selectedPendingDeposits !== 1 ? 's' : ''} pendiente{selectedPendingDeposits !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-amber-100/65">{selectedPendingDeposits} depósito{selectedPendingDeposits !== 1 ? 's' : ''} · {selectedPendingWithdrawals} retiro{selectedPendingWithdrawals !== 1 ? 's' : ''} pendiente{selectedPendingWithdrawals !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => setAdjustment({ userIds: selectedIds, direction: 'credit' })} className="bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300">
@@ -294,7 +310,7 @@ export function UserManagementTable({
               <th className="px-3 py-2">Usuario</th>
               <th className="px-3 py-2">Rol</th>
               <th className="px-3 py-2 text-right">Saldo</th>
-              <th className="px-3 py-2 text-center">Depósitos</th>
+              <th className="px-3 py-2 text-center">Fondos</th>
               <th className="px-3 py-2 text-center">Cartones</th>
               <th className="px-3 py-2 text-center">Truco</th>
               <th className="px-3 py-2">Último acceso</th>
@@ -304,6 +320,8 @@ export function UserManagementTable({
           <tbody>
             {filteredRows.map((row) => {
               const pendingDeposits = row.deposits.filter((deposit) => deposit.status === 'pending')
+              const withdrawals = row.withdrawals ?? []
+              const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === 'pending')
               return (
                 <tr key={row.id} className="rounded-md bg-black/25 align-middle">
                   <td className="rounded-l-md border-y border-l border-white/10 px-3 py-3">
@@ -332,12 +350,12 @@ export function UserManagementTable({
                     <p className="text-xs text-zinc-500">Cash {formatNumber(row.cash)}</p>
                   </td>
                   <td className="border-y border-white/10 px-3 py-3 text-center">
-                    {pendingDeposits.length > 0 ? (
-                      <Badge className="bg-amber-300 text-zinc-950 hover:bg-amber-300">{pendingDeposits.length} pendiente{pendingDeposits.length !== 1 ? 's' : ''}</Badge>
+                    {pendingDeposits.length + pendingWithdrawals.length > 0 ? (
+                      <Badge className="bg-amber-300 text-zinc-950 hover:bg-amber-300">{pendingDeposits.length + pendingWithdrawals.length} pendiente{pendingDeposits.length + pendingWithdrawals.length !== 1 ? 's' : ''}</Badge>
                     ) : (
                       <span className="text-zinc-600">Sin pendientes</span>
                     )}
-                    <p className="mt-1 text-[10px] text-zinc-500">{row.deposits.length} registrado{row.deposits.length !== 1 ? 's' : ''}</p>
+                    <p className="mt-1 text-[10px] text-zinc-500">{row.deposits.length} cargas · {withdrawals.length} retiros</p>
                   </td>
                   <td className="border-y border-white/10 px-3 py-3 text-center">
                     <p className="font-black text-white">{row.cards.total}</p>
@@ -376,6 +394,11 @@ export function UserManagementTable({
                               <XCircle className="h-4 w-4" /> Rechazar depósitos
                             </DropdownMenuItem>
                           </>
+                        )}
+                        {pendingWithdrawals.length > 0 && (
+                          <DropdownMenuItem onSelect={() => setActivityUserId(row.id)} className="text-amber-100 focus:bg-amber-500/10 focus:text-amber-50">
+                            <WalletCards className="h-4 w-4" /> Revisar retiros
+                          </DropdownMenuItem>
                         )}
                         {canManageRoles && (
                           <>
@@ -572,20 +595,22 @@ function ActivityDialog({
   onReview: (action: DepositAction) => void
 }) {
   const pendingDeposits = user?.deposits.filter((deposit) => deposit.status === 'pending') ?? []
+  const withdrawals = user?.withdrawals ?? []
+  const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === 'pending')
 
   return (
     <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[88vh] w-[min(96vw,900px)] max-w-none overflow-y-auto border-white/10 bg-zinc-950 text-zinc-100">
         <DialogHeader>
           <DialogTitle>{user?.alias ?? 'Usuario'}</DialogTitle>
-          <DialogDescription className="text-zinc-400">Saldo, depósitos y últimos movimientos de la cuenta.</DialogDescription>
+          <DialogDescription className="text-zinc-400">Saldo, cargas, retiros y últimos movimientos de la cuenta.</DialogDescription>
         </DialogHeader>
         {user && (
           <div className="grid gap-5">
             <div className="grid gap-3 sm:grid-cols-3">
               <Summary label="LBB Points" value={formatNumber(user.bonus)} />
               <Summary label="Créditos cash" value={formatNumber(user.cash)} />
-              <Summary label="Depósitos pendientes" value={String(pendingDeposits.length)} />
+              <Summary label="Pendientes" value={String(pendingDeposits.length + pendingWithdrawals.length)} />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => onAdjust('credit')} className="bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300"><CircleDollarSign className="mr-2 h-4 w-4" /> Acreditar</Button>
@@ -608,6 +633,29 @@ function ActivityDialog({
                     </div>
                     <p className="font-mono font-black text-amber-300">{formatMoney(deposit.amount, deposit.currency)}</p>
                     <StatusBadge status={deposit.status} />
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section>
+              <h3 className="mb-2 flex items-center gap-2 font-bold text-white"><BadgeDollarSign className="h-4 w-4 text-amber-300" /> Retiros</h3>
+              <div className="divide-y divide-white/10 rounded-md border border-white/10">
+                {withdrawals.length === 0 ? <p className="p-4 text-sm text-zinc-500">No hay retiros registrados.</p> : withdrawals.map((withdrawal) => (
+                  <div key={withdrawal.id} className="grid gap-2 p-3 text-sm lg:grid-cols-[1fr_auto_auto] lg:items-center">
+                    <div>
+                      <p className="font-semibold text-white">{withdrawal.payoutAccountKind} · {withdrawal.payoutAccount}</p>
+                      <p className="text-xs text-zinc-500">{withdrawal.payoutHolderName} · {formatDate(withdrawal.createdAt)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono font-black text-amber-300">{formatMoney(withdrawal.amount, withdrawal.currency)}</p>
+                      <StatusBadge status={withdrawal.status} />
+                    </div>
+                    {withdrawal.status === 'pending' && (
+                      <div className="flex justify-end gap-2">
+                        <WithdrawalActionButton id={withdrawal.id} action="approve" />
+                        <WithdrawalActionButton id={withdrawal.id} action="reject" />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
