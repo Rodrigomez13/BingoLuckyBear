@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Download, X, Share, Plus } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 
@@ -12,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 const DISMISS_KEY = 'lbb-install-dismissed'
 
 export function InstallPrompt() {
+  const pathname = usePathname()
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [visible, setVisible] = useState(false)
   const [iosHint, setIosHint] = useState(false)
@@ -19,6 +21,17 @@ export function InstallPrompt() {
   // Register the service worker once on mount.
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+
+    if (process.env.NODE_ENV !== 'production') {
+      void navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      if ('caches' in window) {
+        void window.caches.keys()
+          .then((keys) => Promise.all(keys.filter((key) => key.startsWith('lbb-')).map((key) => window.caches.delete(key))))
+      }
+      return
+    }
+
     const register = () => {
       navigator.serviceWorker.register('/sw.js').catch(() => {
         /* ignore registration errors */
@@ -84,7 +97,7 @@ export function InstallPrompt() {
     setVisible(false)
   }
 
-  if (!visible) return null
+  if (!visible || pathname?.startsWith('/truco')) return null
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[58] px-3 md:bottom-5 md:left-auto md:right-5 md:max-w-sm">

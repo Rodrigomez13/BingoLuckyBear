@@ -3,9 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Bot,
   Check,
-  Clover,
   Coins,
   Copy,
   Globe2,
@@ -13,6 +11,7 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Play,
   UserCircle2,
   Users,
 } from 'lucide-react'
@@ -256,79 +255,98 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
     void joinRoomByCode(room.roomCode)
   }
 
+  const quickRoom = publicRooms.find((room) =>
+    room.canJoin
+    && (room.entryFeePoints === 0 || Boolean(account.user))
+    && room.entryFeePoints <= account.points,
+  )
+
+  const quickPlay = () => {
+    setError(null)
+    if (quickRoom) {
+      openPublicRoom(quickRoom)
+      return
+    }
+    onPlayBot(target)
+  }
+
   return (
-    <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 py-8 text-center lbb-fade-up">
+    <div className="relative mx-auto flex max-w-6xl flex-col px-4 py-4 lbb-fade-up sm:py-5">
       <TrucoLoadingOverlay show={busy} message={mode === 'join' ? 'Entrando a la mesa…' : 'Preparando la mesa…'} />
 
-      <div className="absolute right-4 top-4">
-        <RulesModal compact />
-      </div>
-
-      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">
-        <Clover className="h-3.5 w-3.5" /> Lucky Bingo Bear
-      </div>
-      <h1 className="text-balance font-mono text-4xl font-black tracking-tight text-white sm:text-5xl">
-        Truco <span className="text-amber-300">Lucky Bear</span>
-      </h1>
-      <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-emerald-100/70">
-        Mesas gratis para invitados y mesas con pozo para jugadores con cuenta y saldo LBB.
-      </p>
-
-      <AccountBadge account={account} name={currentName} avatar={currentAvatar} />
-
-      <div className="mt-5 inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/30 p-1">
-        {([15, 30] as const).map((score) => (
-          <button
-            key={score}
-            type="button"
-            onClick={() => setTarget(score)}
-            aria-pressed={target === score}
-            className={`rounded-full px-5 py-1.5 text-sm font-bold transition ${
-              target === score ? 'bg-amber-300 text-amber-950' : 'text-emerald-100/70 hover:text-white'
-            }`}
-          >
-            A {score} puntos
-          </button>
-        ))}
-      </div>
-
       {error && (
-        <div className="mt-4 max-w-lg rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-100">
+        <div className="mb-3 rounded-lg border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-100">
           {error}
         </div>
       )}
 
       {mode === 'home' && (
         <>
-          <div className="mt-6 grid w-full gap-3 sm:grid-cols-3">
-            <LobbyCard
-              icon={<Bot className="h-5 w-5" />}
-              title="Jugar contra bot"
-              desc="Partida instantánea contra el oso."
-              onClick={() => onPlayBot(target)}
-              primary
-            />
-            <LobbyCard
-              icon={<Users className="h-5 w-5" />}
-              title="Crear mesa"
-              desc="Gratis o con pozo de puntos."
-              onClick={() => {
-                setError(null)
-                setRoomCode(generateRoomCode())
-                setVisibility('public')
-                setPotPoints(0)
-                setMode('create')
-              }}
-            />
-            <LobbyCard
-              icon={<LogIn className="h-5 w-5" />}
-              title="Unirse por código"
-              desc="Entrá con un código o enlace."
-              onClick={() => {
-                setError(null)
-                setMode('join')
-              }}
-            />
+          <div className="flex flex-col gap-3 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/80">Sala de juego</p>
+              <h1 className="font-mono text-2xl font-black text-white sm:text-3xl">
+                Truco <span className="text-amber-300">Lucky Bear</span>
+              </h1>
+              <p className="mt-1 text-xs text-emerald-100/60">
+                Entrá a una mesa disponible o creá una partida
+                <span className="hidden sm:inline"> gratis o con pozo LBB</span>.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <AccountBadge account={account} name={currentName} avatar={currentAvatar} />
+              <RulesModal compact />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 border-b border-white/10 py-3 lg:flex-row lg:items-center">
+            <div className="inline-flex h-10 shrink-0 items-center rounded-lg border border-white/10 bg-black/30 p-1">
+              {([15, 30] as const).map((score) => (
+                <button
+                  key={score}
+                  type="button"
+                  onClick={() => setTarget(score)}
+                  aria-pressed={target === score}
+                  className={`h-8 rounded-md px-4 text-xs font-black transition ${
+                    target === score ? 'bg-amber-300 text-amber-950' : 'text-emerald-100/65 hover:text-white'
+                  }`}
+                >
+                  {score} puntos
+                </button>
+              ))}
+            </div>
+
+            <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
+              <QuickAction
+                icon={<Play className="h-4 w-4 fill-current" />}
+                title="Partida rápida"
+                detail={quickRoom ? `Mesa de ${quickRoom.host.name}` : 'Contra el bot'}
+                onClick={quickPlay}
+                primary
+              />
+              <QuickAction
+                icon={<Users className="h-4 w-4" />}
+                title="Crear mesa"
+                detail="Pública o privada"
+                onClick={() => {
+                  setError(null)
+                  setRoomCode(generateRoomCode())
+                  setVisibility('public')
+                  setPotPoints(0)
+                  setMode('create')
+                }}
+              />
+              <QuickAction
+                icon={<LogIn className="h-4 w-4" />}
+                title="Ingresar código"
+                detail="Código o enlace"
+                onClick={() => {
+                  setError(null)
+                  setMode('join')
+                }}
+              />
+            </div>
           </div>
 
           <PublicRoomsPanel
@@ -341,7 +359,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       )}
 
       {mode === 'create' && (
-        <div className="mt-8 w-full max-w-xl rounded-2xl border border-amber-300/20 bg-[#06140e]/80 p-5 sm:p-6">
+        <div className="mx-auto mt-3 w-full max-w-xl rounded-lg border border-amber-300/20 bg-[#06140e]/80 p-5 sm:p-6">
           <h2 className="text-lg font-bold text-white">Crear mesa</h2>
           <p className="mt-1 text-sm text-emerald-100/60">
             El pozo total se forma con dos aportes iguales. Tu mitad se reserva al crear la mesa.
@@ -430,7 +448,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       )}
 
       {mode === 'join' && (
-        <div className="mt-8 w-full max-w-lg rounded-2xl border border-amber-300/20 bg-[#06140e]/80 p-5 sm:p-6">
+        <div className="mx-auto mt-3 w-full max-w-lg rounded-lg border border-amber-300/20 bg-[#06140e]/80 p-5 sm:p-6">
           <h2 className="text-lg font-bold text-white">Unirse a una mesa</h2>
           <p className="mt-1 text-sm text-emerald-100/60">Ingresá el código de 5 caracteres que te pasó el anfitrión.</p>
 
@@ -506,27 +524,27 @@ function AccountBadge({
   avatar: ReturnType<typeof getCustomerAvatar>
 }) {
   if (account.loading) {
-    return <div className="mt-4 h-12 w-64 animate-pulse rounded-2xl bg-white/5" />
+    return <div className="h-10 w-36 animate-pulse rounded-lg bg-white/5 sm:w-44" />
   }
 
   if (!account.user) {
     return (
-      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-4 py-2 text-left">
-        <UserCircle2 className="h-8 w-8 text-emerald-200/60" />
+      <div className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-black/25 px-3 text-left">
+        <UserCircle2 className="h-5 w-5 text-emerald-200/60" />
         <div>
           <p className="text-xs font-bold text-white">Modo invitado</p>
-          <p className="text-[10px] text-emerald-100/55">Nombre + avatar · solo mesas gratis</p>
+          <p className="text-[9px] text-emerald-100/55">Solo mesas gratis</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-left">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${avatar.gradient} text-xl`}>{avatar.emoji}</span>
+    <div className="flex h-10 items-center gap-2 rounded-lg border border-amber-300/20 bg-amber-300/10 px-3 text-left">
+      <span className={`flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br ${avatar.gradient} text-base`}>{avatar.emoji}</span>
       <div>
         <p className="text-xs font-bold text-white">{name}</p>
-        <p className="flex items-center gap-1 text-[10px] font-bold text-amber-200"><Coins className="h-3 w-3" /> {account.points} LBB disponibles</p>
+        <p className="flex items-center gap-1 text-[9px] font-bold text-amber-200"><Coins className="h-3 w-3" /> {account.points} LBB</p>
       </div>
     </div>
   )
@@ -615,16 +633,16 @@ function IconCopyButton({ onClick, copied, label }: { onClick: () => void; copie
   )
 }
 
-function LobbyCard({
+function QuickAction({
   icon,
   title,
-  desc,
+  detail,
   onClick,
   primary = false,
 }: {
   icon: React.ReactNode
   title: string
-  desc: string
+  detail: string
   onClick: () => void
   primary?: boolean
 }) {
@@ -632,20 +650,20 @@ function LobbyCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 sm:flex-col sm:items-center sm:gap-2 sm:p-4 sm:text-center ${
+      className={`group flex h-12 items-center gap-3 rounded-lg border px-3 text-left transition ${
         primary
-          ? 'border-amber-300/40 bg-amber-300/10 hover:bg-amber-300/15'
-          : 'border-white/10 bg-[#06140e]/70 hover:border-amber-300/30'
+          ? 'border-amber-300 bg-amber-300 text-amber-950 hover:bg-amber-200'
+          : 'border-white/10 bg-[#06140e]/70 hover:border-amber-300/30 hover:bg-white/5'
       }`}
     >
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${
-        primary ? 'bg-amber-300 text-amber-950' : 'bg-white/5 text-amber-300'
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
+        primary ? 'bg-amber-950/10 text-amber-950' : 'bg-white/5 text-amber-300'
       }`}>
         {icon}
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-bold text-white">{title}</span>
-        <span className="block text-xs leading-snug text-emerald-100/60">{desc}</span>
+        <span className={`block text-xs font-black ${primary ? 'text-amber-950' : 'text-white'}`}>{title}</span>
+        <span className={`block truncate text-[10px] ${primary ? 'text-amber-950/65' : 'text-emerald-100/55'}`}>{detail}</span>
       </span>
     </button>
   )
