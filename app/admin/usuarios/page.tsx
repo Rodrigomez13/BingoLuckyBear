@@ -1,12 +1,11 @@
 import Link from 'next/link'
-import { ArrowLeft, Mail, ShieldCheck, Ticket, Trophy, UserCircle2, WalletCards } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Mail, ShieldCheck, UserCircle2, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { requireAdminPage } from '@/lib/auth/roles'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
-import { UserAdminEditor } from '@/components/admin/user-admin-editor'
+import { UserManagementTable, type AdminUserRow } from '@/components/admin/user-management-table'
 
 interface ProfileRow {
   id: string
@@ -41,7 +40,33 @@ interface StatsRow {
 interface CardCountRow {
   user_id: string | null
   email: string | null
+  dni: string | null
+  deposit_id: string | null
   payment_status: string | null
+}
+
+interface DepositRow {
+  id: string
+  user_id: string | null
+  customer_email: string | null
+  amount: number
+  currency: string
+  wallet_kind: 'bonus_points' | 'cash_credits'
+  payment_method: string
+  payment_reference: string | null
+  status: string
+  created_at: string
+}
+
+interface TransactionRow {
+  id: string
+  user_id: string
+  wallet_kind: 'bonus_points' | 'cash_credits'
+  transaction_type: string
+  amount: number
+  balance_after: number | null
+  description: string | null
+  created_at: string
 }
 
 export default async function AdminUsersPage() {
@@ -52,9 +77,8 @@ export default async function AdminUsersPage() {
 
   const authUsers = authUsersData.users ?? []
   const userIds = authUsers.map((user) => user.id)
-  const emails = authUsers.map((user) => user.email?.toLowerCase()).filter(Boolean) as string[]
 
-  const [profilesResult, walletsResult, rolesResult, statsResult, cardsResult] = await Promise.allSettled([
+  const [profilesResult, walletsResult, rolesResult, statsResult, cardsResult, depositsResult, transactionsResult] = await Promise.allSettled([
     userIds.length
       ? serviceClient.from('customer_profiles').select('id, email, full_name, alias, avatar_key, phone, dni, created_at').in('id', userIds)
       : Promise.resolve({ data: [] as ProfileRow[] }),
@@ -67,9 +91,21 @@ export default async function AdminUsersPage() {
     userIds.length
       ? serviceClient.from('truco_player_stats').select('user_id, matches_played, matches_won, matches_lost, ranking_points').in('user_id', userIds)
       : Promise.resolve({ data: [] as StatsRow[] }),
-    emails.length
-      ? serviceClient.from('bingo_cards').select('user_id, email, payment_status').or(`user_id.in.(${userIds.join(',')}),email.in.(${emails.join(',')})`)
-      : Promise.resolve({ data: [] as CardCountRow[] }),
+    serviceClient
+      .from('bingo_cards')
+      .select('user_id, email, dni, deposit_id, payment_status')
+      .order('created_at', { ascending: false })
+      .limit(2000),
+    serviceClient
+      .from('payment_deposits')
+      .select('id, user_id, customer_email, amount, currency, wallet_kind, payment_method, payment_reference, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1000),
+    serviceClient
+      .from('lbb_wallet_transactions')
+      .select('id, user_id, wallet_kind, transaction_type, amount, balance_after, description, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1000),
   ])
 
   const profiles = resultData<ProfileRow>(profilesResult)
@@ -77,15 +113,21 @@ export default async function AdminUsersPage() {
   const roles = resultData<RoleRow>(rolesResult)
   const stats = resultData<StatsRow>(statsResult)
   const cards = resultData<CardCountRow>(cardsResult)
+  const deposits = resultData<DepositRow>(depositsResult)
+  const transactions = resultData<TransactionRow>(transactionsResult)
 
   const profileById = new Map(profiles.map((row) => [row.id, row]))
+  const profileByDni = new Map(profiles.filter((row) => row.dni).map((row) => [normalizeDni(row.dni), row]))
   const walletById = new Map(wallets.map((row) => [row.user_id, row]))
   const roleById = new Map(roles.map((row) => [row.user_id, row.role]))
   const statsById = new Map(stats.map((row) => [row.user_id, row]))
+  const authUserByEmail = new Map(authUsers.filter((user) => user.email).map((user) => [user.email!.toLowerCase(), user]))
 
   const cardsByUser = new Map<string, { total: number; approved: number; pending: number; rejected: number }>()
   for (const card of cards) {
-    const key = card.user_id || authUsers.find((user) => user.email?.toLowerCase() === card.email?.toLowerCase())?.id
+    const key = card.user_id
+      || authUserByEmail.get(card.email?.toLowerCase() ?? '')?.id
+      || profileByDni.get(normalizeDni(card.dni))?.id
     if (!key) continue
     const current = cardsByUser.get(key) ?? { total: 0, approved: 0, pending: 0, rejected: 0 }
     current.total += 1
@@ -95,7 +137,53 @@ export default async function AdminUsersPage() {
     cardsByUser.set(key, current)
   }
 
-  const rows = authUsers
+  const depositsByUser = new Map<string, AdminUserRow['deposits']>()
+  for (const deposit of deposits) {
+    let matchedBy: 'user_id' | 'email' | 'dni' = 'user_id'
+    let userId = deposit.user_id
+    if (!userId && deposit.customer_email) {
+      userId = authUserByEmail.get(deposit.customer_email.toLowerCase())?.id ?? null
+      matchedBy = 'email'
+    }
+    if (!userId) {
+      const linkedCard = cards.find((card) => card.deposit_id === deposit.id && card.dni)
+      userId = profileByDni.get(normalizeDni(linkedCard?.dni))?.id ?? null
+      matchedBy = 'dni'
+    }
+    if (!userId) continue
+    const current = depositsByUser.get(userId) ?? []
+    current.push({
+      id: deposit.id,
+      amount: Number(deposit.amount ?? 0),
+      currency: deposit.currency || 'ARS',
+      walletKind: deposit.wallet_kind,
+      paymentMethod: deposit.payment_method,
+      paymentReference: deposit.payment_reference,
+      status: deposit.status,
+      createdAt: deposit.created_at,
+      matchedBy,
+    })
+    depositsByUser.set(userId, current)
+  }
+
+  const transactionsByUser = new Map<string, AdminUserRow['transactions']>()
+  for (const transaction of transactions) {
+    const current = transactionsByUser.get(transaction.user_id) ?? []
+    if (current.length < 20) {
+      current.push({
+        id: transaction.id,
+        walletKind: transaction.wallet_kind,
+        transactionType: transaction.transaction_type,
+        amount: Number(transaction.amount ?? 0),
+        balanceAfter: transaction.balance_after === null ? null : Number(transaction.balance_after),
+        description: transaction.description,
+        createdAt: transaction.created_at,
+      })
+    }
+    transactionsByUser.set(transaction.user_id, current)
+  }
+
+  const rows: AdminUserRow[] = authUsers
     .map((user) => {
       const profile = profileById.get(user.id)
       const wallet = walletById.get(user.id)
@@ -113,10 +201,12 @@ export default async function AdminUsersPage() {
         phone: profile?.phone ?? '',
         dni: profile?.dni ?? '',
         role,
-        avatar,
+        avatarKey: avatar.key,
+        avatarLabel: avatar.label,
+        avatarSrc: getCustomerAvatarImageSrc(avatar.key),
         emailConfirmed: Boolean(user.email_confirmed_at || user.confirmed_at),
-        createdAt: user.created_at,
-        lastSignInAt: user.last_sign_in_at,
+        createdAt: user.created_at ?? null,
+        lastSignInAt: user.last_sign_in_at ?? null,
         bonus: Number(wallet?.bonus_points_balance ?? 0),
         cash: Number(wallet?.cash_credits_balance ?? 0),
         cards: cardCount,
@@ -124,6 +214,8 @@ export default async function AdminUsersPage() {
         matchesWon: Number(playerStats?.matches_won ?? 0),
         matchesLost: Number(playerStats?.matches_lost ?? 0),
         rankingPoints: Number(playerStats?.ranking_points ?? 1000),
+        deposits: depositsByUser.get(user.id) ?? [],
+        transactions: transactionsByUser.get(user.id) ?? [],
       }
     })
     .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
@@ -175,72 +267,7 @@ export default async function AdminUsersPage() {
                 No hay usuarios registrados.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1040px] border-separate border-spacing-y-2 text-sm">
-                  <thead>
-                    <tr className="text-left text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                      <th className="px-3 py-2">Usuario</th>
-                      <th className="px-3 py-2">Rol</th>
-                      <th className="px-3 py-2">Estado</th>
-                      <th className="px-3 py-2 text-right">Saldo</th>
-                      <th className="px-3 py-2 text-center">Cartones</th>
-                      <th className="px-3 py-2 text-center">Truco</th>
-                      <th className="px-3 py-2">Alta</th>
-                      <th className="px-3 py-2">Último acceso</th>
-                      <th className="px-3 py-2 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.id} className="rounded-2xl bg-black/25 align-middle">
-                        <td className="rounded-l-2xl border-y border-l border-white/10 px-3 py-3">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-amber-300/25 bg-amber-300/10">
-                              <img src={getCustomerAvatarImageSrc(row.avatar.key)} alt={row.avatar.label} className="h-full w-full object-cover" />
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate font-bold text-white">{row.alias}</p>
-                              <p className="truncate text-xs text-zinc-500">{row.email}</p>
-                              <p className="mt-1 truncate font-mono text-[10px] text-zinc-600">{row.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3">
-                          <RoleBadge role={row.role} />
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3">
-                          <Badge className={row.emailConfirmed ? 'bg-emerald-500 text-white hover:bg-emerald-500' : 'bg-rose-500 text-white hover:bg-rose-500'}>
-                            {row.emailConfirmed ? 'Verificado' : 'Sin verificar'}
-                          </Badge>
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3 text-right">
-                          <p className="font-mono font-black text-amber-300">{row.bonus} LBB</p>
-                          <p className="text-xs text-zinc-500">Cash {row.cash}</p>
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3 text-center">
-                          <div className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-2.5 py-1.5">
-                            <Ticket className="h-4 w-4 text-amber-300" />
-                            <span className="font-black text-white">{row.cards.total}</span>
-                          </div>
-                          <p className="mt-1 text-[10px] text-zinc-500">{row.cards.approved} ok · {row.cards.pending} pend.</p>
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3 text-center">
-                          <div className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-2.5 py-1.5">
-                            <Trophy className="h-4 w-4 text-emerald-300" />
-                            <span className="font-black text-white">{row.matchesWon}/{row.matchesPlayed}</span>
-                          </div>
-                          <p className="mt-1 text-[10px] text-zinc-500">{row.rankingPoints} pts</p>
-                        </td>
-                        <td className="border-y border-white/10 px-3 py-3 text-xs text-zinc-400">{formatDate(row.createdAt)}</td>
-                        <td className="border-y border-white/10 px-3 py-3 text-xs text-zinc-400">{formatDate(row.lastSignInAt)}</td>
-                        <td className="rounded-r-2xl border-y border-r border-white/10 px-3 py-3 text-right">
-                          <UserAdminEditor user={{ id: row.id, email: row.email, role: row.role, fullName: row.fullName, alias: row.alias, phone: row.phone, dni: row.dni }} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <UserManagementTable rows={rows} currentUserId={currentUser.id} canManageRoles={access.role === 'admin'} />
             )}
           </CardContent>
         </Card>
@@ -265,13 +292,6 @@ function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: 
   )
 }
 
-function RoleBadge({ role }: { role: string }) {
-  if (role === 'admin') return <Badge className="bg-amber-300 text-zinc-950 hover:bg-amber-300">Admin</Badge>
-  if (role === 'operator') return <Badge className="bg-sky-400 text-zinc-950 hover:bg-sky-400">Operador</Badge>
-  return <Badge className="bg-zinc-700 text-zinc-100 hover:bg-zinc-700">Jugador</Badge>
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
+function normalizeDni(value?: string | null) {
+  return String(value ?? '').replace(/\D/g, '')
 }

@@ -11,6 +11,8 @@ function isReviewAction(value: unknown): value is 'approve' | 'reject' | 'cancel
   return value === 'approve' || value === 'reject' || value === 'cancel'
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { user, serviceClient, error } = await requireAdminApi()
   if (error) return error
@@ -21,22 +23,61 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = await request.json().catch(() => ({}))
     const action = body.action
     const notes = cleanNote(body.notes)
+    const targetUserId = String(body.target_user_id ?? '').trim()
 
     if (!id) return NextResponse.json({ error: 'Falta el depósito' }, { status: 400 })
     if (!isReviewAction(action)) return NextResponse.json({ error: 'Acción inválida' }, { status: 400 })
 
-    const { data: deposit, error: readError } = await serviceClient
+    const { data: depositRow, error: readError } = await serviceClient
       .from('payment_deposits')
       .select('*')
       .eq('id', id)
       .single()
 
-    if (readError || !deposit) throw readError ?? new Error('Depósito no encontrado')
+    if (readError || !depositRow) throw readError ?? new Error('Depósito no encontrado')
+    let deposit = depositRow
+    const originalDeposit = depositRow
     if (deposit.status !== 'pending') {
       return NextResponse.json({ error: 'Solo se pueden revisar depósitos pendientes' }, { status: 409 })
     }
 
     if (action === 'approve') {
+      if (!deposit.user_id && targetUserId) {
+        if (!UUID_RE.test(targetUserId)) return NextResponse.json({ error: 'Usuario destino inválido' }, { status: 400 })
+        const [{ data: targetAuth }, { data: targetProfile }] = await Promise.all([
+          serviceClient.auth.admin.getUserById(targetUserId),
+          serviceClient.from('customer_profiles').select('id, email, dni').eq('id', targetUserId).maybeSingle(),
+        ])
+        if (!targetAuth.user) return NextResponse.json({ error: 'Usuario destino no encontrado' }, { status: 404 })
+
+        const { data: linkedDeposit, error: linkError } = await serviceClient
+          .from('payment_deposits')
+          .update({
+            user_id: targetUserId,
+            customer_email: targetProfile?.email ?? targetAuth.user.email?.toLowerCase() ?? deposit.customer_email,
+            metadata: {
+              ...(deposit.metadata ?? {}),
+              linkedByAdmin: user.id,
+              linkedFromUserList: true,
+              linkedProfileDni: targetProfile?.dni ?? null,
+            },
+          })
+          .eq('id', id)
+          .eq('status', 'pending')
+          .select('*')
+          .single()
+
+        if (linkError) throw linkError
+        deposit = linkedDeposit
+
+        const [{ error: purchaseLinkError }, { error: cardLinkError }] = await Promise.all([
+          serviceClient.from('game_purchases').update({ user_id: targetUserId }).eq('deposit_id', id),
+          serviceClient.from('bingo_cards').update({ user_id: targetUserId, customer_id: targetUserId }).eq('deposit_id', id),
+        ])
+        if (purchaseLinkError) throw purchaseLinkError
+        if (cardLinkError) throw cardLinkError
+      }
+
       let updated = deposit
       const { data: purchases, error: purchasesError } = await serviceClient
         .from('game_purchases')
@@ -108,9 +149,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         action: 'payment_deposit_approved',
         entityType: 'payment_deposit',
         entityId: id,
-        beforeData: deposit,
+        beforeData: originalDeposit,
         afterData: updated,
         reason: notes || 'Depósito aprobado',
+        metadata: deposit.user_id !== originalDeposit.user_id
+          ? { linkedUserId: deposit.user_id, previousUserId: originalDeposit.user_id }
+          : undefined,
       })
 
       return NextResponse.json({ ok: true, deposit: updated })

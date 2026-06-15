@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Pencil, Save } from 'lucide-react'
+import { Loader2, Pencil, Save, UserRoundPen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -12,6 +13,7 @@ type Role = 'admin' | 'operator' | 'player'
 
 export function UserAdminEditor({
   user,
+  trigger = 'button',
 }: {
   user: {
     id: string
@@ -22,6 +24,7 @@ export function UserAdminEditor({
     phone: string
     dni: string
   }
+  trigger?: 'button' | 'menu'
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -58,9 +61,19 @@ export function UserAdminEditor({
 
   return (
     <>
-      <Button type="button" size="icon" variant="outline" onClick={() => setOpen(true)} title="Editar usuario" className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/10">
-        <Pencil className="h-4 w-4" />
-      </Button>
+      {trigger === 'menu' ? (
+        <DropdownMenuItem
+          onSelect={() => window.setTimeout(() => setOpen(true), 0)}
+          className="text-zinc-200 focus:bg-white/10 focus:text-white"
+        >
+          <UserRoundPen className="h-4 w-4" />
+          Editar datos y rol
+        </DropdownMenuItem>
+      ) : (
+        <Button type="button" size="icon" variant="outline" onClick={() => setOpen(true)} title="Editar usuario" className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/10">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[min(94vw,720px)] max-w-none border-white/10 bg-zinc-950 text-zinc-100">
           <DialogHeader>
