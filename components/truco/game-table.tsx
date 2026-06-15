@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Hash, Maximize2, Minimize2, RotateCcw, Tally5 } from 'lucide-react'
+import { ArrowLeft, Clock, Hash, Maximize2, Minimize2, RotateCcw, Tally5 } from 'lucide-react'
 import {
   type EnvidoCall,
   type GameState,
@@ -10,11 +10,13 @@ import {
   callFlor,
   callTruco,
   createGame,
+  getActivePlayer,
   goToMazo,
   nextRound,
   playCard,
   respondEnvido,
   respondTruco,
+  TURN_TIME_LIMIT_MS,
 } from '@/lib/truco/engine'
 import { botAct } from '@/lib/truco/bot'
 import { type OnlineAction, type OnlineRole } from '@/lib/truco/online'
@@ -74,11 +76,14 @@ export function GameTable({
   // Personal, visual-only score notation. Initialized from the table rule but
   // can be switched at any time during play without affecting the rival.
   const [scoreStyle, setScoreStyle] = useState<TrucoScoreStyle>(() => normalizeTrucoRules(rules).scoreStyle)
+  // Ticking clock used to render the per-turn countdown in online tables.
+  const [now, setNow] = useState(() => Date.now())
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const gameShellRef = useRef<HTMLDivElement | null>(null)
   const spriteWarmedRef = useRef(false)
   const lastVersionRef = useRef<number | null>(null)
+  const timeoutFiredVersionRef = useRef<number | null>(null)
 
   const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
@@ -90,6 +95,16 @@ export function GameTable({
       : roomView?.players.player.name ?? 'Rival'
   const waitingForRival = isOnline && onlineStatus === 'waiting'
   const activeRules = normalizeTrucoRules(state.rules ?? rules)
+
+  // Per-turn countdown (online tables only). The clock only runs once the game
+  // has actually started (status "connected"/playing), never while a table is
+  // still waiting for a rival.
+  const timerActive =
+    isOnline && onlineStatus === 'connected' && state.phase === 'playing' && typeof state.turnStartedAt === 'number'
+  const activePlayer = getActivePlayer(state)
+  const localIsActive = activePlayer === actor
+  const turnDeadline = (state.turnStartedAt ?? 0) + TURN_TIME_LIMIT_MS
+  const secondsLeft = timerActive ? Math.max(0, Math.ceil((turnDeadline - now) / 1000)) : null
 
   const loadBalance = useCallback(async () => {
     try {
@@ -261,6 +276,29 @@ export function GameTable({
     void commitAction({ type: 'restart' })
   }
 
+  // Tick the countdown clock twice a second while an online turn is live.
+  useEffect(() => {
+    if (!timerActive) return
+    setNow(Date.now())
+    const id = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [timerActive, state.turnStartedAt])
+
+  // Claim a timeout once the 30s window elapses. The player on the clock folds
+  // immediately at 0s; the waiting rival can claim ~3s later as a fallback in
+  // case the other client is closed. The server re-validates the deadline.
+  useEffect(() => {
+    if (!timerActive || actionBusy) return
+    const version = lastVersionRef.current
+    if (version === null || timeoutFiredVersionRef.current === version) return
+    const overdueBy = now - turnDeadline
+    const threshold = localIsActive ? 0 : 3000
+    if (overdueBy >= threshold) {
+      timeoutFiredVersionRef.current = version
+      void commitAction({ type: 'timeout' })
+    }
+  }, [timerActive, actionBusy, now, turnDeadline, localIsActive, commitAction])
+
   // When a round finishes, briefly show who won and advance automatically.
   // The player no longer needs to press "Siguiente mano". In online mode only
   // the host drives the advance; the guest receives the new hand via polling.
@@ -334,7 +372,23 @@ export function GameTable({
           <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 sm:px-4 sm:py-1.5">
             <span className={`h-2 w-2 shrink-0 rounded-full ${state.turn === actor ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
             <span className="truncate text-xs font-bold text-amber-100 sm:text-sm">{turnLabel}</span>
+            {secondsLeft !== null && (
+              <span
+                className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-black tabular-nums sm:text-sm ${
+                  secondsLeft <= 10 ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/15 text-emerald-200'
+                }`}
+                aria-label={localIsActive ? 'Tu tiempo restante' : `Tiempo restante de ${rivalLabel}`}
+              >
+                <Clock className="h-3 w-3" />
+                {secondsLeft}s
+              </span>
+            )}
           </div>
+          {secondsLeft !== null && (
+            <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">
+              {localIsActive ? 'Tenés 30s para jugar' : `Turno de ${rivalLabel}`}
+            </span>
+          )}
           {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
         <div className="flex gap-1.5">

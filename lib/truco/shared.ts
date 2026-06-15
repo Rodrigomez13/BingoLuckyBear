@@ -9,6 +9,7 @@ export type OnlineAction =
   | { type: 'call-truco' }
   | { type: 'respond'; accept: boolean }
   | { type: 'go-maze' }
+  | { type: 'timeout' }
   | { type: 'next-round' }
   | { type: 'restart' }
 
