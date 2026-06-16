@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { finalizeDepositApproval, finalizeDepositRejection } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
-import { parseReceiptWithAi } from '@/lib/receipt-ai'
-import { formatReceiptOcrError, parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
+import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
+import { formatReceiptOcrError } from '@/lib/receipt-ocr'
 import {
   type ParsedReceiptData,
   documentIdentityKeys,
@@ -76,19 +76,22 @@ function identitiesMatch(left?: string | null, right?: string | null) {
 }
 
 /**
- * Reads a deposit's receipt with AI vision, validates it against the declared
- * data, links the sender by DNI when possible and — when every key field matches
- * with high confidence — automatically approves the deposit and credits the wallet.
+ * Reads a deposit's receipt with the free local OCR engine, validates it against
+ * the declared data, links the sender by DNI when possible and then either:
+ * - auto-approves when every key field matches with high confidence.
+ * - auto-rejects when there is a hard invalid signal (duplicate operation,
+ *   amount/destination/document mismatch or implausible date).
  *
  * `actorUserId` is the admin that triggered it, or `null` for an automatic
  * (system) run fired when the customer uploads the receipt.
  */
 export async function processDepositReceipt(
   serviceClient: SupabaseClient,
-  options: { depositId: string; actorUserId: string | null; autoApprove?: boolean },
+  options: { depositId: string; actorUserId: string | null; autoApprove?: boolean; autoReject?: boolean },
 ): Promise<ProcessReceiptResult> {
   const { depositId, actorUserId } = options
   const autoApprove = options.autoApprove ?? true
+  const autoReject = options.autoReject ?? true
 
   const { data: deposit, error: depositError } = await serviceClient
     .from('payment_deposits')
@@ -122,6 +125,7 @@ export async function processDepositReceipt(
         .from('payment_deposits')
         .select('id, payment_reference, receipt_operation_number, status')
         .neq('id', depositId)
+        .in('status', ['pending', 'approved'])
         .limit(500),
     ])
 
@@ -130,12 +134,13 @@ export async function processDepositReceipt(
       .filter(Boolean)
 
     const file = await getPrivateReceiptFile(deposit.receipt_url)
-    const { parsed, engine } = await parseReceiptWithFallback({
+    const receiptInput = {
       ...file,
       expectedAmount: deposit.amount,
       expectedOperationNumber: deposit.payment_reference,
       expectedDestinationAccounts: destinationAccounts,
-    })
+    }
+    const parsed = await parseReceiptWithFreeOcr(receiptInput)
 
     const profileRows = (profiles ?? []) as ProfileRecord[]
     const matchingProfiles = parsed.senderDocument
@@ -153,11 +158,13 @@ export async function processDepositReceipt(
       maxAgeDays: 30,
     })
 
-    const parsedOperation = normalizeOperationNumber(parsed.operationNumber)
-    const duplicateDepositIds = parsedOperation
+    const operationKeys = [...new Set([parsed.operationNumber, deposit.payment_reference]
+      .map((value) => normalizeOperationNumber(value))
+      .filter((value) => value.length >= 4))]
+    const duplicateDepositIds = operationKeys.length
       ? (otherDeposits ?? [])
           .filter((row) => [row.receipt_operation_number, row.payment_reference]
-            .some((value) => normalizeOperationNumber(value) === parsedOperation))
+            .some((value) => operationKeys.includes(normalizeOperationNumber(value))))
           .map((row) => row.id)
       : []
     const warnings = [...validation.warnings]
@@ -165,7 +172,16 @@ export async function processDepositReceipt(
     if (matchingProfiles.length > 1) warnings.push('El documento coincide con más de un usuario. No se vinculó automáticamente.')
     if (duplicateDepositIds.length > 0) warnings.push('El número de operación ya aparece en otro depósito.')
 
-    const reviewRecommendation = duplicateDepositIds.length > 0 || matchingProfiles.length > 1
+    const hardRejectReasons = [
+      duplicateDepositIds.length > 0 ? 'El número de operación ya fue usado en otro depósito pendiente o aprobado.' : null,
+      validation.amountMatches === false ? 'El monto detectado no coincide con el monto informado.' : null,
+      validation.operationMatches === false ? 'El número de operación detectado no coincide con el informado.' : null,
+      validation.destinationMatches === false ? 'La cuenta destino no coincide con una cuenta de cobro configurada.' : null,
+      validation.senderDocumentMatches === false ? 'El documento del emisor no coincide con el DNI del usuario vinculado.' : null,
+      validation.dateIsPlausible === false ? 'La fecha detectada es futura o demasiado anterior a la solicitud.' : null,
+    ].filter((reason): reason is string => Boolean(reason))
+
+    const reviewRecommendation = duplicateDepositIds.length > 0 || matchingProfiles.length > 1 || hardRejectReasons.length > 0
       ? 'mismatch'
       : validation.reviewRecommendation
 
@@ -217,13 +233,13 @@ export async function processDepositReceipt(
         senderDocumentMatches: validation.senderDocumentMatches,
         dateIsPlausible: validation.dateIsPlausible,
         duplicateDepositIds,
+        hardRejectReasons,
         parsedBy: actorUserId,
         parsedAt,
         autoLinkedUserId: autoLinkedProfile?.id ?? null,
         autoApproved: false,
         autoRejected: false,
-        autoRejectReasons: autoRejectEligible ? failedReasons : [],
-        engine,
+        engine: 'free_ocr',
       },
     }
 
@@ -264,7 +280,7 @@ export async function processDepositReceipt(
         entityId: depositId,
         beforeData: deposit,
         afterData: updated,
-        reason: 'Lectura y validación IA de comprobante',
+        reason: 'Lectura y validación OCR de comprobante',
         metadata: { reviewRecommendation, duplicateDepositIds, autoLinkedUserId: autoLinkedProfile?.id ?? null },
       })
     }
@@ -273,8 +289,50 @@ export async function processDepositReceipt(
     let autoApproved = false
     let autoRejected = false
 
-    if (autoApproveEligible) {
-      const approvalNotes = 'Aprobado automáticamente por validación IA del comprobante'
+    if (autoReject && hardRejectReasons.length > 0) {
+      const rejectionNotes = `Rechazado automáticamente por OCR: ${hardRejectReasons.join(' ')}`
+      finalDeposit = await finalizeDepositRejection(serviceClient, {
+        depositId,
+        adminUserId: actorUserId,
+        status: 'rejected',
+        notes: rejectionNotes,
+      })
+      autoRejected = finalDeposit.status === 'rejected'
+
+      if (autoRejected) {
+        const { data: stamped } = await serviceClient
+          .from('payment_deposits')
+          .update({
+            metadata: {
+              ...(finalDeposit.metadata ?? nextMetadata),
+              ocr: {
+                ...nextMetadata.ocr,
+                autoRejected: true,
+                autoRejectedAt: new Date().toISOString(),
+              },
+            },
+          })
+          .eq('id', depositId)
+          .select('*')
+          .single()
+        finalDeposit = stamped ?? finalDeposit
+
+        if (actorUserId) {
+          await logAdminAudit(serviceClient, {
+            adminUserId: actorUserId,
+            action: 'payment_deposit_auto_rejected',
+            entityType: 'payment_deposit',
+            entityId: depositId,
+            beforeData: updated,
+            afterData: finalDeposit,
+            reason: rejectionNotes,
+          })
+        }
+      }
+    }
+
+    if (!autoRejected && autoApproveEligible) {
+      const approvalNotes = 'Aprobado automáticamente por validación OCR del comprobante'
       const approved = await finalizeDepositApproval(serviceClient, {
         depositId,
         adminUserId: actorUserId,
@@ -387,7 +445,7 @@ export async function processDepositReceipt(
             reviewRecommendation: 'manual_review',
             parsedBy: actorUserId,
             parsedAt: new Date().toISOString(),
-            engine: 'ai_vision',
+            engine: 'free_ocr',
           },
         },
       })

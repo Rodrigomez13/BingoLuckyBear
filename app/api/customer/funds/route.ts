@@ -137,6 +137,7 @@ export async function POST(request: Request) {
           depositId: deposit.id,
           actorUserId: null,
           autoApprove: true,
+          autoReject: true,
         })
         autoApproved = Boolean(processed.autoApproved)
         autoRejected = Boolean(processed.autoRejected)

@@ -93,7 +93,15 @@ async function recognizeFast(bytes: Buffer) {
       user_defined_dpi: '220',
     })
 
-    const prepared = await preprocessForTesseract(bytes)
+    let prepared = bytes
+    let usedRawImageFallback = false
+    try {
+      prepared = await preprocessForTesseract(bytes)
+    } catch (preprocessError) {
+      usedRawImageFallback = true
+      console.warn('[v0] Receipt OCR preprocessing failed, using original image:', preprocessError)
+    }
+
     const result = await withTimeout(
       worker.recognize(prepared),
       22_000,
@@ -103,6 +111,7 @@ async function recognizeFast(bytes: Buffer) {
     return {
       text: result.data.text,
       confidence: Number.isFinite(result.data.confidence) ? result.data.confidence / 100 : null,
+      usedRawImageFallback,
     }
   } finally {
     await worker.terminate().catch(() => undefined)
@@ -126,5 +135,11 @@ export async function parseReceiptWithFreeOcr(input: ReceiptOcrInput): Promise<P
   const result = await recognizeFast(input.bytes)
   if (!result.text.trim()) throw new Error('No se detectó texto. Usá una captura completa y legible o revisión manual.')
 
-  return parseReceiptText(result.text, input, { confidence: result.confidence, source: 'image_ocr' })
+  const parsed = parseReceiptText(result.text, input, { confidence: result.confidence, source: 'image_ocr' })
+  return {
+    ...parsed,
+    warnings: result.usedRawImageFallback
+      ? [...parsed.warnings, 'No se pudo preprocesar la imagen; se leyó el comprobante original con menor precisión.']
+      : parsed.warnings,
+  }
 }

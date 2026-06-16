@@ -259,22 +259,22 @@ export async function finalizeDepositApproval(
 }
 
 /**
- * Marks a pending deposit as rejected and rolls back all downstream effects:
- * - Cancels any linked bingo card game purchases and marks the cards as rejected.
- * - Flips the deposit to rejected.
- * Pending receipt deposits never credited the wallet (credit only happens on
- * approval), so there is nothing to reverse here. Used by both the admin manual
- * rejection flow and the automatic OCR mismatch flow.
- * Pass `adminUserId = null` for system-triggered (automatic) rejections.
+ * Marks a pending deposit as rejected/cancelled and cancels any related bingo
+ * purchase/card reservations. Used by manual admin review and automatic OCR
+ * validation when a comprobante has a hard mismatch or duplicated operation.
  */
 export async function finalizeDepositRejection(
   serviceClient: SupabaseClient,
   input: {
     depositId: string
     adminUserId: string | null
+    status?: 'rejected' | 'cancelled'
     notes?: string
   },
 ) {
+  const nextStatus = input.status ?? 'rejected'
+  const reviewedAt = new Date().toISOString()
+
   const { data: deposit, error: depositError } = await serviceClient
     .from('payment_deposits')
     .select('*')
@@ -283,17 +283,16 @@ export async function finalizeDepositRejection(
 
   if (depositError) throw depositError
   if (!deposit) throw new Error('Deposito no encontrado')
-  if (deposit.status === 'rejected') return deposit
+  if (deposit.status === nextStatus) return deposit
   if (deposit.status !== 'pending') throw new Error('Solo se pueden rechazar depositos pendientes')
 
-  const reviewedAt = new Date().toISOString()
   const { data: updated, error: updateError } = await serviceClient
     .from('payment_deposits')
     .update({
-      status: 'rejected',
+      status: nextStatus,
       reviewed_by: input.adminUserId,
       reviewed_at: reviewedAt,
-      review_notes: input.notes || 'Deposito rechazado',
+      review_notes: input.notes || (nextStatus === 'rejected' ? 'Depósito rechazado' : 'Depósito cancelado'),
     })
     .eq('id', input.depositId)
     .select('*')

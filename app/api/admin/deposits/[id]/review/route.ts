@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdminApi } from '@/lib/auth/roles'
 import { logAdminAudit } from '@/lib/admin/audit'
-import { approveDepositAndCreditWallet } from '@/lib/economy/server'
+import { approveDepositAndCreditWallet, finalizeDepositRejection } from '@/lib/economy/server'
 
 function cleanNote(value: unknown) {
   return String(value ?? '').trim().slice(0, 220)
@@ -174,37 +174,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     const nextStatus = action === 'reject' ? 'rejected' : 'cancelled'
-    const { data: updated, error: updateError } = await serviceClient
-      .from('payment_deposits')
-      .update({
-        status: nextStatus,
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        review_notes: notes || (action === 'reject' ? 'Depósito rechazado' : 'Depósito cancelado'),
-      })
-      .eq('id', id)
-      .select('*')
-      .single()
-
-    if (updateError) throw updateError
-
-    const cancelledPurchaseStatus = 'cancelled'
-    const { error: purchaseUpdateError } = await serviceClient
-      .from('game_purchases')
-      .update({ status: cancelledPurchaseStatus })
-      .eq('deposit_id', id)
-    if (purchaseUpdateError) throw purchaseUpdateError
-
-    const { error: cardsUpdateError } = await serviceClient
-      .from('bingo_cards')
-      .update({
-        payment_status: 'rejected',
-        card_status: 'cancelled',
-        payment_reviewed_at: new Date().toISOString(),
-        payment_reviewed_by: user.id,
-      })
-      .eq('deposit_id', id)
-    if (cardsUpdateError) throw cardsUpdateError
+    const updated = await finalizeDepositRejection(serviceClient, {
+      depositId: id,
+      adminUserId: user.id,
+      status: nextStatus,
+      notes: notes || (action === 'reject' ? 'Depósito rechazado' : 'Depósito cancelado'),
+    })
 
     await logAdminAudit(serviceClient, {
       adminUserId: user.id,

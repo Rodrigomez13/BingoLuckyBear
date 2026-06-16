@@ -94,5 +94,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     parsed: result.parsed,
     validation: result.validation,
     autoApproved: result.autoApproved,
+    autoRejected: result.autoRejected,
   })
 }
