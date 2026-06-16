@@ -12,7 +12,7 @@ import { formatAccountBalance } from '@/lib/economy/format'
 interface AuthPayload {
   authenticated?: boolean
   user: { id: string; email?: string | null } | null
-  player: { alias?: string | null; avatar_key?: string | null; avatar_image_src?: string | null } | null
+  player: { alias?: string | null; avatar_key?: string | null; avatar_image_src?: string | null; google_avatar_url?: string | null; profile_complete?: boolean | null } | null
   wallet?: { total_balance?: number | null } | null
   access?: { role?: 'admin' | 'operator' | 'player'; isAdmin?: boolean; dashboardPath?: string } | null
 }
@@ -31,6 +31,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   const access = payload?.access ?? null
   const isAdmin = Boolean(access?.isAdmin)
   const avatar = getCustomerAvatar(player?.avatar_key)
+  const avatarSrc = player?.avatar_image_src || getCustomerAvatarImageSrc(avatar.key)
   const alias = player?.alias || user?.email?.split('@')[0] || 'Jugador'
   const totalBalance = Number(payload?.wallet?.total_balance ?? 0)
 
@@ -130,7 +131,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
             : 'border-white/10 bg-white/5 text-slate-200 hover:border-amber-300/30 hover:text-amber-100'
         }`}
       >
-        <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="sm" />
+        <AvatarBubble src={avatarSrc} label={avatar.label} size="sm" />
         <span className="hidden min-w-0 text-left sm:block">
           <span className="block truncate text-sm leading-tight">{alias}</span>
           <span className="block truncate text-[9px] font-bold leading-tight text-amber-300">{formatAccountBalance(totalBalance)}</span>
@@ -146,7 +147,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         >
           <div className="border-b border-white/10 p-3">
             <div className="flex items-center gap-3">
-              <AvatarBubble avatarKey={avatar.key} label={avatar.label} size="md" />
+              <AvatarBubble src={avatarSrc} label={avatar.label} size="md" />
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
@@ -187,10 +188,10 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   )
 }
 
-function AvatarBubble({ avatarKey, label, size }: { avatarKey: string; label: string; size: 'sm' | 'md' }) {
+function AvatarBubble({ src, label, size }: { src: string; label: string; size: 'sm' | 'md' }) {
   return (
     <span className={`${size === 'md' ? 'h-10 w-10 rounded-lg' : 'h-7 w-7 rounded-full'} flex shrink-0 items-center justify-center overflow-hidden border border-amber-300/25 bg-amber-300/10 shadow-inner`}>
-      <img src={getCustomerAvatarImageSrc(avatarKey)} alt={label} className="h-full w-full object-cover" />
+      <img src={src} alt={label} className="h-full w-full object-cover" />
     </span>
   )
 }

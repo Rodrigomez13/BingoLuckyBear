@@ -120,7 +120,7 @@ export function LoginModal({ open, onClose, onAuthenticated }: LoginModalProps) 
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback?next=/mi-cuenta`,
+          redirectTo: `${origin}/auth/callback?next=/`,
           queryParams: { prompt: 'select_account' },
         },
       })
