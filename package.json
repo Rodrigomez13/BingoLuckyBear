@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:ocr": "tsx scripts/test-receipt-parser.ts"
+    "test:ocr": "tsx scripts/test-receipt-parser.ts",
+    "ocr:check": "tsx scripts/check-receipt-ocr.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
