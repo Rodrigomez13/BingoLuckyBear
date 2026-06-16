@@ -8,6 +8,7 @@ import { requireAdminPage } from '@/lib/auth/roles'
 import { DepositActionButton } from '@/components/admin/deposit-action-button'
 import { DepositOcrControls } from '@/components/admin/deposit-ocr-controls'
 import { AdminEconomyNav } from '@/components/admin/admin-economy-nav'
+import { OcrTestPanel } from '@/components/admin/ocr-test-panel'
 
 interface DepositRow {
   id: string
@@ -89,6 +90,8 @@ export default async function AdminDepositsPage() {
 
         <AdminEconomyNav />
 
+        <OcrTestPanel />
+
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Metric label="Pendientes" value={String(pending.length)} detail={formatARS(totalPending)} />
           <Metric label="Aprobados" value={String(approved.length)} detail="con revisión admin" />
@@ -146,8 +149,8 @@ export default async function AdminDepositsPage() {
                         <td className="px-4 py-4">
                           <div className="flex flex-wrap items-center gap-1">
                             <OcrStatusBadge status={deposit.receipt_parse_status} recommendation={ocr.reviewRecommendation} />
-                            {ocr.autoApproved && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Auto-aprobado IA</Badge>}
-                            {ocr.autoRejected && <Badge className="bg-rose-600 text-white hover:bg-rose-600">Auto-rechazado IA</Badge>}
+                            {ocr.autoApproved && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Auto-aprobado OCR</Badge>}
+                            {ocr.autoRejected && <Badge className="bg-rose-600 text-white hover:bg-rose-600">Auto-rechazado OCR</Badge>}
                           </div>
                           {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {ocr.engine === 'ai_vision' ? '· IA' : ocr.engine === 'free_ocr' ? '· OCR' : ''}</p>}
                           {ocr.autoRejectReasons.length > 0 && <p className="mt-1 max-w-[240px] text-xs text-rose-200">Motivo: {ocr.autoRejectReasons.join('; ')}</p>}

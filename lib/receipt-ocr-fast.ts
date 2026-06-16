@@ -79,11 +79,24 @@ async function preprocessForTesseract(bytes: Buffer) {
 }
 
 async function recognizeFast(bytes: Buffer) {
+  let prepared = bytes
+  let usedRawImageFallback = false
+  try {
+    prepared = await preprocessForTesseract(bytes)
+  } catch (preprocessError) {
+    usedRawImageFallback = true
+    console.warn('[v0] Receipt OCR preprocessing failed, using original image:', preprocessError)
+  }
+
   const { createWorker, PSM } = await import('tesseract.js')
   const worker = await withTimeout(
-    createWorker('eng', 1, { cachePath: tmpdir(), cacheMethod: 'write', logger: () => undefined }),
-    20_000,
-    'El motor OCR no pudo iniciar en Vercel. Usá revisión manual para este comprobante.',
+    createWorker('eng', 1, {
+      cachePath: tmpdir(),
+      cacheMethod: 'write',
+      logger: () => undefined,
+    }),
+    32_000,
+    'El motor OCR gratuito no pudo iniciar en Vercel. Reintentá desde el botón OCR; si vuelve a fallar, usá revisión manual para ese comprobante.',
   )
 
   try {
@@ -93,18 +106,9 @@ async function recognizeFast(bytes: Buffer) {
       user_defined_dpi: '220',
     })
 
-    let prepared = bytes
-    let usedRawImageFallback = false
-    try {
-      prepared = await preprocessForTesseract(bytes)
-    } catch (preprocessError) {
-      usedRawImageFallback = true
-      console.warn('[v0] Receipt OCR preprocessing failed, using original image:', preprocessError)
-    }
-
     const result = await withTimeout(
       worker.recognize(prepared),
-      22_000,
+      18_000,
       'El OCR demoró demasiado. Subí una captura más liviana o usá revisión manual.',
     )
 
@@ -125,7 +129,7 @@ export async function parseReceiptWithFreeOcr(input: ReceiptOcrInput): Promise<P
   if (isPdf) {
     const text = await extractPdfText(input.bytes)
     if (text.length < 30) throw new Error('El PDF no contiene texto seleccionable. Usá revisión manual o subí una captura JPG/PNG/WebP.')
-    return parseReceiptText(text, input, { confidence: null, source: 'pdf_text' })
+    return parseReceiptText(text, input, { confidence: 0.95, source: 'pdf_text' })
   }
 
   if (!IMAGE_CONTENT_TYPES.has(contentType)) {
