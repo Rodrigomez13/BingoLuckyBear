@@ -150,28 +150,28 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
             <BingoCardArtboard card={card} raffleName={raffleName} drawnNumbers={drawnNumbers} />
           </div>
 
-          <div className={cn('grid gap-3 min-[560px]:grid-cols-3', dense ? 'mt-3' : 'mt-4')}>
+          <div className={cn('grid gap-2 lg:grid-cols-3', dense ? 'mt-3' : 'mt-4')}>
             <Button
               onClick={() => setShowModal(true)}
               variant="outline"
-              className={cn('h-auto w-full whitespace-normal border-amber-400/40 bg-transparent px-3 font-semibold leading-tight text-amber-200 hover:bg-amber-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
+              className={cn('h-auto w-full justify-center whitespace-normal border-amber-400/40 bg-transparent px-2 font-semibold leading-tight text-amber-200 hover:bg-amber-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
-              <Eye className="mr-2 h-4 w-4 shrink-0" />
-              Ver Carton Completo
+              <Eye className="mr-1.5 h-4 w-4 shrink-0" />
+              Ver carton
             </Button>
             <Button
               onClick={shareCard}
               variant="outline"
-              className={cn('h-auto w-full whitespace-normal border-sky-300/40 bg-transparent px-3 font-semibold leading-tight text-sky-100 hover:bg-sky-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
+              className={cn('h-auto w-full justify-center whitespace-normal border-sky-300/40 bg-transparent px-2 font-semibold leading-tight text-sky-100 hover:bg-sky-400/10', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
-              <Share2 className="mr-2 h-4 w-4 shrink-0" />
+              <Share2 className="mr-1.5 h-4 w-4 shrink-0" />
               Compartir
             </Button>
             <Button
               onClick={downloadCard}
-              className={cn('h-auto w-full whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 px-3 font-semibold leading-tight text-white hover:from-amber-600 hover:to-orange-600', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
+              className={cn('h-auto w-full justify-center whitespace-normal bg-gradient-to-r from-amber-500 to-orange-500 px-2 font-semibold leading-tight text-white hover:from-amber-600 hover:to-orange-600', dense ? 'min-h-10 py-2 text-xs' : 'min-h-11 py-2.5 text-sm')}
             >
-              <Download className="mr-2 h-4 w-4 shrink-0" />
+              <Download className="mr-1.5 h-4 w-4 shrink-0" />
               Descargar
             </Button>
           </div>

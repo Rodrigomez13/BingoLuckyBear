@@ -13,10 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { BearLogo } from '@/components/bear-logo'
 import { CUSTOMER_AVATARS, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { formatPhoneInput } from '@/lib/phone'
-import { CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, LogOut, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, LogOut, Pencil, Save, Ticket, UserCircle2, UserPlus, WalletCards } from 'lucide-react'
 
 interface CustomerProfile {
   full_name?: string | null
@@ -77,6 +78,7 @@ export default function MyAccountPage() {
   const [profile, setProfile] = useState(emptyProfile)
   const [cards, setCards] = useState<CustomerCard[]>([])
   const [loginOpen, setLoginOpen] = useState(false)
+  const [profileEditOpen, setProfileEditOpen] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
@@ -184,6 +186,7 @@ export default function MyAccountPage() {
 
       setMessage('Datos guardados. La próxima compra se va a completar con esta información.')
       await loadAccount(userEmail)
+      setProfileEditOpen(false)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el perfil')
@@ -272,62 +275,41 @@ export default function MyAccountPage() {
                     <CardTitle className="text-white">Datos guardados</CardTitle>
                     <CardDescription className="text-zinc-400">Sesión activa: {userEmail}</CardDescription>
                   </div>
-                  <Button onClick={logout} variant="outline" size="sm" className="border-red-400/40 bg-transparent text-red-200 hover:bg-red-500/10">
+                  <Button onClick={logout} variant="outline" size="sm" className="shrink-0 border-red-400/40 bg-transparent text-red-200 hover:bg-red-500/10">
                     <LogOut className="mr-2 h-4 w-4" />
                     Salir
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={saveProfile} className="space-y-4">
-                  <Field label="Nombre completo" value={profile.full_name} onChange={(value) => setProfile({ ...profile, full_name: value })} />
-                  <Field label="DNI" value={profile.dni} onChange={(value) => setProfile({ ...profile, dni: value })} />
-                  <Field label="Dirección" value={profile.address} onChange={(value) => setProfile({ ...profile, address: value })} />
-                  <Field
-                    label="Teléfono"
-                    type="tel"
-                    inputMode="tel"
-                    placeholder="+54 9 11 1234-5678"
-                    value={profile.phone}
-                    onChange={(value) => setProfile({ ...profile, phone: value })}
-                    onBlur={() => setProfile((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
-                  />
-                  <Field label="Email de contacto" type="email" value={profile.email} onChange={(value) => setProfile({ ...profile, email: value })} />
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <SummaryRow label="Nombre" value={profile.full_name} />
+                  <SummaryRow label="DNI" value={profile.dni} />
+                  <SummaryRow label="Teléfono" value={profile.phone} />
+                  <SummaryRow label="Email" value={profile.email || userEmail} />
+                </div>
 
-                  <div className="rounded-xl border border-sky-300/20 bg-sky-400/10 p-4">
-                    <p className="mb-3 flex items-center gap-2 text-sm font-bold text-sky-100">
-                      <WalletCards className="h-4 w-4" />
-                      Cuenta para cobrar premios
-                    </p>
-                    <div className="grid gap-3">
-                      <div className="space-y-2">
-                        <Label>Tipo</Label>
-                        <select
-                          value={profile.payout_account_kind}
-                          onChange={(event) => setProfile({ ...profile, payout_account_kind: event.target.value })}
-                          className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
-                        >
-                          <option value="">Seleccioná</option>
-                          <option value="Alias">Alias</option>
-                          <option value="CBU">CBU</option>
-                          <option value="CVU">CVU</option>
-                        </select>
-                      </div>
-                      <Field label="Alias / CBU / CVU" value={profile.payout_account} onChange={(value) => setProfile({ ...profile, payout_account: value })} />
-                      <Field label="Titular de la cuenta" value={profile.payout_holder_name} onChange={(value) => setProfile({ ...profile, payout_holder_name: value })} />
-                    </div>
+                <div className="rounded-xl border border-sky-300/20 bg-sky-400/10 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-sky-100">
+                    <WalletCards className="h-4 w-4" />
+                    Cuenta para cobrar premios
+                  </p>
+                  <div className="grid gap-2">
+                    <SummaryRow label="Tipo" value={profile.payout_account_kind} compact />
+                    <SummaryRow label="Alias / CBU / CVU" value={profile.payout_account} compact />
+                    <SummaryRow label="Titular" value={profile.payout_holder_name} compact />
                   </div>
+                </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Button type="submit" disabled={isSaving} className="h-12 rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
-                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                      Guardar datos
-                    </Button>
-                    <Button asChild variant="outline" className="h-12 rounded-full border-amber-300/30 bg-transparent text-amber-100 hover:bg-amber-300/10">
-                      <Link href="/mi-cuenta/jugador">Ver saldo y avatar</Link>
-                    </Button>
-                  </div>
-                </form>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Button type="button" onClick={() => setProfileEditOpen(true)} className="h-12 rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar datos
+                  </Button>
+                  <Button asChild variant="outline" className="h-12 rounded-full border-amber-300/30 bg-transparent text-amber-100 hover:bg-amber-300/10">
+                    <Link href="/mi-cuenta/jugador">Ver saldo y avatar</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -387,6 +369,67 @@ export default function MyAccountPage() {
         )}
       </section>
 
+      <Dialog open={profileEditOpen} onOpenChange={setProfileEditOpen}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto border-white/10 bg-zinc-950 text-zinc-100 shadow-2xl shadow-black/70 sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar datos de cuenta</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Estos datos se usan para identificar compras, contacto y cobro de premios.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={saveProfile} className="space-y-4">
+            <Field label="Nombre completo" value={profile.full_name} onChange={(value) => setProfile({ ...profile, full_name: value })} />
+            <Field label="DNI" value={profile.dni} onChange={(value) => setProfile({ ...profile, dni: value })} />
+            <Field label="Dirección" value={profile.address} onChange={(value) => setProfile({ ...profile, address: value })} />
+            <Field
+              label="Teléfono"
+              type="tel"
+              inputMode="tel"
+              placeholder="+54 9 11 1234-5678"
+              value={profile.phone}
+              onChange={(value) => setProfile({ ...profile, phone: value })}
+              onBlur={() => setProfile((current) => ({ ...current, phone: formatPhoneInput(current.phone) }))}
+            />
+            <Field label="Email de contacto" type="email" value={profile.email} onChange={(value) => setProfile({ ...profile, email: value })} />
+
+            <div className="rounded-xl border border-sky-300/20 bg-sky-400/10 p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold text-sky-100">
+                <WalletCards className="h-4 w-4" />
+                Cuenta para cobrar premios
+              </p>
+              <div className="grid gap-3">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <select
+                    value={profile.payout_account_kind}
+                    onChange={(event) => setProfile({ ...profile, payout_account_kind: event.target.value })}
+                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+                  >
+                    <option value="">Seleccioná</option>
+                    <option value="Alias">Alias</option>
+                    <option value="CBU">CBU</option>
+                    <option value="CVU">CVU</option>
+                  </select>
+                </div>
+                <Field label="Alias / CBU / CVU" value={profile.payout_account} onChange={(value) => setProfile({ ...profile, payout_account: value })} />
+                <Field label="Titular de la cuenta" value={profile.payout_holder_name} onChange={(value) => setProfile({ ...profile, payout_holder_name: value })} />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <Button type="submit" disabled={isSaving} className="h-12 rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Guardar datos
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setProfileEditOpen(false)} className="h-12 rounded-full border-white/15 bg-transparent text-zinc-100 hover:bg-white/10">
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onAuthenticated={() => void loadAccount()} />
     </main>
   )
@@ -437,6 +480,18 @@ function Field({
         placeholder={placeholder}
         className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
       />
+    </div>
+  )
+}
+
+function SummaryRow({ label, value, compact = false }: { label: string; value?: string | null; compact?: boolean }) {
+  const display = value?.trim() || 'Sin cargar'
+  return (
+    <div className={`rounded-xl border border-white/10 bg-white/[0.03] ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">{label}</p>
+      <p className={`mt-1 break-words font-semibold ${display === 'Sin cargar' ? 'text-zinc-500' : 'text-zinc-100'}`}>
+        {display}
+      </p>
     </div>
   )
 }
