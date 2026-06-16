@@ -257,3 +257,66 @@ export async function finalizeDepositApproval(
   if (updateError) throw updateError
   return updated
 }
+
+/**
+ * Marks a pending deposit as rejected and rolls back all downstream effects:
+ * - Cancels any linked bingo card game purchases and marks the cards as rejected.
+ * - Flips the deposit to rejected.
+ * Pending receipt deposits never credited the wallet (credit only happens on
+ * approval), so there is nothing to reverse here. Used by both the admin manual
+ * rejection flow and the automatic OCR mismatch flow.
+ * Pass `adminUserId = null` for system-triggered (automatic) rejections.
+ */
+export async function finalizeDepositRejection(
+  serviceClient: SupabaseClient,
+  input: {
+    depositId: string
+    adminUserId: string | null
+    notes?: string
+  },
+) {
+  const { data: deposit, error: depositError } = await serviceClient
+    .from('payment_deposits')
+    .select('*')
+    .eq('id', input.depositId)
+    .single()
+
+  if (depositError) throw depositError
+  if (!deposit) throw new Error('Deposito no encontrado')
+  if (deposit.status === 'rejected') return deposit
+  if (deposit.status !== 'pending') throw new Error('Solo se pueden rechazar depositos pendientes')
+
+  const reviewedAt = new Date().toISOString()
+  const { data: updated, error: updateError } = await serviceClient
+    .from('payment_deposits')
+    .update({
+      status: 'rejected',
+      reviewed_by: input.adminUserId,
+      reviewed_at: reviewedAt,
+      review_notes: input.notes || 'Deposito rechazado',
+    })
+    .eq('id', input.depositId)
+    .select('*')
+    .single()
+
+  if (updateError) throw updateError
+
+  const { error: purchaseUpdateError } = await serviceClient
+    .from('game_purchases')
+    .update({ status: 'cancelled' })
+    .eq('deposit_id', input.depositId)
+  if (purchaseUpdateError) throw purchaseUpdateError
+
+  const { error: cardsUpdateError } = await serviceClient
+    .from('bingo_cards')
+    .update({
+      payment_status: 'rejected',
+      card_status: 'cancelled',
+      payment_reviewed_at: reviewedAt,
+      payment_reviewed_by: input.adminUserId,
+    })
+    .eq('deposit_id', input.depositId)
+  if (cardsUpdateError) throw cardsUpdateError
+
+  return updated
+}

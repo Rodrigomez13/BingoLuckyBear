@@ -147,8 +147,10 @@ export default async function AdminDepositsPage() {
                           <div className="flex flex-wrap items-center gap-1">
                             <OcrStatusBadge status={deposit.receipt_parse_status} recommendation={ocr.reviewRecommendation} />
                             {ocr.autoApproved && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Auto-aprobado IA</Badge>}
+                            {ocr.autoRejected && <Badge className="bg-rose-600 text-white hover:bg-rose-600">Auto-rechazado IA</Badge>}
                           </div>
-                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {ocr.engine === 'ai_vision' ? '· IA' : ''}</p>}
+                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {ocr.engine === 'ai_vision' ? '· IA' : ocr.engine === 'free_ocr' ? '· OCR' : ''}</p>}
+                          {ocr.autoRejectReasons.length > 0 && <p className="mt-1 max-w-[240px] text-xs text-rose-200">Motivo: {ocr.autoRejectReasons.join('; ')}</p>}
                           {ocr.senderName && <p className="max-w-[210px] truncate text-xs text-zinc-400">De {ocr.senderName}</p>}
                           {deposit.receipt_amount !== null && <p className="mt-1 text-xs text-zinc-300">Monto {formatMoney(deposit.receipt_amount, deposit.currency)}</p>}
                           {deposit.receipt_operation_number && <p className="max-w-[210px] truncate text-xs text-zinc-500">Op. {deposit.receipt_operation_number}</p>}
@@ -197,6 +199,8 @@ function getOcrMetadata(metadata: Record<string, unknown> | null) {
     senderName: typeof ocr.senderName === 'string' ? ocr.senderName : null,
     reviewRecommendation: typeof ocr.reviewRecommendation === 'string' ? ocr.reviewRecommendation : null,
     autoApproved: ocr.autoApproved === true,
+    autoRejected: ocr.autoRejected === true,
+    autoRejectReasons: Array.isArray(ocr.autoRejectReasons) ? ocr.autoRejectReasons.map(String).filter(Boolean) : [],
     engine: typeof ocr.engine === 'string' ? ocr.engine : null,
     warnings: Array.isArray(ocr.warnings) ? ocr.warnings.map(String).filter(Boolean) : [],
   }

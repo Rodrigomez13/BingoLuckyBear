@@ -2,9 +2,13 @@ import { nanoid } from 'nanoid'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateBingoNumbers } from '@/lib/bingo'
 import { createGamePurchase, createPaymentDeposit, debitWalletForPurchase } from '@/lib/economy/server'
+import { processDepositReceipt } from '@/lib/receipt-processing'
 import { applyWalletTransaction, ensurePlayerAccount } from '@/lib/wallet/server'
 import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 function clean(value: unknown) {
   return String(value ?? '').trim()
@@ -263,18 +267,59 @@ export async function POST(request: NextRequest) {
     }
     if (insertError) throw insertError
 
+    // Superficial OCR filter: read and validate the receipt automatically right
+    // after the cards are created. The system run auto-approves only when every
+    // key field matches, auto-rejects on a hard inconsistency, and otherwise
+    // leaves the purchase pending for manual review. Never blocks the request.
+    let receiptOcrOutcome: 'auto_approved' | 'auto_rejected' | 'pending' = 'pending'
+    if (paymentSource === 'receipt' && depositId) {
+      try {
+        const processed = await processDepositReceipt(serviceClient, {
+          depositId,
+          actorUserId: null,
+          autoApprove: true,
+        })
+        if (processed.autoApproved) receiptOcrOutcome = 'auto_approved'
+        else if (processed.autoRejected) receiptOcrOutcome = 'auto_rejected'
+      } catch (ocrError) {
+        console.error('[v0] Automatic receipt processing failed (purchase):', ocrError)
+      }
+
+      // Reflect the OCR outcome on the cards we return to the customer.
+      if (receiptOcrOutcome !== 'pending') {
+        const { data: refreshedCards } = await serviceClient
+          .from('bingo_cards')
+          .select('*')
+          .eq('purchase_id', purchaseId)
+        if (refreshedCards?.length) cards = refreshedCards
+      }
+    }
+
     walletPurchase = null
     receiptPurchase = null
+
+    const finalStatus = isPaid || receiptOcrOutcome === 'auto_approved'
+      ? 'approved'
+      : receiptOcrOutcome === 'auto_rejected'
+        ? 'rejected'
+        : 'pending'
+
+    const messageByStatus = {
+      approved: isPaid
+        ? 'Compra aprobada. Tus cartones ya están participando.'
+        : 'Comprobante validado automáticamente. Tus cartones ya están participando.',
+      rejected: 'El comprobante no superó la verificación automática y fue rechazado. Revisá que el monto, la cuenta destino y el número de operación sean correctos y volvé a cargarlo.',
+      pending: 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
+    } as const
+
     return NextResponse.json({
       success: true,
       quantity,
-      status: isPaid ? 'approved' : 'pending',
+      status: finalStatus,
       deposit_id: depositId,
       purchase_id: purchaseId,
       total_amount: totalAmount,
-      message: isPaid
-        ? 'Compra aprobada. Tus cartones ya están participando.'
-        : 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
+      message: messageByStatus[finalStatus],
       cards: cards ?? [],
     })
   } catch (error) {

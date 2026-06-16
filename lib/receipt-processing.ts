@@ -1,15 +1,57 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { logAdminAudit } from '@/lib/admin/audit'
-import { finalizeDepositApproval } from '@/lib/economy/server'
+import { finalizeDepositApproval, finalizeDepositRejection } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
 import { parseReceiptWithAi } from '@/lib/receipt-ai'
-import { formatReceiptOcrError } from '@/lib/receipt-ocr'
+import { formatReceiptOcrError, parseReceiptWithFreeOcr } from '@/lib/receipt-ocr'
 import {
   type ParsedReceiptData,
   documentIdentityKeys,
   normalizeOperationNumber,
   validateParsedReceipt,
 } from '@/lib/receipt-validation'
+
+interface ReceiptEngineInput {
+  bytes: Buffer
+  contentType: string
+  filename: string
+  expectedAmount?: string | number | null
+  expectedOperationNumber?: string | null
+  expectedDestinationAccounts?: Array<string | null | undefined>
+}
+
+/**
+ * Reads a receipt with the AI vision model first (most accurate) and, if that
+ * throws (gateway error, quota, unreadable for the model, etc.), automatically
+ * falls back to the free Tesseract/PDF OCR engine. The returned `source` field
+ * records which engine actually produced the data.
+ */
+async function parseReceiptWithFallback(
+  input: ReceiptEngineInput,
+): Promise<{ parsed: ParsedReceiptData; engine: 'ai_vision' | 'free_ocr'; aiError?: string }> {
+  try {
+    const parsed = await parseReceiptWithAi(input)
+    return { parsed, engine: 'ai_vision' }
+  } catch (aiError) {
+    const aiMessage = aiError instanceof Error ? aiError.message : String(aiError)
+    console.error('[v0] AI vision OCR failed, falling back to Tesseract:', aiMessage)
+    try {
+      const parsed = await parseReceiptWithFreeOcr(input)
+      parsed.warnings = [
+        ...new Set([
+          ...parsed.warnings,
+          'La lectura con IA falló; se usó el OCR gratuito de respaldo. Revisá con más cuidado.',
+        ]),
+      ]
+      return { parsed, engine: 'free_ocr', aiError: aiMessage }
+    } catch (ocrError) {
+      // Surface the AI error as the primary message: it is usually clearer.
+      const ocrMessage = ocrError instanceof Error ? ocrError.message : String(ocrError)
+      console.error('[v0] Tesseract fallback also failed:', ocrMessage)
+      throw aiError instanceof Error ? aiError : new Error(aiMessage)
+    }
+  }
+}
 
 interface ProfileRecord {
   id: string
@@ -23,6 +65,7 @@ export interface ProcessReceiptResult {
   parsed?: ParsedReceiptData
   validation?: ReturnType<typeof validateParsedReceipt> & { reviewRecommendation: string }
   autoApproved?: boolean
+  autoRejected?: boolean
   error?: string
 }
 
@@ -87,7 +130,7 @@ export async function processDepositReceipt(
       .filter(Boolean)
 
     const file = await getPrivateReceiptFile(deposit.receipt_url)
-    const parsed = await parseReceiptWithAi({
+    const { parsed, engine } = await parseReceiptWithFallback({
       ...file,
       expectedAmount: deposit.amount,
       expectedOperationNumber: deposit.payment_reference,
@@ -140,6 +183,24 @@ export async function processDepositReceipt(
       && validation.senderDocumentMatches !== false
       && validation.dateIsPlausible !== false
 
+    // A hard contradiction against the declared data (wrong amount, wrong
+    // operation number, wrong destination account, mismatched sender document or
+    // implausible date) — or a receipt whose operation number is already used in
+    // another deposit — is treated as an inconsistency and auto-rejected.
+    // Receipts that are merely unreadable / low confidence stay pending for
+    // manual review instead of being rejected, to avoid punishing bad photos.
+    const hardMismatchFields: Array<[boolean, string]> = [
+      [validation.amountMatches === false, 'el monto no coincide con el informado'],
+      [validation.operationMatches === false, 'el número de operación no coincide'],
+      [validation.destinationMatches === false, 'la cuenta destino no es una cuenta de cobro válida'],
+      [validation.senderDocumentMatches === false, 'el documento del emisor no coincide con el usuario'],
+      [validation.dateIsPlausible === false, 'la fecha del comprobante no es plausible'],
+    ]
+    const failedReasons = hardMismatchFields.filter(([failed]) => failed).map(([, reason]) => reason)
+    if (duplicateDepositIds.length > 0) failedReasons.push('el comprobante ya fue usado en otro depósito')
+
+    const autoRejectEligible = autoApprove && !autoApproveEligible && failedReasons.length > 0
+
     const parsedAt = new Date().toISOString()
     const nextMetadata = {
       ...(deposit.metadata ?? {}),
@@ -160,7 +221,9 @@ export async function processDepositReceipt(
         parsedAt,
         autoLinkedUserId: autoLinkedProfile?.id ?? null,
         autoApproved: false,
-        engine: 'ai_vision',
+        autoRejected: false,
+        autoRejectReasons: autoRejectEligible ? failedReasons : [],
+        engine,
       },
     }
 
@@ -208,6 +271,7 @@ export async function processDepositReceipt(
 
     let finalDeposit = updated
     let autoApproved = false
+    let autoRejected = false
 
     if (autoApproveEligible) {
       const approvalNotes = 'Aprobado automáticamente por validación IA del comprobante'
@@ -249,6 +313,47 @@ export async function processDepositReceipt(
           })
         }
       }
+    } else if (autoRejectEligible) {
+      const rejectionNotes = `Rechazado automáticamente por el lector OCR: ${failedReasons.join('; ')}.`
+      const rejected = await finalizeDepositRejection(serviceClient, {
+        depositId,
+        adminUserId: actorUserId,
+        notes: rejectionNotes,
+      })
+      autoRejected = rejected.status === 'rejected'
+
+      if (autoRejected) {
+        const { data: stamped } = await serviceClient
+          .from('payment_deposits')
+          .update({
+            metadata: {
+              ...(rejected.metadata ?? nextMetadata),
+              ocr: {
+                ...nextMetadata.ocr,
+                ...((rejected.metadata as Record<string, Record<string, unknown>> | null)?.ocr ?? {}),
+                autoRejected: true,
+                autoRejectedAt: new Date().toISOString(),
+                autoRejectReasons: failedReasons,
+              },
+            },
+          })
+          .eq('id', depositId)
+          .select('*')
+          .single()
+        finalDeposit = stamped ?? rejected
+
+        if (actorUserId) {
+          await logAdminAudit(serviceClient, {
+            adminUserId: actorUserId,
+            action: 'payment_deposit_auto_rejected',
+            entityType: 'payment_deposit',
+            entityId: depositId,
+            beforeData: updated,
+            afterData: finalDeposit,
+            reason: rejectionNotes,
+          })
+        }
+      }
     }
 
     return {
@@ -257,6 +362,7 @@ export async function processDepositReceipt(
       parsed,
       validation: { ...validation, warnings: [...new Set(warnings)], reviewRecommendation },
       autoApproved,
+      autoRejected,
     }
   } catch (err) {
     const message = formatReceiptOcrError(err)
