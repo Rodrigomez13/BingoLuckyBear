@@ -361,6 +361,7 @@ export async function POST(request: NextRequest) {
           actorUserId: null,
           autoApprove: true,
           autoReject: true,
+          clientOcr: body.receipt_ocr ?? null,
         })
 
         if (processed.autoApproved) receiptOcrOutcome = 'auto_approved'

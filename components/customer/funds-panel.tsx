@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowDownToLine, ArrowUpFromLine, FileText, Image as ImageIcon, Landmark, Loader2, RefreshCw, XCircle } from 'lucide-react'
 import { PAYMENT_METHODS } from '@/lib/payment'
+import { readReceiptTextInBrowser, type BrowserReceiptOcrResult } from '@/lib/receipt-browser-ocr'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -61,6 +62,7 @@ export function FundsPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [ocrStatus, setOcrStatus] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
@@ -105,6 +107,18 @@ export function FundsPanel({
   const submitDeposit = async () => {
     if (parsedAmount <= 0) throw new Error('Ingresá el monto transferido')
     if (!paymentMethod || !paymentReference.trim()) throw new Error('Completá método y número de operación')
+    let receiptOcr: BrowserReceiptOcrResult | null = null
+    if (file) {
+      setOcrStatus('Leyendo comprobante en tu navegador...')
+      receiptOcr = await readReceiptTextInBrowser(file, (progress) => {
+        const percent = Math.round(progress.progress * 100)
+        setOcrStatus(percent > 0 ? `Leyendo comprobante ${percent}%` : 'Preparando OCR del comprobante')
+      }).catch((ocrError) => {
+        console.warn('[v0] Browser receipt OCR failed:', ocrError)
+        setOcrStatus('No se pudo leer en el navegador; se revisará desde el servidor/admin.')
+        return null
+      })
+    }
     const receiptUrl = await uploadReceipt()
     const response = await fetch('/api/customer/funds', {
       method: 'POST',
@@ -115,6 +129,7 @@ export function FundsPanel({
         payment_method: paymentMethod,
         payment_reference: paymentReference,
         receipt_url: receiptUrl,
+        receipt_ocr: receiptOcr,
       }),
     })
     const json = await response.json()
@@ -145,6 +160,7 @@ export function FundsPanel({
       setAmount('')
       setPaymentReference('')
       setFile(null)
+      setOcrStatus(null)
       if (fileRef.current) fileRef.current.value = ''
       await Promise.all([load(), onChanged()])
       setMode('history')
@@ -216,10 +232,11 @@ export function FundsPanel({
                 </div>
               </div>
               <button type="button" onClick={() => fileRef.current?.click()} className="min-h-28 rounded-md border border-dashed border-amber-300/35 bg-amber-300/[0.04] p-4 text-center text-sm text-amber-100 hover:bg-amber-300/[0.08]">
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className="hidden" />
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setOcrStatus(null) }} className="hidden" />
                 <ImageIcon className="mx-auto mb-2 h-6 w-6 text-amber-300" />
                 {file ? file.name : 'Subir comprobante'}
               </button>
+              {ocrStatus && <p className="text-xs text-sky-200">{ocrStatus}</p>}
             </div>
             <AccountInstructions account={data?.paymentAccount ?? null} amount={parsedAmount} />
           </div>

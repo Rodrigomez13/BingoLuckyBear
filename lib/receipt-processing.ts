@@ -3,7 +3,7 @@ import { logAdminAudit } from '@/lib/admin/audit'
 import { finalizeDepositApproval, finalizeDepositRejection } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
 import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
-import { formatReceiptOcrError } from '@/lib/receipt-ocr'
+import { formatReceiptOcrError, parseReceiptText } from '@/lib/receipt-ocr'
 import {
   type ParsedReceiptData,
   documentIdentityKeys,
@@ -27,6 +27,12 @@ export interface ProcessReceiptResult {
   error?: string
 }
 
+export interface ClientReceiptOcrEvidence {
+  rawText?: string | null
+  confidence?: number | null
+  source?: 'browser_ocr' | string | null
+}
+
 function identitiesMatch(left?: string | null, right?: string | null) {
   const leftKeys = documentIdentityKeys(left)
   const rightKeys = documentIdentityKeys(right)
@@ -45,7 +51,13 @@ function identitiesMatch(left?: string | null, right?: string | null) {
  */
 export async function processDepositReceipt(
   serviceClient: SupabaseClient,
-  options: { depositId: string; actorUserId: string | null; autoApprove?: boolean; autoReject?: boolean },
+  options: {
+    depositId: string
+    actorUserId: string | null
+    autoApprove?: boolean
+    autoReject?: boolean
+    clientOcr?: ClientReceiptOcrEvidence | null
+  },
 ): Promise<ProcessReceiptResult> {
   const { depositId, actorUserId } = options
   const autoApprove = options.autoApprove ?? true
@@ -91,14 +103,36 @@ export async function processDepositReceipt(
       .flatMap((account) => [account.alias, account.cbu])
       .filter(Boolean)
 
-    const file = await getPrivateReceiptFile(deposit.receipt_url)
     const receiptInput = {
-      ...file,
       expectedAmount: deposit.amount,
       expectedOperationNumber: deposit.payment_reference,
       expectedDestinationAccounts: destinationAccounts,
     }
-    const parsed = await parseReceiptWithFreeOcr(receiptInput)
+    const clientRawText = typeof options.clientOcr?.rawText === 'string'
+      ? options.clientOcr.rawText.trim().slice(0, 12_000)
+      : ''
+    const clientConfidence = typeof options.clientOcr?.confidence === 'number' && Number.isFinite(options.clientOcr.confidence)
+      ? Math.max(0, Math.min(1, options.clientOcr.confidence))
+      : null
+    const hasClientOcr = clientRawText.length >= 25
+    let parsed: ParsedReceiptData
+    if (hasClientOcr) {
+      const browserParsed = parseReceiptText(clientRawText, receiptInput, { confidence: clientConfidence, source: 'browser_ocr' })
+      parsed = {
+        ...browserParsed,
+        warnings: [
+          ...browserParsed.warnings,
+          'Lectura generada en el navegador del cliente; requiere validación administrativa antes de acreditar.',
+        ],
+      }
+    } else {
+      const file = await getPrivateReceiptFile(deposit.receipt_url)
+      parsed = await parseReceiptWithFreeOcr({
+        ...file,
+        ...receiptInput,
+      })
+    }
+    const evidenceIsClientOnly = parsed.source === 'browser_ocr'
 
     const profileRows = (profiles ?? []) as ProfileRecord[]
     const matchingProfiles = parsed.senderDocument
@@ -147,6 +181,7 @@ export async function processDepositReceipt(
 
     // Auto-approve only when every key signal lines up with high confidence.
     const autoApproveEligible = autoApprove
+      && !evidenceIsClientOnly
       && reviewRecommendation === 'ready_for_review'
       && duplicateDepositIds.length === 0
       && matchingProfiles.length <= 1
@@ -157,23 +192,12 @@ export async function processDepositReceipt(
       && validation.senderDocumentMatches !== false
       && validation.dateIsPlausible !== false
 
-    // A hard contradiction against the declared data (wrong amount, wrong
-    // operation number, wrong destination account, mismatched sender document or
-    // implausible date) — or a receipt whose operation number is already used in
-    // another deposit — is treated as an inconsistency and auto-rejected.
-    // Receipts that are merely unreadable / low confidence stay pending for
-    // manual review instead of being rejected, to avoid punishing bad photos.
-    const hardMismatchFields: Array<[boolean, string]> = [
-      [validation.amountMatches === false, 'el monto no coincide con el informado'],
-      [validation.operationMatches === false, 'el número de operación no coincide'],
-      [validation.destinationMatches === false, 'la cuenta destino no es una cuenta de cobro válida'],
-      [validation.senderDocumentMatches === false, 'el documento del emisor no coincide con el usuario'],
-      [validation.dateIsPlausible === false, 'la fecha del comprobante no es plausible'],
-    ]
-    const failedReasons = hardMismatchFields.filter(([failed]) => failed).map(([, reason]) => reason)
-    if (duplicateDepositIds.length > 0) failedReasons.push('el comprobante ya fue usado en otro depósito')
-
-    const autoRejectEligible = autoApprove && !autoApproveEligible && failedReasons.length > 0
+    // Browser OCR is assistive text provided by the client. It can speed up
+    // review, but it is not trusted enough to auto-credit money.
+    const browserSafeAutoRejectReasons = evidenceIsClientOnly
+      ? hardRejectReasons.filter((reason) => /operaci[oó]n ya fue usado/i.test(reason))
+      : hardRejectReasons
+    const autoRejectEligible = autoReject && !autoApproveEligible && browserSafeAutoRejectReasons.length > 0
 
     const parsedAt = new Date().toISOString()
     const nextMetadata = {
@@ -197,7 +221,9 @@ export async function processDepositReceipt(
         autoLinkedUserId: autoLinkedProfile?.id ?? null,
         autoApproved: false,
         autoRejected: false,
-        engine: 'free_ocr',
+        engine: evidenceIsClientOnly ? 'browser_ocr' : 'free_ocr',
+        evidenceTrust: evidenceIsClientOnly ? 'assistive_client_text' : 'server_extracted_text',
+        serverAutoApprovalAllowed: !evidenceIsClientOnly,
       },
     }
 
@@ -247,49 +273,7 @@ export async function processDepositReceipt(
     let autoApproved = false
     let autoRejected = false
 
-    if (autoReject && hardRejectReasons.length > 0) {
-      const rejectionNotes = `Rechazado automáticamente por OCR: ${hardRejectReasons.join(' ')}`
-      finalDeposit = await finalizeDepositRejection(serviceClient, {
-        depositId,
-        adminUserId: actorUserId,
-        status: 'rejected',
-        notes: rejectionNotes,
-      })
-      autoRejected = finalDeposit.status === 'rejected'
-
-      if (autoRejected) {
-        const { data: stamped } = await serviceClient
-          .from('payment_deposits')
-          .update({
-            metadata: {
-              ...(finalDeposit.metadata ?? nextMetadata),
-              ocr: {
-                ...nextMetadata.ocr,
-                autoRejected: true,
-                autoRejectedAt: new Date().toISOString(),
-              },
-            },
-          })
-          .eq('id', depositId)
-          .select('*')
-          .single()
-        finalDeposit = stamped ?? finalDeposit
-
-        if (actorUserId) {
-          await logAdminAudit(serviceClient, {
-            adminUserId: actorUserId,
-            action: 'payment_deposit_auto_rejected',
-            entityType: 'payment_deposit',
-            entityId: depositId,
-            beforeData: updated,
-            afterData: finalDeposit,
-            reason: rejectionNotes,
-          })
-        }
-      }
-    }
-
-    if (!autoRejected && autoApproveEligible) {
+    if (autoApproveEligible) {
       const approvalNotes = 'Aprobado automáticamente por validación OCR del comprobante'
       const approved = await finalizeDepositApproval(serviceClient, {
         depositId,
@@ -330,7 +314,7 @@ export async function processDepositReceipt(
         }
       }
     } else if (autoRejectEligible) {
-      const rejectionNotes = `Rechazado automáticamente por el lector OCR: ${failedReasons.join('; ')}.`
+      const rejectionNotes = `Rechazado automáticamente por el lector OCR: ${browserSafeAutoRejectReasons.join('; ')}.`
       const rejected = await finalizeDepositRejection(serviceClient, {
         depositId,
         adminUserId: actorUserId,
@@ -349,7 +333,7 @@ export async function processDepositReceipt(
                 ...((rejected.metadata as Record<string, Record<string, unknown>> | null)?.ocr ?? {}),
                 autoRejected: true,
                 autoRejectedAt: new Date().toISOString(),
-                autoRejectReasons: failedReasons,
+                autoRejectReasons: browserSafeAutoRejectReasons,
               },
             },
           })

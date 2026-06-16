@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { PaymentInstructions } from '@/components/participate/payment-instructions'
 import { PurchaseConfirmation } from '@/components/participate/purchase-confirmation'
 import { PAYMENT_METHODS } from '@/lib/payment'
+import { readReceiptTextInBrowser, type BrowserReceiptOcrResult } from '@/lib/receipt-browser-ocr'
 import { formatMoneyAmount, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
 import { formatAccountBalance } from '@/lib/economy/format'
@@ -64,6 +65,7 @@ export function AccountPurchaseForm({
   const [previewType, setPreviewType] = useState<'image' | 'pdf' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [ocrStatus, setOcrStatus] = useState<string | null>(null)
   const [confirmedCards, setConfirmedCards] = useState<BingoCard[]>([])
   const [receiptUrl, setReceiptUrl] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -113,6 +115,7 @@ export function AccountPurchaseForm({
       setFile(selectedFile)
       setPreview(URL.createObjectURL(selectedFile))
       setPreviewType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image')
+      setOcrStatus(null)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'El comprobante no es valido')
@@ -149,7 +152,18 @@ export function AccountPurchaseForm({
       }
 
       let uploadedPath = ''
+      let receiptOcr: BrowserReceiptOcrResult | null = null
       if (paymentSource === 'receipt' && file) {
+        setOcrStatus('Leyendo comprobante en tu navegador...')
+        receiptOcr = await readReceiptTextInBrowser(file, (progress) => {
+          const percent = Math.round(progress.progress * 100)
+          setOcrStatus(percent > 0 ? `Leyendo comprobante ${percent}%` : 'Preparando OCR del comprobante')
+        }).catch((ocrError) => {
+          console.warn('[v0] Browser receipt OCR failed:', ocrError)
+          setOcrStatus('No se pudo leer en el navegador; se revisará desde el servidor/admin.')
+          return null
+        })
+
         const uploadForm = new FormData()
         uploadForm.append('file', file)
         const uploadResponse = await fetch('/api/upload', { method: 'POST', body: uploadForm })
@@ -169,6 +183,7 @@ export function AccountPurchaseForm({
           payment_method: paymentMethod,
           payment_reference: paymentReference,
           payment_receipt_url: uploadedPath,
+          receipt_ocr: receiptOcr,
           session_token: sessionToken,
         }),
       })
@@ -202,6 +217,7 @@ export function AccountPurchaseForm({
     setPaymentSource('receipt')
     setAcceptedLegal(false)
     setFile(null)
+    setOcrStatus(null)
     if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     setPreviewType(null)
@@ -294,6 +310,7 @@ export function AccountPurchaseForm({
                       <Input id="payment_reference" value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Ej: 1234567890" className="border-zinc-700 bg-zinc-900 text-white" />
                     </div>
                   </div>
+                  {ocrStatus && <p className="text-xs text-sky-200">{ocrStatus}</p>}
                 </div>
 
                 <div className="space-y-2">

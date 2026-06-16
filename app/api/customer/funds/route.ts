@@ -138,6 +138,7 @@ export async function POST(request: Request) {
           actorUserId: null,
           autoApprove: true,
           autoReject: true,
+          clientOcr: body.receipt_ocr ?? null,
         })
         autoApproved = Boolean(processed.autoApproved)
         autoRejected = Boolean(processed.autoRejected)
