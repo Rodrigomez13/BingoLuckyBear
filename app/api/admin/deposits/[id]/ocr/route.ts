@@ -73,10 +73,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
   }
 
+  const ocrText = typeof body.ocrText === 'string' ? body.ocrText.trim() : ''
+  const ocrConfidence = Number(body.ocrConfidence)
+  const preExtracted = ocrText.length >= 5
+    ? { text: ocrText, confidence: Number.isFinite(ocrConfidence) ? ocrConfidence : null }
+    : null
+
   const result = await processDepositReceipt(serviceClient, {
     depositId: id,
     actorUserId: user.id,
     autoApprove: true,
+    preExtracted,
   })
 
   if (!result.ok) {

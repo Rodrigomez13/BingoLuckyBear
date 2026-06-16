@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { isPdfReceipt, runClientOcr } from '@/lib/client-ocr'
 
 interface OcrTestResult {
   ok: boolean
@@ -57,6 +58,7 @@ function statusClass(value: boolean | null | undefined) {
 export function OcrTestPanel() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [isBusy, setIsBusy] = useState(false)
+  const [progress, setProgress] = useState<string | null>(null)
   const [result, setResult] = useState<OcrTestResult | null>(null)
   const [fileName, setFileName] = useState('')
 
@@ -72,15 +74,41 @@ export function OcrTestPanel() {
 
     setIsBusy(true)
     setResult(null)
+    setProgress(null)
 
     try {
       const formData = new FormData(form)
-      formData.set('file', file)
+      const isPdf = isPdfReceipt(file.type) || isPdfReceipt(file.name)
 
-      const response = await fetch('/api/admin/ocr-test', {
-        method: 'POST',
-        body: formData,
-      })
+      let response: Response
+
+      if (isPdf) {
+        // El PDF se lee en el servidor (texto nativo, sin OCR de imagen).
+        setProgress('Leyendo PDF…')
+        formData.set('file', file)
+        response = await fetch('/api/admin/ocr-test', { method: 'POST', body: formData })
+      } else {
+        // Las imágenes se leen con OCR en el navegador (gratis y sin límites de Vercel).
+        setProgress('Cargando motor OCR…')
+        const text = await runClientOcr(file, (ratio) => {
+          setProgress(`Leyendo imagen… ${Math.round(ratio * 100)}%`)
+        })
+        setProgress('Validando datos…')
+
+        response = await fetch('/api/admin/ocr-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text.text,
+            confidence: text.confidence,
+            amount: formData.get('amount') ?? '',
+            operation: formData.get('operation') ?? '',
+            document: formData.get('document') ?? '',
+            destinations: formData.get('destinations') ?? '',
+          }),
+        })
+      }
+
       const data = await readJson(response) as OcrTestResult
       if (!response.ok) throw new Error(data.error || 'No se pudo probar el OCR')
       setResult(data)
@@ -88,6 +116,7 @@ export function OcrTestPanel() {
       setResult({ ok: false, error: error instanceof Error ? error.message : 'No se pudo probar el OCR' })
     } finally {
       setIsBusy(false)
+      setProgress(null)
     }
   }
 
@@ -123,7 +152,7 @@ export function OcrTestPanel() {
                   Probar OCR
                 </Button>
               </div>
-              {fileName && <p className="text-xs text-zinc-500">{fileName}</p>}
+              {progress ? <p className="text-xs text-sky-300">{progress}</p> : fileName ? <p className="text-xs text-zinc-500">{fileName}</p> : null}
             </div>
 
             <Field id="ocr-test-amount" name="amount" label="Monto" placeholder="3000" />
@@ -143,8 +172,15 @@ export function OcrTestPanel() {
 
         <div className="rounded-xl border border-white/10 bg-black/35 p-4">
           {!result && (
-            <div className="flex h-full min-h-48 items-center justify-center text-center text-sm text-zinc-500">
-              El resultado aparece acá.
+            <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-sm text-zinc-500">
+              {isBusy ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin text-sky-300" />
+                  <span className="text-sky-200">{progress ?? 'Procesando…'}</span>
+                </>
+              ) : (
+                'El resultado aparece acá.'
+              )}
             </div>
           )}
 
