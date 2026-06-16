@@ -1,23 +1,10 @@
 import { NextResponse } from 'next/server'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { requireAdminApi } from '@/lib/auth/roles'
-import { formatReceiptOcrError } from '@/lib/receipt-ocr'
-import { documentIdentityKeys, normalizeOperationNumber, validateParsedReceipt } from '@/lib/receipt-validation'
+import { processDepositReceipt } from '@/lib/receipt-processing'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
-
-interface ProfileRecord {
-  id: string
-  email: string | null
-  dni: string | null
-}
-
-function identitiesMatch(left?: string | null, right?: string | null) {
-  const leftKeys = documentIdentityKeys(left)
-  const rightKeys = documentIdentityKeys(right)
-  return leftKeys.some((key) => rightKeys.includes(key))
-}
 
 function apiError(message: string, status = 500, details?: unknown) {
   return NextResponse.json({ error: message, details }, { status })
@@ -31,19 +18,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const { id } = await context.params
   const body = await request.json().catch(() => ({}))
 
-  try {
-    const { data: deposit, error: depositError } = await serviceClient
-      .from('payment_deposits')
-      .select('*')
-      .eq('id', id)
-      .single()
+  // Manual review: admin confirms the receipt is valid without automatic reading.
+  if (body.action === 'manual') {
+    try {
+      const { data: deposit, error: depositError } = await serviceClient
+        .from('payment_deposits')
+        .select('*')
+        .eq('id', id)
+        .single()
 
-    if (depositError || !deposit) throw depositError ?? new Error('Depósito no encontrado')
-    if (deposit.status !== 'pending') {
-      return apiError('Solo se revisan comprobantes de depósitos pendientes', 409)
-    }
+      if (depositError || !deposit) throw depositError ?? new Error('Depósito no encontrado')
+      if (deposit.status !== 'pending') {
+        return apiError('Solo se revisan comprobantes de depósitos pendientes', 409)
+      }
 
-    if (body.action === 'manual') {
       const reviewedAt = new Date().toISOString()
       const { data: updated, error: updateError } = await serviceClient
         .from('payment_deposits')
@@ -75,8 +63,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         reason: String(body.notes ?? '').trim().slice(0, 220) || 'Comprobante revisado manualmente',
       })
       return NextResponse.json({ ok: true, deposit: updated })
+    } catch (err) {
+      return apiError(err instanceof Error ? err.message : 'No se pudo marcar la revisión manual')
     }
+  }
 
+  // Automatic reading + validation (+ auto-approval when everything matches).
+  const result = await processDepositReceipt(serviceClient, {
+    depositId: id,
+    actorUserId: user.id,
+    autoApprove: true,
+  })
+
+  if (!result.ok) {
+    return apiError(result.error ?? 'No se pudo leer el comprobante', 500)
     if (!deposit.receipt_url) {
       return apiError('El depósito no tiene comprobante adjunto', 400)
     }
@@ -250,4 +250,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       details: process.env.NODE_ENV === 'development' ? stack : undefined,
     })
   }
+
+  return NextResponse.json({
+    ok: true,
+    deposit: result.deposit,
+    parsed: result.parsed,
+    validation: result.validation,
+    autoApproved: result.autoApproved,
+  })
 }

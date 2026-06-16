@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createPaymentDeposit } from '@/lib/economy/server'
+import { processDepositReceipt } from '@/lib/receipt-processing'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { ensurePlayerAccount } from '@/lib/wallet/server'
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 const MAX_AMOUNT = 100_000_000
 
@@ -122,7 +126,22 @@ export async function POST(request: Request) {
         metadata: { source: 'player_balance_request' },
       })
 
-      return NextResponse.json({ ok: true, deposit })
+      // Read and validate the receipt automatically. A system-triggered run
+      // auto-approves only when every key field matches; otherwise it just
+      // leaves the validation ready for the admin. Never blocks the deposit.
+      let autoApproved = false
+      try {
+        const processed = await processDepositReceipt(serviceClient, {
+          depositId: deposit.id,
+          actorUserId: null,
+          autoApprove: true,
+        })
+        autoApproved = Boolean(processed.autoApproved)
+      } catch (ocrError) {
+        console.error('[v0] Automatic receipt processing failed:', ocrError)
+      }
+
+      return NextResponse.json({ ok: true, deposit, autoApproved })
     }
 
     if (action === 'withdrawal') {

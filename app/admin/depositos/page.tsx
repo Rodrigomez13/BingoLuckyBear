@@ -144,8 +144,12 @@ export default async function AdminDepositsPage() {
                           {deposit.receipt_url && <a href={`/api/file?pathname=${encodeURIComponent(deposit.receipt_url)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-sky-300">Ver comprobante <ExternalLink className="h-3 w-3" /></a>}
                         </td>
                         <td className="px-4 py-4">
-                          <OcrStatusBadge status={deposit.receipt_parse_status} recommendation={ocr.reviewRecommendation} />
-                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}%</p>}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <OcrStatusBadge status={deposit.receipt_parse_status} recommendation={ocr.reviewRecommendation} />
+                            {ocr.autoApproved && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Auto-aprobado IA</Badge>}
+                          </div>
+                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {ocr.engine === 'ai_vision' ? '· IA' : ''}</p>}
+                          {ocr.senderName && <p className="max-w-[210px] truncate text-xs text-zinc-400">De {ocr.senderName}</p>}
                           {deposit.receipt_amount !== null && <p className="mt-1 text-xs text-zinc-300">Monto {formatMoney(deposit.receipt_amount, deposit.currency)}</p>}
                           {deposit.receipt_operation_number && <p className="max-w-[210px] truncate text-xs text-zinc-500">Op. {deposit.receipt_operation_number}</p>}
                           {ocr.senderDocument && <p className="text-xs text-zinc-500">Doc. {ocr.senderDocument}</p>}
@@ -190,7 +194,10 @@ function getOcrMetadata(metadata: Record<string, unknown> | null) {
   return {
     confidence: typeof ocr.confidence === 'number' ? ocr.confidence : null,
     senderDocument: typeof ocr.senderDocument === 'string' ? ocr.senderDocument : null,
+    senderName: typeof ocr.senderName === 'string' ? ocr.senderName : null,
     reviewRecommendation: typeof ocr.reviewRecommendation === 'string' ? ocr.reviewRecommendation : null,
+    autoApproved: ocr.autoApproved === true,
+    engine: typeof ocr.engine === 'string' ? ocr.engine : null,
     warnings: Array.isArray(ocr.warnings) ? ocr.warnings.map(String).filter(Boolean) : [],
   }
 }

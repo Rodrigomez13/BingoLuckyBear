@@ -11,7 +11,7 @@ export interface ParsedReceiptData {
   date: string | null
   rawText: string | null
   confidence: number | null
-  source: 'image_ocr' | 'pdf_text' | 'external'
+  source: 'image_ocr' | 'pdf_text' | 'external' | 'ai_vision'
   warnings: string[]
 }
 
@@ -146,7 +146,9 @@ export function coerceParsedReceiptData(value: unknown): ParsedReceiptData {
   const record = typeof value === 'object' && value ? value as Record<string, unknown> : {}
   const amount = parseMoneyValue(record.amount as string | number | null)
   const confidence = Number(record.confidence)
-  const source = record.source === 'pdf_text' || record.source === 'image_ocr' ? record.source : 'external'
+  const source = record.source === 'pdf_text' || record.source === 'image_ocr' || record.source === 'ai_vision'
+    ? record.source
+    : 'external'
 
   return {
     amount,
