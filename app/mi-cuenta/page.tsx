@@ -207,17 +207,17 @@ export default function MyAccountPage() {
       <div className="lbb-ambient" />
       <SiteHeader activePath="mi-cuenta" kicker="Cuenta de jugador" compact />
 
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-[104px] sm:px-6 lg:px-8">
-        <div className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+        <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
           <div>
-            <Badge className="mb-4 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
+            <Badge className="mb-3 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
               <UserCircle2 className="mr-1 h-3.5 w-3.5" />
               Mi cuenta
             </Badge>
-            <h1 className="max-w-3xl font-mono text-4xl font-black leading-none text-white sm:text-6xl">
+            <h1 className="max-w-3xl font-mono text-3xl font-black leading-[0.96] text-white sm:text-5xl">
               Tus datos, saldo y cartones en un solo lugar
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base sm:leading-7">
               Entrá con contraseña, elegí tu avatar, revisá tus cartones y usá tu cuenta para Truco y Bingo.
             </p>
           </div>
@@ -264,7 +264,7 @@ export default function MyAccountPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[420px_minmax(0,1fr)]">
+          <div className="grid gap-5 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-8">
             <Card className="h-fit border-white/10 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/25">
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
@@ -337,7 +337,7 @@ export default function MyAccountPage() {
                   <h2 className="text-xl font-bold text-white">Mis cartones</h2>
                   <p className="text-sm text-zinc-400">Los cartones aparecen acá cuando comprás con la sesión iniciada o con este correo.</p>
                 </div>
-                <Button asChild className="rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200">
+                <Button asChild className="w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 sm:w-auto">
                   <Link href="/participar">
                     <Ticket className="mr-2 h-4 w-4" />
                     Comprar cartones

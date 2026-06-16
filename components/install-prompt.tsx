@@ -97,10 +97,15 @@ export function InstallPrompt() {
     setVisible(false)
   }
 
-  if (!visible || pathname?.startsWith('/truco')) return null
+  const quietPath = pathname?.startsWith('/truco')
+    || pathname?.startsWith('/mi-cuenta')
+    || pathname?.startsWith('/participar')
+    || pathname?.startsWith('/admin')
+
+  if (!visible || quietPath) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[58] px-3 md:bottom-5 md:left-auto md:right-5 md:max-w-sm">
+    <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[58] px-3 md:bottom-5 md:left-auto md:right-5 md:max-w-sm">
       <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-white/10 bg-zinc-950/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl md:mx-0">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/20 to-amber-300/20">
           <BearLogo size={34} />
