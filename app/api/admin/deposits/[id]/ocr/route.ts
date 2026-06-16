@@ -105,7 +105,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const [{ getPrivateReceiptFile }, { parseReceiptWithFreeOcr }] = await Promise.all([
       import('@/lib/receipt-file'),
-      import('@/lib/receipt-ocr'),
+      import('@/lib/receipt-ocr-fast'),
     ])
 
     const file = await getPrivateReceiptFile(deposit.receipt_url)
@@ -243,6 +243,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       })
       .eq('id', id)
 
-    return apiError(message, 500, process.env.NODE_ENV === 'development' ? stack : undefined)
+    return NextResponse.json({
+      ok: false,
+      error: message,
+      reviewRecommendation: 'manual_review',
+      details: process.env.NODE_ENV === 'development' ? stack : undefined,
+    })
   }
 }
