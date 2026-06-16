@@ -208,12 +208,6 @@ export default async function WinnersPage() {
           </Card>
         </div>
 
-        {displays.length === 0 && (
-          <div className="mt-8 rounded-[1.2rem] border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-50">
-            Esta es una vista de ejemplo con imagenes de referencia. Cuando finalices sorteos reales con pagos aprobados, los ganadores publicados reemplazaran automaticamente esta seccion.
-          </div>
-        )}
-
         <section className="lbb-gold-glow mt-8 overflow-hidden rounded-[1.6rem] border border-white/10 bg-black/30 shadow-2xl shadow-black/30">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
             <div className="flex flex-col justify-center gap-4 p-6 sm:p-8">
