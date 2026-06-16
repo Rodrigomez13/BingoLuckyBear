@@ -79,7 +79,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         error: isMissingSchema
-          ? 'Falta aplicar supabase-payment-accounts-migration.sql en Supabase'
+          ? 'Falta aplicar archive/legacy-root-artifacts/sql/supabase-payment-accounts-migration.sql en Supabase'
           : 'No se pudo actualizar la cuenta de cobro',
         detail: process.env.NODE_ENV === 'development' ? message : undefined,
       },
@@ -119,7 +119,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: isMissingSchema
-          ? 'Falta aplicar supabase-payment-accounts-migration.sql en Supabase'
+          ? 'Falta aplicar archive/legacy-root-artifacts/sql/supabase-payment-accounts-migration.sql en Supabase'
           : 'No se pudo eliminar la cuenta de cobro',
         detail: process.env.NODE_ENV === 'development' ? message : undefined,
       },

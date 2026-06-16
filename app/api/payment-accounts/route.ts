@@ -43,7 +43,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error: isMissingSchema
-          ? 'Falta aplicar supabase-payment-accounts-migration.sql en Supabase'
+          ? 'Falta aplicar archive/legacy-root-artifacts/sql/supabase-payment-accounts-migration.sql en Supabase'
           : 'No se pudieron cargar las cuentas de cobro',
         detail: process.env.NODE_ENV === 'development' ? message : undefined,
       },
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: isMissingSchema
-          ? 'Falta aplicar supabase-payment-accounts-migration.sql en Supabase'
+          ? 'Falta aplicar archive/legacy-root-artifacts/sql/supabase-payment-accounts-migration.sql en Supabase'
           : 'No se pudo guardar la cuenta de cobro',
         detail: process.env.NODE_ENV === 'development' ? message : undefined,
       },
