@@ -13,6 +13,7 @@ interface ReceiptAiInput {
 
 // Vision-capable, fast and economical model served through the Vercel AI Gateway.
 const RECEIPT_VISION_MODEL = 'google/gemini-3.5-flash'
+const AI_GATEWAY_RECOVERABLE_ERROR_PATTERN = /(?:AI Gateway|gateway|valid credit card|free credits|payment required|status\s*402|\b402\b|rate limit|\b429\b|quota|payload|too large|body.*large|timeout|timed out|fetch failed|network|ECONNRESET|ETIMEDOUT)/i
 
 const IMAGE_CONTENT_TYPES = new Set([
   'image/jpeg',
@@ -106,6 +107,16 @@ function normalizeDate(value: string | null) {
 function clampConfidence(value: number | null | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null
   return Math.max(0, Math.min(1, value))
+}
+
+export function isRecoverableReceiptAiError(error: unknown) {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : ''
+
+  return AI_GATEWAY_RECOVERABLE_ERROR_PATTERN.test(message)
 }
 
 export async function parseReceiptWithAi(input: ReceiptAiInput): Promise<ParsedReceiptData> {

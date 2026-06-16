@@ -23,6 +23,7 @@ const OCR_TIMEOUT_MS = 20_000
 const PDF_TIMEOUT_MS = 12_000
 const SHARP_LOAD_ERROR_PATTERN = /(?:sharp|libvips|ERR_DLOPEN_FAILED|external module sharp|Could not load)/i
 const IMAGE_TOO_LARGE_ERROR_PATTERN = /(?:pixel limit|image.*too large|exceeds.*limit|Input image exceeds)/i
+const AI_GATEWAY_BILLING_ERROR_PATTERN = /(?:AI Gateway.*(?:credit card|free credits|credits|payment)|valid credit card|unlock your free credits|payment required|status\s*402|\b402\b)/i
 const PUBLIC_ERROR_MAX_LENGTH = 420
 const LARGE_IMAGE_BYTES = 3_500_000
 const PRIMARY_IMAGE_LIMIT = { width: 1150, height: 1550 }
@@ -45,6 +46,10 @@ export function formatReceiptOcrError(error: unknown, fallback = 'No se pudo lee
 
   if (IMAGE_TOO_LARGE_ERROR_PATTERN.test(message)) {
     return 'La imagen del comprobante es demasiado grande para el OCR automático en Vercel. Subí una captura recortada del comprobante o marcá revisión manual.'
+  }
+
+  if (AI_GATEWAY_BILLING_ERROR_PATTERN.test(message)) {
+    return 'La lectura con IA de Vercel no está habilitada por billing/créditos. El sistema puede intentar OCR local; si no alcanza, revisá el comprobante manualmente.'
   }
 
   return message.replace(/\s+/g, ' ').trim().slice(0, PUBLIC_ERROR_MAX_LENGTH) || fallback

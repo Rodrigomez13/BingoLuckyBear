@@ -2,7 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { finalizeDepositApproval } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
-import { parseReceiptWithAi } from '@/lib/receipt-ai'
+import { isRecoverableReceiptAiError, parseReceiptWithAi } from '@/lib/receipt-ai'
+import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
 import { formatReceiptOcrError } from '@/lib/receipt-ocr'
 import {
   type ParsedReceiptData,
@@ -87,12 +88,37 @@ export async function processDepositReceipt(
       .filter(Boolean)
 
     const file = await getPrivateReceiptFile(deposit.receipt_url)
-    const parsed = await parseReceiptWithAi({
+    const receiptInput = {
       ...file,
       expectedAmount: deposit.amount,
       expectedOperationNumber: deposit.payment_reference,
       expectedDestinationAccounts: destinationAccounts,
-    })
+    }
+    let parserEngine = 'ai_vision'
+    let aiFallbackReason: string | null = null
+    let parsed: ParsedReceiptData
+
+    try {
+      parsed = await parseReceiptWithAi(receiptInput)
+    } catch (aiError) {
+      if (!isRecoverableReceiptAiError(aiError)) throw aiError
+
+      aiFallbackReason = formatReceiptOcrError(aiError, 'La lectura con IA no está disponible.')
+      parserEngine = 'free_ocr_fallback'
+
+      try {
+        const fallbackParsed = await parseReceiptWithFreeOcr(receiptInput)
+        parsed = {
+          ...fallbackParsed,
+          warnings: [
+            ...fallbackParsed.warnings,
+            'La lectura con IA no está disponible; se usó OCR local gratuito como respaldo.',
+          ],
+        }
+      } catch (fallbackError) {
+        throw new Error(`${aiFallbackReason} Además, el OCR local falló: ${formatReceiptOcrError(fallbackError)}`)
+      }
+    }
 
     const profileRows = (profiles ?? []) as ProfileRecord[]
     const matchingProfiles = parsed.senderDocument
@@ -160,7 +186,8 @@ export async function processDepositReceipt(
         parsedAt,
         autoLinkedUserId: autoLinkedProfile?.id ?? null,
         autoApproved: false,
-        engine: 'ai_vision',
+        engine: parserEngine,
+        aiFallbackReason,
       },
     }
 
