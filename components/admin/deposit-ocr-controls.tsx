@@ -57,7 +57,7 @@ export function DepositOcrControls({
         variant="outline"
         disabled={disabled || busy !== null}
         onClick={() => void run('ocr')}
-        title="Leer y validar comprobante con OCR"
+        title="Leer y validar comprobante con IA (vuelve a procesar)"
         className="border-sky-400/40 bg-transparent text-sky-200 hover:bg-sky-500/10"
       >
         {busy === 'ocr' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}

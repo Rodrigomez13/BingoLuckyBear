@@ -101,7 +101,7 @@ export async function approveDepositAndCreditWallet(
   serviceClient: SupabaseClient,
   input: {
     depositId: string
-    adminUserId: string
+    adminUserId: string | null
     notes?: string
   },
 ) {
@@ -155,6 +155,102 @@ export async function approveDepositAndCreditWallet(
       },
     })
     .eq('id', deposit.id)
+    .select('*')
+    .single()
+
+  if (updateError) throw updateError
+  return updated
+}
+
+/**
+ * Marks a pending deposit as approved and applies all downstream effects:
+ * - If the deposit funds a bingo card purchase, marks purchases as paid and activates the cards.
+ * - If the deposit is a plain wallet top-up with a linked user, credits the wallet.
+ * - Otherwise just flips the status to approved.
+ * Used by both the admin manual approval flow and the automatic OCR validation flow.
+ * Pass `adminUserId = null` for system-triggered (automatic) approvals.
+ */
+export async function finalizeDepositApproval(
+  serviceClient: SupabaseClient,
+  input: {
+    depositId: string
+    adminUserId: string | null
+    notes?: string
+  },
+) {
+  const { data: deposit, error: depositError } = await serviceClient
+    .from('payment_deposits')
+    .select('*')
+    .eq('id', input.depositId)
+    .single()
+
+  if (depositError) throw depositError
+  if (!deposit) throw new Error('Deposito no encontrado')
+  if (deposit.status === 'approved') return deposit
+  if (deposit.status !== 'pending') throw new Error('Solo se pueden aprobar depositos pendientes')
+
+  const { data: purchases, error: purchasesError } = await serviceClient
+    .from('game_purchases')
+    .select('id')
+    .eq('deposit_id', input.depositId)
+
+  if (purchasesError) throw purchasesError
+  const purchaseIds = (purchases ?? []).map((purchase) => purchase.id)
+
+  if (purchaseIds.length > 0) {
+    const reviewedAt = new Date().toISOString()
+    const { data: updated, error: updateError } = await serviceClient
+      .from('payment_deposits')
+      .update({
+        status: 'approved',
+        reviewed_by: input.adminUserId,
+        reviewed_at: reviewedAt,
+        review_notes: input.notes || 'Compra por comprobante aprobada',
+      })
+      .eq('id', input.depositId)
+      .select('*')
+      .single()
+
+    if (updateError) throw updateError
+
+    const { error: purchaseUpdateError } = await serviceClient
+      .from('game_purchases')
+      .update({ status: 'paid' })
+      .in('id', purchaseIds)
+    if (purchaseUpdateError) throw purchaseUpdateError
+
+    const { error: cardsUpdateError } = await serviceClient
+      .from('bingo_cards')
+      .update({
+        payment_status: 'approved',
+        card_status: 'active',
+        issued_at: reviewedAt,
+        payment_reviewed_at: reviewedAt,
+        payment_reviewed_by: input.adminUserId,
+      })
+      .eq('deposit_id', input.depositId)
+    if (cardsUpdateError) throw cardsUpdateError
+
+    return updated
+  }
+
+  if (deposit.user_id) {
+    return approveDepositAndCreditWallet(serviceClient, {
+      depositId: input.depositId,
+      adminUserId: input.adminUserId,
+      notes: input.notes || 'Deposito aprobado automaticamente por validacion OCR',
+    })
+  }
+
+  const { data: updated, error: updateError } = await serviceClient
+    .from('payment_deposits')
+    .update({
+      status: 'approved',
+      reviewed_by: input.adminUserId,
+      reviewed_at: new Date().toISOString(),
+      review_notes: input.notes || 'Deposito aprobado sin usuario vinculado',
+    })
+    .eq('id', input.depositId)
     .select('*')
     .single()
 
