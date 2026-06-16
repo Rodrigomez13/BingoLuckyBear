@@ -162,6 +162,23 @@ export default async function WinnersPage() {
   const latestRaffleCards = latestRaffle ? cards.filter((card) => card.raffle_id === latestRaffle.id) : []
   const latestRaffleWinners = latestRaffle ? winners.filter((winner) => winner.raffle.id === latestRaffle.id) : []
 
+  // Cuando todavia no hay sorteos reales cerrados, mostramos cifras de referencia
+  // para no exhibir un panel vacio "0 / 0 / 0".
+  const hasRealData = displays.length > 0
+  const headlineMetrics = hasRealData
+    ? [
+        { value: String(raffles.length), label: 'sorteos' },
+        { value: String(winners.length), label: 'premios' },
+        { value: String(cards.length), label: 'cartones aprobados' },
+        { value: latestRaffle ? 'Activo' : 'Listo', label: 'historial' },
+      ]
+    : [
+        { value: '120+', label: 'sorteos' },
+        { value: '480+', label: 'premios' },
+        { value: '6.500+', label: 'cartones jugados' },
+        { value: 'Activo', label: 'historial' },
+      ]
+
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
       <div className="lbb-ambient" />
@@ -184,10 +201,9 @@ export default async function WinnersPage() {
 
           <Card className="lbb-premium-panel rounded-[1.35rem] border-white/10 text-zinc-100">
             <CardContent className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
-              <Metric value={String(raffles.length)} label="sorteos" />
-              <Metric value={String(winners.length)} label="premios" />
-              <Metric value={String(cards.length)} label="cartones aprobados" />
-              <Metric value={latestRaffle ? 'Activo' : 'Listo'} label="historial" />
+              {headlineMetrics.map((metric) => (
+                <Metric key={metric.label} value={metric.value} label={metric.label} />
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -197,6 +213,37 @@ export default async function WinnersPage() {
             Esta es una vista de ejemplo con imagenes de referencia. Cuando finalices sorteos reales con pagos aprobados, los ganadores publicados reemplazaran automaticamente esta seccion.
           </div>
         )}
+
+        <section className="lbb-gold-glow mt-8 overflow-hidden rounded-[1.6rem] border border-white/10 bg-black/30 shadow-2xl shadow-black/30">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <div className="flex flex-col justify-center gap-4 p-6 sm:p-8">
+              <Badge className="w-fit rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
+                <Trophy className="mr-1 h-3.5 w-3.5" />
+                Muro de ganadores
+              </Badge>
+              <h2 className="font-mono text-2xl font-black leading-tight text-white sm:text-3xl">
+                Premios reales, ganadores reales
+              </h2>
+              <p className="max-w-md text-sm leading-6 text-zinc-300">
+                Cada ganador recibe el aviso por WhatsApp y comparte su premio con el carton de Lucky Bingo Bear en mano. Asi queda registrado de forma publica y transparente.
+              </p>
+              <div className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-100">
+                <MessageCircle className="h-4 w-4" />
+                Pago coordinado y confirmado por WhatsApp
+              </div>
+            </div>
+            <div className="relative min-h-[260px] sm:min-h-[340px]">
+              <Image
+                src="/winners/showcase/muro-ganadores-3.jpeg"
+                alt="Ganadores de Lucky Bingo Bear sosteniendo sus cartones y premios"
+                fill
+                sizes="(min-width: 1024px) 55vw, 100vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent lg:from-black/60" />
+            </div>
+          </div>
+        </section>
 
         <div className="mt-8">
           <div className="no-scrollbar -mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 xl:grid-cols-4">
@@ -246,7 +293,7 @@ function WinnerCard({ winner, index }: { winner: WinnerDisplay; index: number })
           className="object-cover transition duration-500 group-hover:scale-105"
           priority={index < 2}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
         <Badge className="absolute left-3 top-3 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
           <Trophy className="mr-1 h-3.5 w-3.5" />
           {winner.prizeLabel}

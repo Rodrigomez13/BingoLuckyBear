@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { CalendarDays, Clock, Crown, Gift, Ticket, WalletCards } from 'lucide-react'
+import { CalendarDays, Clock, Crown, Gift, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
@@ -90,9 +90,25 @@ export function LiveWall() {
             No hay sorteo activo
           </h1>
           <p className="mt-3 text-zinc-300">Cuando haya un sorteo disponible, esta pantalla mostrara la cuenta regresiva, las bolillas y los premios en juego.</p>
-          <Button asChild className="mt-6 bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
-            <Link href="/">Volver al inicio</Link>
-          </Button>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {['$350.000', '$200.000', '$150.000', '$50.000'].map((prize) => (
+              <span
+                key={prize}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-sm font-bold text-amber-100"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                {prize}
+              </span>
+            ))}
+          </div>
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button asChild className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 sm:w-auto">
+              <Link href="/ganadores">Ver ultimos ganadores</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-12 w-full rounded-full border-white/20 bg-transparent font-bold text-white hover:border-amber-300 hover:text-amber-200 sm:w-auto">
+              <Link href="/">Volver al inicio</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
