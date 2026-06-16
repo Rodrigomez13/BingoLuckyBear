@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { logAdminAudit } from '@/lib/admin/audit'
 import { finalizeDepositApproval, finalizeDepositRejection } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
-import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
 import { formatReceiptOcrError, parseReceiptText } from '@/lib/receipt-ocr'
+import { parseReceiptWithServerOcr } from '@/lib/receipt-server-ocr'
 import {
   type ParsedReceiptData,
   documentIdentityKeys,
@@ -127,7 +127,7 @@ export async function processDepositReceipt(
       }
     } else {
       const file = await getPrivateReceiptFile(deposit.receipt_url)
-      parsed = await parseReceiptWithFreeOcr({
+      parsed = await parseReceiptWithServerOcr({
         ...file,
         ...receiptInput,
       })
@@ -221,7 +221,7 @@ export async function processDepositReceipt(
         autoLinkedUserId: autoLinkedProfile?.id ?? null,
         autoApproved: false,
         autoRejected: false,
-        engine: evidenceIsClientOnly ? 'browser_ocr' : 'free_ocr',
+        engine: evidenceIsClientOnly ? 'browser_ocr' : parsed.source,
         evidenceTrust: evidenceIsClientOnly ? 'assistive_client_text' : 'server_extracted_text',
         serverAutoApprovalAllowed: !evidenceIsClientOnly,
       },
@@ -387,7 +387,7 @@ export async function processDepositReceipt(
             reviewRecommendation: 'manual_review',
             parsedBy: actorUserId,
             parsedAt: new Date().toISOString(),
-            engine: 'free_ocr',
+            engine: 'server_ocr',
           },
         },
       })

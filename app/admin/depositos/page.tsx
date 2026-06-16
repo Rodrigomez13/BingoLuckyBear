@@ -152,7 +152,7 @@ export default async function AdminDepositsPage() {
                             {ocr.autoApproved && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Auto-aprobado OCR</Badge>}
                             {ocr.autoRejected && <Badge className="bg-rose-600 text-white hover:bg-rose-600">Auto-rechazado OCR</Badge>}
                           </div>
-                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {ocr.engine === 'ai_vision' ? '· IA' : ocr.engine === 'free_ocr' ? '· OCR' : ''}</p>}
+                          {typeof ocr.confidence === 'number' && <p className="mt-1 text-xs text-zinc-500">Confianza {Math.round(ocr.confidence * 100)}% {formatOcrEngine(ocr.engine)}</p>}
                           {ocr.autoRejectReasons.length > 0 && <p className="mt-1 max-w-[240px] text-xs text-rose-200">Motivo: {ocr.autoRejectReasons.join('; ')}</p>}
                           {ocr.senderName && <p className="max-w-[210px] truncate text-xs text-zinc-400">De {ocr.senderName}</p>}
                           {deposit.receipt_amount !== null && <p className="mt-1 text-xs text-zinc-300">Monto {formatMoney(deposit.receipt_amount, deposit.currency)}</p>}
@@ -207,6 +207,16 @@ function getOcrMetadata(metadata: Record<string, unknown> | null) {
     engine: typeof ocr.engine === 'string' ? ocr.engine : null,
     warnings: Array.isArray(ocr.warnings) ? ocr.warnings.map(String).filter(Boolean) : [],
   }
+}
+
+function formatOcrEngine(engine: string | null) {
+  if (engine === 'paddle_ocr') return '· PaddleOCR'
+  if (engine === 'image_ocr') return '· OCR'
+  if (engine === 'pdf_text') return '· PDF'
+  if (engine === 'browser_ocr') return '· Navegador'
+  if (engine === 'ai_vision') return '· IA'
+  if (engine === 'free_ocr') return '· OCR'
+  return ''
 }
 
 function OcrStatusBadge({

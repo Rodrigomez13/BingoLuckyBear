@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdminApi } from '@/lib/auth/roles'
 import { formatReceiptOcrError } from '@/lib/receipt-ocr'
-import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
+import { parseReceiptWithServerOcr } from '@/lib/receipt-server-ocr'
 import { validateParsedReceipt } from '@/lib/receipt-validation'
 
 export const runtime = 'nodejs'
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     const bytes = Buffer.from(await file.arrayBuffer())
-    const parsed = await parseReceiptWithFreeOcr({
+    const parsed = await parseReceiptWithServerOcr({
       bytes,
       contentType: file.type || 'application/octet-stream',
       filename: file.name || 'comprobante',
