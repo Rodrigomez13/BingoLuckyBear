@@ -2,9 +2,13 @@ import { nanoid } from 'nanoid'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateBingoNumbers } from '@/lib/bingo'
 import { createGamePurchase, createPaymentDeposit, debitWalletForPurchase } from '@/lib/economy/server'
+import { processDepositReceipt } from '@/lib/receipt-processing'
 import { applyWalletTransaction, ensurePlayerAccount } from '@/lib/wallet/server'
 import { getPurchaseAvailability, syncRaffleLifecycle } from '@/lib/raffle-lifecycle'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 function clean(value: unknown) {
   return String(value ?? '').trim()
@@ -115,6 +119,8 @@ export async function POST(request: NextRequest) {
     let depositId: string | null = null
     let purchaseId: string
     let walletTransactionId: string | null = null
+    let autoApproved = false
+    let autoRejected = false
 
     if (paymentSource === 'receipt') {
       const deposit = await createPaymentDeposit(serviceClient, {
@@ -263,18 +269,40 @@ export async function POST(request: NextRequest) {
     }
     if (insertError) throw insertError
 
+    if (paymentSource === 'receipt' && depositId) {
+      try {
+        const processed = await processDepositReceipt(serviceClient, {
+          depositId,
+          actorUserId: null,
+          autoApprove: true,
+          autoReject: true,
+        })
+        autoApproved = Boolean(processed.autoApproved)
+        autoRejected = Boolean(processed.autoRejected)
+      } catch (ocrError) {
+        console.error('[v0] Automatic purchase receipt processing failed:', ocrError)
+      }
+    }
+
     walletPurchase = null
     receiptPurchase = null
+    const finalStatus = isPaid || autoApproved ? 'approved' : autoRejected ? 'rejected' : 'pending'
     return NextResponse.json({
       success: true,
       quantity,
-      status: isPaid ? 'approved' : 'pending',
+      status: finalStatus,
       deposit_id: depositId,
       purchase_id: purchaseId,
       total_amount: totalAmount,
+      auto_approved: autoApproved,
+      auto_rejected: autoRejected,
       message: isPaid
         ? 'Compra aprobada. Tus cartones ya están participando.'
-        : 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
+        : autoApproved
+          ? 'Comprobante validado automáticamente. Tus cartones ya están participando.'
+          : autoRejected
+            ? 'El comprobante fue rechazado automáticamente por datos inválidos o repetidos.'
+            : 'Recibimos tu compra. Tus cartones quedan pendientes hasta aprobar el comprobante.',
       cards: cards ?? [],
     })
   } catch (error) {

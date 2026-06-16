@@ -257,3 +257,65 @@ export async function finalizeDepositApproval(
   if (updateError) throw updateError
   return updated
 }
+
+/**
+ * Marks a pending deposit as rejected/cancelled and cancels any related bingo
+ * purchase/card reservations. Used by manual admin review and automatic OCR
+ * validation when a comprobante has a hard mismatch or duplicated operation.
+ */
+export async function finalizeDepositRejection(
+  serviceClient: SupabaseClient,
+  input: {
+    depositId: string
+    adminUserId: string | null
+    status?: 'rejected' | 'cancelled'
+    notes?: string
+  },
+) {
+  const nextStatus = input.status ?? 'rejected'
+  const reviewedAt = new Date().toISOString()
+
+  const { data: deposit, error: depositError } = await serviceClient
+    .from('payment_deposits')
+    .select('*')
+    .eq('id', input.depositId)
+    .single()
+
+  if (depositError) throw depositError
+  if (!deposit) throw new Error('Deposito no encontrado')
+  if (deposit.status === nextStatus) return deposit
+  if (deposit.status !== 'pending') throw new Error('Solo se pueden rechazar depositos pendientes')
+
+  const { data: updated, error: updateError } = await serviceClient
+    .from('payment_deposits')
+    .update({
+      status: nextStatus,
+      reviewed_by: input.adminUserId,
+      reviewed_at: reviewedAt,
+      review_notes: input.notes || (nextStatus === 'rejected' ? 'Depósito rechazado' : 'Depósito cancelado'),
+    })
+    .eq('id', input.depositId)
+    .select('*')
+    .single()
+
+  if (updateError) throw updateError
+
+  const { error: purchaseUpdateError } = await serviceClient
+    .from('game_purchases')
+    .update({ status: 'cancelled' })
+    .eq('deposit_id', input.depositId)
+  if (purchaseUpdateError) throw purchaseUpdateError
+
+  const { error: cardsUpdateError } = await serviceClient
+    .from('bingo_cards')
+    .update({
+      payment_status: 'rejected',
+      card_status: 'cancelled',
+      payment_reviewed_at: reviewedAt,
+      payment_reviewed_by: input.adminUserId,
+    })
+    .eq('deposit_id', input.depositId)
+  if (cardsUpdateError) throw cardsUpdateError
+
+  return updated
+}

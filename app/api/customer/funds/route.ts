@@ -126,22 +126,24 @@ export async function POST(request: Request) {
         metadata: { source: 'player_balance_request' },
       })
 
-      // Read and validate the receipt automatically. A system-triggered run
-      // auto-approves only when every key field matches; otherwise it just
-      // leaves the validation ready for the admin. Never blocks the deposit.
+      // Read and validate the receipt automatically with the free OCR engine.
+      // It approves only on strong matches and rejects only on hard invalid signals.
       let autoApproved = false
+      let autoRejected = false
       try {
         const processed = await processDepositReceipt(serviceClient, {
           depositId: deposit.id,
           actorUserId: null,
           autoApprove: true,
+          autoReject: true,
         })
         autoApproved = Boolean(processed.autoApproved)
+        autoRejected = Boolean(processed.autoRejected)
       } catch (ocrError) {
         console.error('[v0] Automatic receipt processing failed:', ocrError)
       }
 
-      return NextResponse.json({ ok: true, deposit, autoApproved })
+      return NextResponse.json({ ok: true, deposit, autoApproved, autoRejected })
     }
 
     if (action === 'withdrawal') {
