@@ -3,7 +3,7 @@ import { logAdminAudit } from '@/lib/admin/audit'
 import { finalizeDepositApproval, finalizeDepositRejection } from '@/lib/economy/server'
 import { getPrivateReceiptFile } from '@/lib/receipt-file'
 import { parseReceiptWithFreeOcr } from '@/lib/receipt-ocr-fast'
-import { formatReceiptOcrError } from '@/lib/receipt-ocr'
+import { formatReceiptOcrError, parseReceiptText } from '@/lib/receipt-ocr'
 import {
   type ParsedReceiptData,
   documentIdentityKeys,
@@ -45,7 +45,18 @@ function identitiesMatch(left?: string | null, right?: string | null) {
  */
 export async function processDepositReceipt(
   serviceClient: SupabaseClient,
-  options: { depositId: string; actorUserId: string | null; autoApprove?: boolean; autoReject?: boolean },
+  options: {
+    depositId: string
+    actorUserId: string | null
+    autoApprove?: boolean
+    autoReject?: boolean
+    /**
+     * Texto ya extraído por el OCR del navegador (imágenes). Cuando se provee,
+     * se omite la lectura de imagen en el servidor (que es poco confiable en
+     * Vercel) y se parsea/valida ese texto directamente.
+     */
+    preExtracted?: { text: string; confidence: number | null } | null
+  },
 ): Promise<ProcessReceiptResult> {
   const { depositId, actorUserId } = options
   const autoApprove = options.autoApprove ?? true
@@ -91,14 +102,23 @@ export async function processDepositReceipt(
       .flatMap((account) => [account.alias, account.cbu])
       .filter(Boolean)
 
-    const file = await getPrivateReceiptFile(deposit.receipt_url)
-    const receiptInput = {
-      ...file,
+    const expectedFields = {
       expectedAmount: deposit.amount,
       expectedOperationNumber: deposit.payment_reference,
       expectedDestinationAccounts: destinationAccounts,
     }
-    const parsed = await parseReceiptWithFreeOcr(receiptInput)
+
+    let parsed: ParsedReceiptData
+    if (options.preExtracted && options.preExtracted.text.trim().length >= 5) {
+      // El navegador ya leyó la imagen con Tesseract; solo parseamos el texto.
+      parsed = parseReceiptText(options.preExtracted.text, expectedFields, {
+        confidence: options.preExtracted.confidence,
+        source: 'image_ocr',
+      })
+    } else {
+      const file = await getPrivateReceiptFile(deposit.receipt_url)
+      parsed = await parseReceiptWithFreeOcr({ ...file, ...expectedFields })
+    }
 
     const profileRows = (profiles ?? []) as ProfileRecord[]
     const matchingProfiles = parsed.senderDocument

@@ -169,7 +169,7 @@ export default async function AdminDepositsPage() {
                         <td className="px-4 py-4 text-xs text-zinc-400">{formatDate(deposit.created_at)}{deposit.reviewed_at && <p className="text-zinc-600">Rev. {formatDate(deposit.reviewed_at)}</p>}</td>
                         <td className="px-4 py-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <DepositOcrControls id={deposit.id} disabled={!canReview || !deposit.receipt_url} />
+                            <DepositOcrControls id={deposit.id} receiptUrl={deposit.receipt_url} disabled={!canReview || !deposit.receipt_url} />
                             <DepositActionButton
                               id={deposit.id}
                               action="approve"
