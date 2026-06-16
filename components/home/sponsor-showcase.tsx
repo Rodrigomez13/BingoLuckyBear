@@ -57,7 +57,7 @@ export function SponsorShowcase({
     : `Aguarda la fecha del proximo sorteo${nextRaffleName ? `: ${nextRaffleName}` : ''}. Cuando este habilitado, la compra de cartones vuelve a estar disponible.`
 
   return (
-    <section className="lbb-scroll-reveal py-14 sm:py-20">
+    <section className="lbb-scroll-reveal py-10 sm:py-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
           <div className="lbb-premium-panel relative h-full overflow-hidden rounded-[1.5rem] lg:min-h-[24rem]">

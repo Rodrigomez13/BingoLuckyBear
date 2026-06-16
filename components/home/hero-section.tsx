@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { ArrowRight, CheckCircle2, Radio, ShieldCheck, Sparkles, Ticket } from 'lucide-react'
+import { ArrowRight, Radio, ShieldCheck, Sparkles, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RaffleCountdown } from '@/components/home/raffle-countdown'
 import { formatArgentinaDate } from '@/lib/date'
@@ -109,9 +109,9 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
             </div>
 
             <div className="mt-8 grid w-full max-w-2xl gap-2 min-[560px]:grid-cols-3">
-              <TrustPill icon={<ShieldCheck className="h-4 w-4" />} label="Aviso por WhatsApp" />
+              <TrustPill icon={<ShieldCheck className="h-4 w-4" />} label="Aviso WhatsApp" />
               <TrustPill icon={<Ticket className="h-4 w-4" />} label="Carton automatico" />
-              <TrustPill icon={<Radio className="h-4 w-4" />} label="Resultado publicado" />
+              <TrustPill icon={<Radio className="h-4 w-4" />} label="Resultado publico" />
             </div>
           </div>
 
@@ -134,10 +134,9 @@ export function HeroSection({ raffleName, hasActiveRaffle = true, nextDrawDate }
 
 function TrustPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="lbb-soft-transition flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-100 hover:border-amber-300/45 hover:bg-amber-300/10">
-      <span className="text-amber-300">{icon}</span>
-      <span className="min-w-0 truncate">{label}</span>
-      <CheckCircle2 className="h-4 w-4 text-[#04f77c]" />
+    <div className="lbb-soft-transition flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-center text-sm font-medium leading-tight text-slate-100 hover:border-amber-300/45 hover:bg-amber-300/10">
+      <span className="shrink-0 text-[#04f77c]">{icon}</span>
+      <span className="min-w-0">{label}</span>
     </div>
   )
 }

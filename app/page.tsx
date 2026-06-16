@@ -71,7 +71,6 @@ export default async function HomePage() {
           hasActiveRaffle={hasActiveRaffle}
           nextDrawDate={nextDrawDate}
         />
-        <BrandMarquee />
         <TrucoPromoSection />
         <HowItWorks />
         <SponsorShowcase
@@ -81,6 +80,7 @@ export default async function HomePage() {
           hasActiveRaffle={hasActiveRaffle}
           nextRaffleName={nextRaffle?.name ?? null}
         />
+        <BrandMarquee />
         <TrustSection />
         <Footer />
       </div>

@@ -24,9 +24,9 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="lbb-scroll-reveal py-14 sm:py-20">
+    <section id="como-funciona" className="lbb-scroll-reveal py-10 sm:py-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-10 max-w-3xl text-center">
+        <div className="mx-auto mb-8 max-w-3xl text-center">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-300">Como participar</p>
           <h2
             className="text-4xl font-bold leading-tight tracking-normal text-white md:text-5xl"

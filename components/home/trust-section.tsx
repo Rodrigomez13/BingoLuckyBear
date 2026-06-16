@@ -40,9 +40,9 @@ const testimonials = [
 
 export function TrustSection() {
   return (
-    <section className="lbb-scroll-reveal py-14 sm:py-20">
+    <section className="lbb-scroll-reveal py-10 sm:py-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center">
+        <div className="mb-10 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center">
             <div>
               <div className="mb-4 inline-flex h-9 items-center gap-2 rounded-full border border-[#04f77c]/25 bg-[#04f77c]/10 px-4 text-xs font-bold uppercase tracking-[0.18em] text-[#04f77c]">
                 <ShieldCheck className="h-4 w-4" />

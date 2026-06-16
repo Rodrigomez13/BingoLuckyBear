@@ -35,7 +35,7 @@ const sampleCards = [
 
 export function TrucoPromoSection() {
   return (
-    <section className="relative isolate overflow-hidden py-12 sm:py-16">
+    <section className="relative isolate overflow-hidden py-10 sm:py-12">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(251,191,36,.13),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(4,247,124,.09),transparent_28%)]" />
       <div className="lbb-scroll-reveal mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1fr)] lg:px-8">
         <div className="flex min-w-0 flex-col justify-center text-center lg:text-left">
