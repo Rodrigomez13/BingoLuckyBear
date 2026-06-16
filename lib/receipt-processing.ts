@@ -11,48 +11,6 @@ import {
   validateParsedReceipt,
 } from '@/lib/receipt-validation'
 
-interface ReceiptEngineInput {
-  bytes: Buffer
-  contentType: string
-  filename: string
-  expectedAmount?: string | number | null
-  expectedOperationNumber?: string | null
-  expectedDestinationAccounts?: Array<string | null | undefined>
-}
-
-/**
- * Reads a receipt with the AI vision model first (most accurate) and, if that
- * throws (gateway error, quota, unreadable for the model, etc.), automatically
- * falls back to the free Tesseract/PDF OCR engine. The returned `source` field
- * records which engine actually produced the data.
- */
-async function parseReceiptWithFallback(
-  input: ReceiptEngineInput,
-): Promise<{ parsed: ParsedReceiptData; engine: 'ai_vision' | 'free_ocr'; aiError?: string }> {
-  try {
-    const parsed = await parseReceiptWithAi(input)
-    return { parsed, engine: 'ai_vision' }
-  } catch (aiError) {
-    const aiMessage = aiError instanceof Error ? aiError.message : String(aiError)
-    console.error('[v0] AI vision OCR failed, falling back to Tesseract:', aiMessage)
-    try {
-      const parsed = await parseReceiptWithFreeOcr(input)
-      parsed.warnings = [
-        ...new Set([
-          ...parsed.warnings,
-          'La lectura con IA falló; se usó el OCR gratuito de respaldo. Revisá con más cuidado.',
-        ]),
-      ]
-      return { parsed, engine: 'free_ocr', aiError: aiMessage }
-    } catch (ocrError) {
-      // Surface the AI error as the primary message: it is usually clearer.
-      const ocrMessage = ocrError instanceof Error ? ocrError.message : String(ocrError)
-      console.error('[v0] Tesseract fallback also failed:', ocrMessage)
-      throw aiError instanceof Error ? aiError : new Error(aiMessage)
-    }
-  }
-}
-
 interface ProfileRecord {
   id: string
   email: string | null
