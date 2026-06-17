@@ -1,13 +1,7 @@
 import Link from 'next/link'
-import { ArrowRight, Coins, Crown, ShieldCheck, Trophy, Users, Sword, Wine } from 'lucide-react'
-import type { ComponentType } from 'react'
+import Image from 'next/image'
+import { ArrowRight, Coins, ShieldCheck, Trophy, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-const SUIT_ICON: Record<string, ComponentType<{ className?: string }>> = {
-  ESPADA: Sword,
-  ORO: Coins,
-  COPA: Wine,
-}
 
 const featureCards = [
   {
@@ -27,10 +21,31 @@ const featureCards = [
   },
 ]
 
-const sampleCards = [
-  { rank: '1', suit: 'ESPADA', power: 'MATA' },
-  { rank: '7', suit: 'ORO', power: 'FUERTE' },
-  { rank: '3', suit: 'COPA', power: 'JUEGO' },
+const promoCards = [
+  {
+    src: '/truco/cards/back.png',
+    alt: 'Dorso de carta Lucky Bear',
+    className: '-translate-x-28 -rotate-[16deg] opacity-45 sm:-translate-x-36',
+    zIndex: 1,
+  },
+  {
+    src: '/truco/cards/1-espada.png',
+    alt: 'Uno de espada',
+    className: '-translate-x-16 rotate-[-8deg] opacity-70 sm:-translate-x-24',
+    zIndex: 2,
+  },
+  {
+    src: '/truco/cards/7-oro.png',
+    alt: 'Siete de oro',
+    className: 'translate-x-0 rotate-[2deg] opacity-75',
+    zIndex: 3,
+  },
+  {
+    src: '/truco/cards/3-copa.png',
+    alt: 'Tres de copa',
+    className: 'translate-x-16 rotate-[12deg] opacity-70 sm:translate-x-24',
+    zIndex: 4,
+  },
 ]
 
 export function TrucoPromoSection() {
@@ -99,29 +114,16 @@ export function TrucoPromoSection() {
             </div>
 
             <div className="relative flex min-h-[12rem] items-center justify-center">
-              {sampleCards.map((card, index) => {
-                const SuitIcon = SUIT_ICON[card.suit] ?? Sword
-                return (
+              <div className="absolute inset-x-10 bottom-4 h-16 rounded-[50%] bg-black/35 blur-2xl" />
+              {promoCards.map((card) => (
                 <div
-                  key={`${card.rank}-${card.suit}`}
-                  className="absolute aspect-[5/7] w-28 rounded-2xl border border-amber-300/35 bg-gradient-to-br from-[#f8e5b0] to-[#b7822d] p-2 shadow-2xl shadow-black/40 transition-transform duration-500 hover:-translate-y-2 sm:w-32"
-                  style={{ transform: `translateX(${(index - 1) * 4.25}rem) rotate(${(index - 1) * 9}deg)`, zIndex: index + 1 }}
+                  key={card.src}
+                  className={`absolute aspect-[5/7] w-24 drop-shadow-[0_24px_34px_rgba(0,0,0,.45)] transition duration-500 hover:-translate-y-2 hover:opacity-90 sm:w-32 ${card.className}`}
+                  style={{ zIndex: card.zIndex }}
                 >
-                  <div className="flex h-full flex-col justify-between rounded-xl border border-amber-950/20 bg-[#fff4ca] p-2 text-amber-950">
-                    <div className="flex items-center justify-between font-mono font-black">
-                      <span>{card.rank}</span>
-                      <SuitIcon className="h-4 w-4" />
-                    </div>
-                    <div className="text-center">
-                      <Crown className="mx-auto mb-2 h-8 w-8" />
-                      <p className="font-mono text-lg font-black">{card.power}</p>
-                      <p className="text-[9px] font-black tracking-[0.16em]">{card.suit}</p>
-                    </div>
-                    <div className="text-right font-mono font-black">LBB</div>
-                  </div>
+                  <Image src={card.src} alt={card.alt} fill sizes="(min-width: 640px) 8rem, 6rem" className="object-contain" />
                 </div>
-                )
-              })}
+              ))}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
