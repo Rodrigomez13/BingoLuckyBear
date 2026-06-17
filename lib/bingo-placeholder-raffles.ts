@@ -26,6 +26,6 @@ export const PLACEHOLDER_RAFFLES: PlaceholderRaffle[] = [
     dateLabel: 'A confirmar',
     prize: '$200.000',
     status: 'No comprable',
-    detail: 'La compra se habilita únicamente cuando el admin active un sorteo real.',
+    detail: 'La compra se habilita únicamente cuando haya un sorteo oficial disponible.',
   },
 ]

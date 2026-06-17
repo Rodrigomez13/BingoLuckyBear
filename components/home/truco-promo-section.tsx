@@ -85,17 +85,16 @@ export function TrucoPromoSection() {
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-200/80">Mesa pública</p>
-                  <p className="font-mono text-2xl font-black tracking-[0.18em] text-amber-300">LBB27</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-200/80">Mesa en vivo</p>
+                  <p className="font-mono text-2xl font-black text-amber-300">luckybear vs truquero</p>
                 </div>
                 <span className="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase text-emerald-200">
-                  Esperando rival
+                  Jugando
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <MiniStat label="Puntos" value="30" />
-                <MiniStat label="Entrada" value="50" />
-                <MiniStat label="Pozo" value="100" />
+              <div className="grid gap-2 text-center sm:grid-cols-2">
+                <MiniStat label="Partida" value="A 30 puntos" />
+                <MiniStat label="Estado" value="Apuestas abiertas" />
               </div>
             </div>
 
@@ -132,12 +131,12 @@ export function TrucoPromoSection() {
                 </p>
                 <p className="mt-2 text-xs leading-5 text-slate-400">El servidor valida cada acción para reducir trampas y errores de sincronización.</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                <p className="flex items-center gap-2 text-sm font-black text-white">
-                  <Coins className="h-4 w-4 text-amber-300" /> Economía interna
+              <Link href="/truco" className="rounded-2xl border border-amber-300/25 bg-amber-300 p-4 text-zinc-950 transition hover:bg-amber-200">
+                <p className="flex items-center gap-2 text-sm font-black">
+                  <Coins className="h-4 w-4" /> Apostar por una mesa
                 </p>
-                <p className="mt-2 text-xs leading-5 text-slate-400">La cuenta concentra avatar, historial, movimientos y puntos internos.</p>
-              </div>
+                <p className="mt-2 text-xs font-semibold leading-5 text-zinc-800">Elegí una partida en vivo durante la ventana inicial y jugá contra la casa.</p>
+              </Link>
             </div>
           </div>
         </div>

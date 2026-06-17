@@ -717,6 +717,8 @@ function transactionLabel(type: string) {
     bingo_purchase: 'Compra de cartones',
     truco_entry_fee: 'Entrada a Truco',
     truco_prize: 'Premio de Truco',
+    truco_side_bet: 'Apuesta en Truco',
+    truco_side_bet_win: 'Acierto de apuesta',
     game_purchase: 'Compra de juego',
     game_refund: 'Reintegro',
     refund: 'Reintegro',

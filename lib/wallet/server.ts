@@ -12,6 +12,8 @@ export type WalletTransactionType =
   | 'deposit_rejected'
   | 'truco_entry_fee'
   | 'truco_prize'
+  | 'truco_side_bet'
+  | 'truco_side_bet_win'
   | 'bingo_purchase'
   | 'tournament_entry'
   | 'game_purchase'
@@ -182,15 +184,24 @@ export async function settleTrucoRoomIfNeeded(
     settled_at?: string | null
   },
 ) {
-  if (room.settled_at || room.state.phase !== 'game-over') return
+  if (room.state.phase !== 'game-over') return
 
   const winnerRole = winnerRoleFromState(room.state)
   if (!winnerRole) return
 
-  const { error } = await serviceClient.rpc('lbb_settle_truco_room', {
+  if (!room.settled_at) {
+    const { error } = await serviceClient.rpc('lbb_settle_truco_room', {
+      p_room_id: room.id,
+      p_winner_role: winnerRole,
+    })
+
+    if (error) throw error
+  }
+
+  const { error: sideBetError } = await serviceClient.rpc('lbb_settle_truco_side_bets', {
     p_room_id: room.id,
     p_winner_role: winnerRole,
   })
 
-  if (error) throw error
+  if (sideBetError && !/lbb_settle_truco_side_bets/i.test(sideBetError.message)) throw sideBetError
 }

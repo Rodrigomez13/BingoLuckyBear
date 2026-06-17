@@ -227,7 +227,7 @@ export default function ParticipatePage() {
                 <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4 text-center text-emerald-100">
                   <p className="font-semibold">Tenes {existingCards.length} carton{existingCards.length !== 1 ? 'es' : ''} registrado{existingCards.length !== 1 ? 's' : ''} para este sorteo.</p>
                   <p className="mt-2 text-sm text-emerald-50/90">Participan oficialmente: {approvedCards.length}. Pendientes de aprobacion: {pendingCards.length}. Rechazados: {rejectedCards.length}.</p>
-                  {pendingCards.length > 0 && <p className="mx-auto mt-2 max-w-2xl text-sm text-amber-100">Los cartones pendientes no entran al sorteo hasta que el comprobante sea aprobado por el administrador.</p>}
+                  {pendingCards.length > 0 && <p className="mx-auto mt-2 max-w-2xl text-sm text-amber-100">Los cartones pendientes no entran al sorteo hasta que el comprobante quede aprobado.</p>}
                   {CONTACT_LINKS.whatsappGroupUrl && <div className="mt-4"><Button asChild className="bg-[#25d366] font-bold text-zinc-950 hover:bg-[#30e17b]"><Link href={CONTACT_LINKS.whatsappGroupUrl} target="_blank" rel="noreferrer"><MessageCircle className="mr-2 h-4 w-4" />Unirme al grupo del sorteo</Link></Button></div>}
                 </div>
               )}

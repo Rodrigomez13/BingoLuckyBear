@@ -60,6 +60,10 @@ export async function GET() {
       return NextResponse.json({ ok: false, rooms: [], error: `Faltan variables en Vercel: ${missing.join(', ')}` })
     }
 
+    const authClient = await createClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
     const supabase = await createServiceClient()
     const { data, error } = await supabase
       .from('truco_rooms')
@@ -73,9 +77,57 @@ export async function GET() {
       return NextResponse.json({ ok: false, rooms: [], error: error.message, hint: dbSetupHint(error.message) })
     }
 
+    const rooms = ((data ?? []) as StoredTrucoRoom[]).map((room) => summarizePublicRoom(room))
+    const roomIds = ((data ?? []) as StoredTrucoRoom[]).map((room) => room.id)
+
+    const [{ data: counts }, { data: myBets }] = await Promise.all([
+      roomIds.length
+        ? supabase
+            .from('truco_side_bets')
+            .select('room_id, status')
+            .in('room_id', roomIds)
+            .eq('status', 'pending')
+        : Promise.resolve({ data: [] }),
+      user && roomIds.length
+        ? supabase
+            .from('truco_side_bets')
+            .select('id, room_id, predicted_winner_role, amount_points, potential_payout_points, status')
+            .in('room_id', roomIds)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: [] }),
+    ])
+
+    const countsByRoom = new Map<string, number>()
+    for (const row of counts ?? []) {
+      const roomId = String(row.room_id)
+      countsByRoom.set(roomId, (countsByRoom.get(roomId) ?? 0) + 1)
+    }
+
+    const betsByRoom = new Map<string, NonNullable<typeof rooms[number]['mySideBet']>>()
+    for (const row of myBets ?? []) {
+      const status = String(row.status) as 'pending' | 'won' | 'lost' | 'cancelled'
+      if (!['pending', 'won', 'lost', 'cancelled'].includes(status)) continue
+      if (betsByRoom.has(String(row.room_id))) continue
+      betsByRoom.set(String(row.room_id), {
+        id: String(row.id),
+        predictedWinnerRole: row.predicted_winner_role === 'opponent' ? 'opponent' : 'player',
+        amountPoints: Number(row.amount_points ?? 0),
+        potentialPayoutPoints: Number(row.potential_payout_points ?? 0),
+        status,
+      })
+    }
+
     return NextResponse.json({
       ok: true,
-      rooms: (data ?? []).map((room) => summarizePublicRoom(room as StoredTrucoRoom)),
+      rooms: rooms.map((room, index) => {
+        const original = (data ?? [])[index] as StoredTrucoRoom
+        return {
+          ...room,
+          sideBetCount: countsByRoom.get(original.id) ?? 0,
+          mySideBet: betsByRoom.get(original.id) ?? null,
+        }
+      }),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error inesperado'

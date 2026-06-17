@@ -16,7 +16,7 @@ export function NoActiveRaffle() {
         <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Cartelera de sorteos</p>
         <h1 className="mb-3 text-2xl font-semibold tracking-tight text-white">Próximos sorteos Lucky Bear</h1>
         <p className="mx-auto mb-7 max-w-2xl leading-relaxed text-zinc-300">
-          Estos sorteos son de muestra y mantienen la cartelera completa. La compra de cartones se habilita solo cuando el administrador active un sorteo oficial.
+          Estos sorteos son de muestra y mantienen la cartelera completa. La compra de cartones se habilita solo cuando haya un sorteo oficial disponible.
         </p>
 
         <div className="mb-7 grid gap-3 md:grid-cols-3">

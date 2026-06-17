@@ -123,7 +123,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
               ? `Fila premiada: ${winningLines.join(', ')}`
               : isApproved
                 ? 'Tu carton de bingo fue aprobado y participa oficialmente.'
-                : 'Recibimos tu comprobante. El carton se habilita cuando el administrador apruebe el pago.'}
+                : 'Recibimos tu comprobante. El cartón se habilita cuando el pago quede aprobado.'}
           </p>
         </div>
       )}
@@ -139,7 +139,7 @@ export function BingoCardDisplay({ card, raffleName, drawnNumbers = [], compact 
         <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-center text-amber-100">
           <AlertTriangle className="mx-auto mb-2 h-6 w-6" />
           {isRejected
-            ? 'El pago de este carton fue rechazado. Contacta al administrador para regularizarlo.'
+            ? 'El pago de este cartón fue rechazado. Contactanos para regularizarlo.'
             : 'Este carton esta registrado, pero todavia no participa del sorteo hasta que el pago sea aprobado.'}
         </div>
       )}

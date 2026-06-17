@@ -66,6 +66,20 @@ export interface PublicRoomSummary {
     name: string
     avatarKey: string
   }
+  guest: {
+    name: string
+    avatarKey: string
+  } | null
+  bettingOpen: boolean
+  sideBetMaxPoints: number
+  sideBetCount?: number
+  mySideBet?: {
+    id: string
+    predictedWinnerRole: Player
+    amountPoints: number
+    potentialPayoutPoints: number
+    status: 'pending' | 'won' | 'lost' | 'cancelled'
+  } | null
   createdAt?: string
   updatedAt?: string
   canJoin: boolean
@@ -113,6 +127,8 @@ export function sanitizeRoom(room: StoredTrucoRoom, secret?: string | null) {
 }
 
 export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
+  const prizePool = Number(room.prize_pool_points ?? 0)
+  const bettingOpen = isSideBetWindowOpen(room)
   return {
     roomCode: room.room_code,
     target: room.target_score,
@@ -122,7 +138,7 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
     hand: room.state.hand,
     version: room.version,
     entryFeePoints: Number(room.entry_fee_points ?? 0),
-    prizePoolPoints: Number(room.prize_pool_points ?? 0),
+    prizePoolPoints: prizePool,
     houseFeeRate: Number(room.house_fee_rate ?? 0),
     houseFeePoints: Number(room.house_fee_points ?? 0),
     prizeAwardedPoints: Number(room.prize_awarded_points ?? 0),
@@ -132,10 +148,34 @@ export function summarizePublicRoom(room: StoredTrucoRoom): PublicRoomSummary {
       name: room.host_name?.trim() || 'Jugador',
       avatarKey: room.host_avatar_key || 'golden_bear',
     },
+    guest: room.guest_secret
+      ? {
+          name: room.guest_name?.trim() || 'Rival',
+          avatarKey: room.guest_avatar_key || 'golden_bear',
+        }
+      : null,
+    bettingOpen,
+    sideBetMaxPoints: bettingOpen ? getSideBetMaxPoints(prizePool) : 0,
     createdAt: room.created_at,
     updatedAt: room.updated_at,
     canJoin: room.status === 'waiting' && !room.guest_secret,
   }
+}
+
+export function getSideBetMaxPoints(prizePoolPoints: number) {
+  return Math.max(0, Math.floor(Number(prizePoolPoints || 0) * 0.25))
+}
+
+export function isSideBetWindowOpen(room: StoredTrucoRoom) {
+  const state = room.state
+  return room.status === 'playing'
+    && (room.visibility ?? 'private') === 'public'
+    && Number(room.prize_pool_points ?? 0) > 0
+    && state.phase === 'playing'
+    && Number(state.scores.player ?? 0) === 0
+    && Number(state.scores.opponent ?? 0) === 0
+    && Number(state.currentTrick ?? 0) === 0
+    && (state.played?.length ?? 0) <= 2
 }
 
 export function isValidRoleSecret(room: StoredTrucoRoom, actor: Player, secret: string) {

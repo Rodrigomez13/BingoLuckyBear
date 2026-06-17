@@ -251,6 +251,8 @@ function formatTransactionType(type?: string | null) {
     deposit_rejected: 'Recarga rechazada',
     truco_entry_fee: 'Entrada Truco',
     truco_prize: 'Premio Truco',
+    truco_side_bet: 'Apuesta en Truco',
+    truco_side_bet_win: 'Acierto de apuesta',
     bingo_purchase: 'Compra bingo',
     refund: 'Reintegro',
     withdrawal_pending: 'Retiro pendiente',

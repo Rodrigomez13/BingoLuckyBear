@@ -160,7 +160,7 @@ export function AccountPurchaseForm({
           setOcrStatus(percent > 0 ? `Leyendo comprobante ${percent}%` : 'Preparando OCR del comprobante')
         }).catch((ocrError) => {
           console.warn('[v0] Browser receipt OCR failed:', ocrError)
-          setOcrStatus('No se pudo leer en el navegador; se revisará desde el servidor/admin.')
+          setOcrStatus('No se pudo leer en el navegador; se revisará automáticamente al recibirlo.')
           return null
         })
 
@@ -294,7 +294,7 @@ export function AccountPurchaseForm({
                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
                     <div>
                       <h3 className="font-bold text-white">Datos de pago</h3>
-                      <p className="text-sm text-zinc-300">Se usan para revisar el comprobante desde el admin.</p>
+                      <p className="text-sm text-zinc-300">Se usan para validar el comprobante y activar tus cartones.</p>
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">

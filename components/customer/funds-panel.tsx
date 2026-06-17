@@ -115,7 +115,7 @@ export function FundsPanel({
         setOcrStatus(percent > 0 ? `Leyendo comprobante ${percent}%` : 'Preparando OCR del comprobante')
       }).catch((ocrError) => {
         console.warn('[v0] Browser receipt OCR failed:', ocrError)
-        setOcrStatus('No se pudo leer en el navegador; se revisará desde el servidor/admin.')
+        setOcrStatus('No se pudo leer en el navegador; se validará automáticamente al recibirlo.')
         return null
       })
     }
@@ -147,7 +147,7 @@ export function FundsPanel({
     })
     const json = await response.json()
     if (!response.ok) throw new Error(json.error || 'No se pudo solicitar el retiro')
-    setMessage('Retiro solicitado. El monto quedó reservado hasta que el admin lo pague o rechace.')
+    setMessage('Retiro solicitado. El monto quedó reservado hasta que el pago sea confirmado o rechazado.')
   }
 
   const submit = async () => {

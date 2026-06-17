@@ -91,7 +91,7 @@ export function LiveWall() {
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
             Próximos sorteos Lucky Bear
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-zinc-300">La pantalla permanece activa con sorteos de muestra. Cuando el admin active un sorteo oficial, esta vista mostrará cuenta regresiva, bolillas y premios en juego.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-zinc-300">La pantalla permanece activa con sorteos de muestra. Cuando haya un sorteo oficial disponible, esta vista mostrará cuenta regresiva, bolillas y premios en juego.</p>
           <div className="mt-7 grid gap-3 md:grid-cols-3">
             {PLACEHOLDER_RAFFLES.map((item) => (
               <div key={item.name} className="rounded-2xl border border-amber-300/20 bg-zinc-900/70 p-4 text-left">

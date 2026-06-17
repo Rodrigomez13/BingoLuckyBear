@@ -38,6 +38,19 @@ export interface PublicRoomsResponse {
   error?: string
 }
 
+export interface TrucoSideBetResponse {
+  ok: boolean
+  bet?: {
+    id: string
+    roomCode: string
+    predictedWinnerRole: 'player' | 'opponent'
+    amountPoints: number
+    potentialPayoutPoints: number
+    status: string
+  }
+  error?: string
+}
+
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
 export function roomSecretKey(roomCode: string) {
@@ -69,6 +82,25 @@ async function readPublicRoomsResponse(response: Response): Promise<PublicRoomsR
 export async function listPublicTrucoRooms() {
   const response = await fetch('/api/truco/rooms', { cache: 'no-store' })
   return readPublicRoomsResponse(response)
+}
+
+export async function placeTrucoSideBet({
+  roomCode,
+  predictedWinnerRole,
+  amountPoints,
+}: {
+  roomCode: string
+  predictedWinnerRole: 'player' | 'opponent'
+  amountPoints: number
+}) {
+  const response = await fetch(`/api/truco/rooms/${roomCode}/bets`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ predictedWinnerRole, amountPoints }),
+  })
+  const payload = await response.json().catch(() => null)
+  if (payload && typeof payload === 'object') return payload as TrucoSideBetResponse
+  return { ok: false, error: response.ok ? 'Respuesta inválida' : 'Error de servidor' }
 }
 
 export async function createAuthoritativeRoom({
