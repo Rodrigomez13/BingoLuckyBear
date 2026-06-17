@@ -1,0 +1,103 @@
+:root {
+  --lbb-card-w: 320px;
+  --lbb-card-h: 448px;
+}
+
+.lbb-card-sprite {
+  width: var(--lbb-card-w);
+  height: var(--lbb-card-h);
+  display: inline-block;
+  background-image: url('/truco/cards/lbb-cards-spritesheet.webp');
+  background-size: 3200px 2240px;
+  background-repeat: no-repeat;
+}
+
+.lbb-card-sprite.is-fluid {
+  width: 100%;
+  aspect-ratio: 320 / 448;
+  height: auto;
+  background-size: 1000% 500%;
+}
+
+.lbb-card-1-oro { background-position: -0px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-1-oro { background-position: 0.00000000% 0.00000000%; }
+.lbb-card-2-oro { background-position: -320px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-2-oro { background-position: 11.11111111% 0.00000000%; }
+.lbb-card-3-oro { background-position: -640px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-3-oro { background-position: 22.22222222% 0.00000000%; }
+.lbb-card-4-oro { background-position: -960px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-4-oro { background-position: 33.33333333% 0.00000000%; }
+.lbb-card-5-oro { background-position: -1280px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-5-oro { background-position: 44.44444444% 0.00000000%; }
+.lbb-card-6-oro { background-position: -1600px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-6-oro { background-position: 55.55555556% 0.00000000%; }
+.lbb-card-7-oro { background-position: -1920px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-7-oro { background-position: 66.66666667% 0.00000000%; }
+.lbb-card-10-oro { background-position: -2240px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-10-oro { background-position: 77.77777778% 0.00000000%; }
+.lbb-card-11-oro { background-position: -2560px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-11-oro { background-position: 88.88888889% 0.00000000%; }
+.lbb-card-12-oro { background-position: -2880px -0px; }
+.lbb-card-sprite.is-fluid.lbb-card-12-oro { background-position: 100.00000000% 0.00000000%; }
+.lbb-card-1-copa { background-position: -0px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-1-copa { background-position: 0.00000000% 25.00000000%; }
+.lbb-card-2-copa { background-position: -320px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-2-copa { background-position: 11.11111111% 25.00000000%; }
+.lbb-card-3-copa { background-position: -640px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-3-copa { background-position: 22.22222222% 25.00000000%; }
+.lbb-card-4-copa { background-position: -960px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-4-copa { background-position: 33.33333333% 25.00000000%; }
+.lbb-card-5-copa { background-position: -1280px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-5-copa { background-position: 44.44444444% 25.00000000%; }
+.lbb-card-6-copa { background-position: -1600px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-6-copa { background-position: 55.55555556% 25.00000000%; }
+.lbb-card-7-copa { background-position: -1920px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-7-copa { background-position: 66.66666667% 25.00000000%; }
+.lbb-card-10-copa { background-position: -2240px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-10-copa { background-position: 77.77777778% 25.00000000%; }
+.lbb-card-11-copa { background-position: -2560px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-11-copa { background-position: 88.88888889% 25.00000000%; }
+.lbb-card-12-copa { background-position: -2880px -448px; }
+.lbb-card-sprite.is-fluid.lbb-card-12-copa { background-position: 100.00000000% 25.00000000%; }
+.lbb-card-1-espada { background-position: -0px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-1-espada { background-position: 0.00000000% 50.00000000%; }
+.lbb-card-2-espada { background-position: -320px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-2-espada { background-position: 11.11111111% 50.00000000%; }
+.lbb-card-3-espada { background-position: -640px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-3-espada { background-position: 22.22222222% 50.00000000%; }
+.lbb-card-4-espada { background-position: -960px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-4-espada { background-position: 33.33333333% 50.00000000%; }
+.lbb-card-5-espada { background-position: -1280px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-5-espada { background-position: 44.44444444% 50.00000000%; }
+.lbb-card-6-espada { background-position: -1600px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-6-espada { background-position: 55.55555556% 50.00000000%; }
+.lbb-card-7-espada { background-position: -1920px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-7-espada { background-position: 66.66666667% 50.00000000%; }
+.lbb-card-10-espada { background-position: -2240px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-10-espada { background-position: 77.77777778% 50.00000000%; }
+.lbb-card-11-espada { background-position: -2560px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-11-espada { background-position: 88.88888889% 50.00000000%; }
+.lbb-card-12-espada { background-position: -2880px -896px; }
+.lbb-card-sprite.is-fluid.lbb-card-12-espada { background-position: 100.00000000% 50.00000000%; }
+.lbb-card-1-basto { background-position: -0px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-1-basto { background-position: 0.00000000% 75.00000000%; }
+.lbb-card-2-basto { background-position: -320px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-2-basto { background-position: 11.11111111% 75.00000000%; }
+.lbb-card-3-basto { background-position: -640px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-3-basto { background-position: 22.22222222% 75.00000000%; }
+.lbb-card-4-basto { background-position: -960px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-4-basto { background-position: 33.33333333% 75.00000000%; }
+.lbb-card-5-basto { background-position: -1280px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-5-basto { background-position: 44.44444444% 75.00000000%; }
+.lbb-card-6-basto { background-position: -1600px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-6-basto { background-position: 55.55555556% 75.00000000%; }
+.lbb-card-7-basto { background-position: -1920px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-7-basto { background-position: 66.66666667% 75.00000000%; }
+.lbb-card-10-basto { background-position: -2240px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-10-basto { background-position: 77.77777778% 75.00000000%; }
+.lbb-card-11-basto { background-position: -2560px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-11-basto { background-position: 88.88888889% 75.00000000%; }
+.lbb-card-12-basto { background-position: -2880px -1344px; }
+.lbb-card-sprite.is-fluid.lbb-card-12-basto { background-position: 100.00000000% 75.00000000%; }
+.lbb-card-back { background-position: -0px -1792px; }
+.lbb-card-sprite.is-fluid.lbb-card-back { background-position: 0.00000000% 100.00000000%; }
