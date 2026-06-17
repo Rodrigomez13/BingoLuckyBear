@@ -149,7 +149,7 @@ export function LobbyOperativoHome({
             </div>
           </header>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="min-w-0 space-y-5">
               <HeroLobby raffleName={raffleName} jackpotPrize={jackpotPrize} />
 
@@ -210,7 +210,7 @@ export function LobbyOperativoHome({
               </section>
             </div>
 
-            <aside className="space-y-4">
+            <aside className="grid gap-4 md:grid-cols-3 2xl:block 2xl:space-y-4">
               <QuickPanel raffle={raffle} jackpotPrize={jackpotPrize} />
               <WinnersPanel />
               <TrustPanel />
@@ -260,7 +260,7 @@ function TopAction({ href, icon, label, badge }: { href: string; icon: React.Rea
 function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPrize?: string | null }) {
   return (
     <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4 lg:p-5">
-      <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)]">
+      <div className="grid gap-5 xl:grid-cols-[19rem_minmax(0,1fr)]">
         <div className="flex min-h-64 items-center justify-center rounded-lg bg-[#071d12] p-4">
           <Image src="/truco/golden-bear-mascot.png" alt="Lucky Bear" width={320} height={320} className="h-56 w-full object-contain xl:h-64" priority />
         </div>

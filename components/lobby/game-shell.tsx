@@ -114,9 +114,9 @@ export function GameShell({ active, eyebrow, title, subtitle, children, aside }:
             </div>
           </header>
 
-          <div className={aside ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]' : ''}>
+          <div className={aside ? 'grid gap-5 2xl:grid-cols-[minmax(0,1fr)_20rem]' : ''}>
             <div className="min-w-0">{children}</div>
-            {aside && <aside className="space-y-4">{aside}</aside>}
+            {aside && <aside className="grid gap-4 md:grid-cols-2 2xl:block 2xl:space-y-4">{aside}</aside>}
           </div>
         </section>
       </div>
