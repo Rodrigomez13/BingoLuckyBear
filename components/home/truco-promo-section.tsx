@@ -21,33 +21,6 @@ const featureCards = [
   },
 ]
 
-const promoCards = [
-  {
-    src: '/truco/cards/back.png',
-    alt: 'Dorso de carta Lucky Bear',
-    className: '-translate-x-28 -rotate-[16deg] opacity-45 sm:-translate-x-36',
-    zIndex: 1,
-  },
-  {
-    src: '/truco/cards/1-espada.png',
-    alt: 'Uno de espada',
-    className: '-translate-x-16 rotate-[-8deg] opacity-70 sm:-translate-x-24',
-    zIndex: 2,
-  },
-  {
-    src: '/truco/cards/7-oro.png',
-    alt: 'Siete de oro',
-    className: 'translate-x-0 rotate-[2deg] opacity-75',
-    zIndex: 3,
-  },
-  {
-    src: '/truco/cards/3-copa.png',
-    alt: 'Tres de copa',
-    className: 'translate-x-16 rotate-[12deg] opacity-70 sm:translate-x-24',
-    zIndex: 4,
-  },
-]
-
 export function TrucoPromoSection() {
   return (
     <section className="relative isolate overflow-hidden py-10 sm:py-12">
@@ -113,17 +86,16 @@ export function TrucoPromoSection() {
               </div>
             </div>
 
-            <div className="relative flex min-h-[12rem] items-center justify-center">
-              <div className="absolute inset-x-10 bottom-4 h-16 rounded-[50%] bg-black/35 blur-2xl" />
-              {promoCards.map((card) => (
-                <div
-                  key={card.src}
-                  className={`absolute aspect-[5/7] w-24 drop-shadow-[0_24px_34px_rgba(0,0,0,.45)] transition duration-500 hover:-translate-y-2 hover:opacity-90 sm:w-32 ${card.className}`}
-                  style={{ zIndex: card.zIndex }}
-                >
-                  <Image src={card.src} alt={card.alt} fill sizes="(min-width: 640px) 8rem, 6rem" className="object-contain" />
-                </div>
-              ))}
+            <div className="relative flex min-h-[12rem] items-center justify-center sm:min-h-[16rem]">
+              <div className="absolute inset-x-8 bottom-3 h-20 rounded-[50%] bg-black/40 blur-2xl" />
+              <Image
+                src="/truco/preview-lobby-home.png"
+                alt="Cartas Lucky Bingo Bear para Truco"
+                width={1024}
+                height={612}
+                priority={false}
+                className="relative z-10 w-[92%] max-w-[34rem] object-contain opacity-75 drop-shadow-[0_28px_38px_rgba(0,0,0,.48)] transition duration-500 hover:-translate-y-1 hover:opacity-90"
+              />
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
