@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
 import { SiteHeader } from '@/components/site-header'
+import { PLACEHOLDER_RAFFLES } from '@/lib/bingo-placeholder-raffles'
 
 interface Raffle {
   id: string
@@ -83,13 +84,25 @@ export function LiveWall() {
 
   if (!raffle) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
-        <div className="max-w-xl text-center">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 py-10 text-zinc-100">
+        <div className="max-w-5xl text-center">
           <Image src="/logo-contexto.svg" alt="Lucky Bingo Bear" width={240} height={240} className="mx-auto h-auto w-48" />
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white">
-            No hay sorteo activo
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Cartelera visual</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+            Próximos sorteos Lucky Bear
           </h1>
-          <p className="mt-3 text-zinc-300">Cuando haya un sorteo disponible, esta pantalla mostrara la cuenta regresiva, las bolillas y los premios en juego.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-zinc-300">La pantalla permanece activa con sorteos de muestra. Cuando el admin active un sorteo oficial, esta vista mostrará cuenta regresiva, bolillas y premios en juego.</p>
+          <div className="mt-7 grid gap-3 md:grid-cols-3">
+            {PLACEHOLDER_RAFFLES.map((item) => (
+              <div key={item.name} className="rounded-2xl border border-amber-300/20 bg-zinc-900/70 p-4 text-left">
+                <p className="text-[10px] font-black uppercase tracking-wide text-zinc-500">{item.status}</p>
+                <h2 className="mt-2 text-xl font-black text-white">{item.name}</h2>
+                <p className="mt-1 text-sm text-zinc-400">{item.dateLabel}</p>
+                <p className="mt-4 font-mono text-3xl font-black text-amber-300">{item.prize}</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {['$350.000', '$200.000', '$150.000', '$50.000'].map((prize) => (
               <span

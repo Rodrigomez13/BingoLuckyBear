@@ -1,22 +1,43 @@
 import Link from 'next/link'
-import { Bell, MessageCircle, Trophy } from 'lucide-react'
+import { Bell, CalendarClock, MessageCircle, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { BearLogo } from '@/components/bear-logo'
 import { CONTACT_LINKS } from '@/lib/contact'
+import { PLACEHOLDER_RAFFLES } from '@/lib/bingo-placeholder-raffles'
 
 const referencePrizes = ['$350.000', '$200.000', '$150.000', '$50.000']
 
 export function NoActiveRaffle() {
   return (
-    <Card className="mx-auto max-w-xl border-white/10 bg-zinc-950/80 text-zinc-100 shadow-2xl shadow-black/30">
-      <CardContent className="px-6 py-12 text-center sm:px-10">
-        <BearLogo size={82} sad className="mx-auto mb-6" />
-        <h1 className="mb-3 text-2xl font-semibold tracking-tight text-white">No hay sorteo activo</h1>
-        <p className="mx-auto mb-7 max-w-md leading-relaxed text-zinc-300">
-          En este momento no hay un sorteo disponible para comprar cartones. Cuando se habilite el proximo, vas a poder
-          participar desde aca y recibir el aviso por WhatsApp si ganas.
+    <Card className="mx-auto max-w-5xl border-white/10 bg-zinc-950/80 text-zinc-100 shadow-2xl shadow-black/30">
+      <CardContent className="px-5 py-8 text-center sm:px-8 sm:py-10">
+        <BearLogo size={76} className="mx-auto mb-5" />
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Cartelera de sorteos</p>
+        <h1 className="mb-3 text-2xl font-semibold tracking-tight text-white">Próximos sorteos Lucky Bear</h1>
+        <p className="mx-auto mb-7 max-w-2xl leading-relaxed text-zinc-300">
+          Estos sorteos son de muestra y mantienen la cartelera completa. La compra de cartones se habilita solo cuando el administrador active un sorteo oficial.
         </p>
+
+        <div className="mb-7 grid gap-3 md:grid-cols-3">
+          {PLACEHOLDER_RAFFLES.map((raffle) => (
+            <div key={raffle.name} className="rounded-2xl border border-amber-300/18 bg-black/30 p-4 text-left">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-400">
+                  {raffle.status}
+                </span>
+                <CalendarClock className="h-4 w-4 text-amber-300" />
+              </div>
+              <h2 className="text-lg font-black text-white">{raffle.name}</h2>
+              <p className="mt-1 text-sm text-zinc-400">{raffle.dateLabel}</p>
+              <p className="mt-4 font-mono text-2xl font-black text-amber-300">{raffle.prize}</p>
+              <p className="mt-3 text-xs leading-5 text-zinc-500">{raffle.detail}</p>
+              <button type="button" disabled className="mt-4 h-10 w-full cursor-not-allowed rounded-full border border-white/10 bg-white/[0.03] text-xs font-black text-zinc-500">
+                Compra no habilitada
+              </button>
+            </div>
+          ))}
+        </div>
 
         <div className="mb-7">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Premios de referencia</p>
