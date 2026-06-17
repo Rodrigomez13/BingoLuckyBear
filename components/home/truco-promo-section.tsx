@@ -89,7 +89,7 @@ export function TrucoPromoSection() {
             <div className="relative flex min-h-[12rem] items-center justify-center sm:min-h-[16rem]">
               <div className="absolute inset-x-8 bottom-3 h-20 rounded-[50%] bg-black/40 blur-2xl" />
               <Image
-                src="/truco/preview-lobby-home.png"
+                src="/truco/preview-lobby-home.webp"
                 alt="Cartas Lucky Bingo Bear para Truco"
                 width={1024}
                 height={612}
