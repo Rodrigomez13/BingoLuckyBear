@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, KeyRound, Loader2, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -56,11 +56,13 @@ export default function SecurityPage() {
   }
 
   return (
-    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="mi-cuenta" kicker="Seguridad" compact />
-
-      <section className="relative z-10 mx-auto max-w-2xl px-4 pb-16 pt-[104px] sm:px-6 lg:px-8">
+    <GameShell
+      active="cartones"
+      eyebrow="Seguridad"
+      title="Cambiar contraseña"
+      subtitle="Mantené tu cuenta segura y lista para jugar."
+    >
+      <section className="mx-auto w-full max-w-2xl pb-16">
         <Badge className="mb-4 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
           <ShieldCheck className="mr-1 h-3.5 w-3.5" /> Seguridad
         </Badge>
@@ -112,7 +114,7 @@ export default function SecurityPage() {
           </div>
         )}
       </section>
-    </main>
+    </GameShell>
   )
 }
 
