@@ -76,13 +76,13 @@ export function LobbyOperativoHome({
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(120deg,#03100a_0%,#052515_46%,#0a170f_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] [background-size:42px_42px]" />
 
-      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[17rem_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-screen max-w-[1680px] lg:grid-cols-[14.5rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-amber-300/15 bg-black/20 p-4 lg:block">
           <Link href="/" className="mb-7 flex items-center gap-3">
             <BearLogo size={66} />
             <div>
-              <p className="font-mono text-2xl font-black uppercase leading-6 text-amber-300">Lucky</p>
-              <p className="font-mono text-2xl font-black uppercase leading-6 text-white">Bingo</p>
+              <p className="font-mono text-xl font-black uppercase leading-5 text-amber-300">Lucky</p>
+              <p className="font-mono text-xl font-black uppercase leading-5 text-white">Bingo</p>
               <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
             </div>
           </Link>
@@ -114,7 +114,7 @@ export function LobbyOperativoHome({
             />
             <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Jugá y ganá</p>
             <p className="mt-1 text-sm leading-5 text-emerald-50/75">Entrá a una mesa, comprá cartones o mirá partidas activas.</p>
-            <Link href="/participar" className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-sm font-black uppercase text-zinc-950 hover:bg-amber-200">
+            <Link href="/participar" className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200">
               Ver sorteos
             </Link>
           </div>
@@ -149,7 +149,7 @@ export function LobbyOperativoHome({
             </div>
           </header>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="min-w-0 space-y-5">
               <HeroLobby raffleName={raffleName} jackpotPrize={jackpotPrize} />
 
@@ -170,7 +170,7 @@ export function LobbyOperativoHome({
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
                   {(visibleRooms.length ? visibleRooms : getFallbackRooms()).map((room, index) => (
                     <RoomCard key={room.roomCode} room={room} tone={index} />
                   ))}
@@ -259,19 +259,29 @@ function TopAction({ href, icon, label, badge }: { href: string; icon: React.Rea
 
 function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPrize?: string | null }) {
   return (
-    <section className="grid gap-4 rounded-lg border border-amber-300/15 bg-black/20 p-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:p-5">
-      <div className="grid gap-4 sm:grid-cols-[13rem_minmax(0,1fr)]">
-        <div className="rounded-lg bg-[#071d12] p-3">
-          <Image src="/truco/golden-bear-mascot.png" alt="Lucky Bear" width={280} height={280} className="mx-auto h-48 w-full object-contain" priority />
+    <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4 lg:p-5">
+      <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)]">
+        <div className="flex min-h-64 items-center justify-center rounded-lg bg-[#071d12] p-4">
+          <Image src="/truco/golden-bear-mascot.png" alt="Lucky Bear" width={320} height={320} className="h-56 w-full object-contain xl:h-64" priority />
         </div>
-        <div className="flex flex-col justify-center">
+        <div className="flex min-w-0 flex-col justify-center py-1">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Lobby general</p>
-          <h1 className="mt-2 max-w-2xl font-mono text-4xl font-black leading-tight text-white sm:text-5xl">
+          <h1 className="mt-2 max-w-4xl font-mono text-3xl font-black leading-tight text-white sm:text-4xl xl:text-5xl 2xl:text-6xl">
             Jugá, ganá y seguí todo desde un solo lugar.
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-7 text-emerald-50/75">
             Mesas de Truco, sorteos de Bingo, saldo y premios disponibles desde tu cuenta Lucky Bear.
           </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Sorteo destacado</p>
+              <p className="mt-1 truncate font-mono text-xl font-black text-white">{raffleName}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Premio principal</p>
+              <p className="mt-1 truncate font-mono text-xl font-black text-lime-300">{jackpotPrize ?? 'A confirmar'}</p>
+            </div>
+          </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Link href="/truco" className="flex h-12 items-center justify-center rounded-md bg-amber-300 px-6 font-black text-zinc-950 hover:bg-amber-200">
               Jugar ahora
@@ -281,18 +291,6 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
             </Link>
           </div>
         </div>
-      </div>
-
-      <div className="rounded-lg border border-amber-300/15 bg-[#071d12] p-4">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-300">Sorteo destacado</p>
-        <h2 className="mt-2 font-mono text-2xl font-black text-white">{raffleName}</h2>
-        <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-sm text-emerald-50/60">Premio principal</p>
-          <p className="font-mono text-3xl font-black text-lime-300">{jackpotPrize ?? 'A confirmar'}</p>
-        </div>
-        <Link href="/en-vivo" className="mt-4 flex h-11 items-center justify-center rounded-md border border-amber-300/30 text-sm font-black uppercase text-amber-100 hover:bg-amber-300/10">
-          Ver en vivo
-        </Link>
       </div>
     </section>
   )

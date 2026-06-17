@@ -43,10 +43,10 @@ export function GameShell({ active, eyebrow, title, subtitle, children, aside }:
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_10%,rgba(251,191,36,.16),transparent_26%),radial-gradient(circle_at_85%_12%,rgba(34,197,94,.16),transparent_30%),linear-gradient(120deg,#03100a_0%,#062415_48%,#0b110d_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.55)_1px,transparent_1px)] [background-size:44px_44px]" />
 
-      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-screen max-w-[1680px] lg:grid-cols-[14.5rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-amber-300/15 bg-black/25 p-4 lg:block">
           <Link href="/" className="mb-6 flex items-center gap-3">
-            <BearLogo size={58} />
+            <BearLogo size={54} />
             <div>
               <p className="font-mono text-xl font-black uppercase leading-5 text-amber-300">Lucky</p>
               <p className="font-mono text-xl font-black uppercase leading-5 text-white">Bingo</p>
