@@ -5,39 +5,40 @@
 
 :root {
   --font-fredoka: var(--font-dm-sans);
-  --background: rgb(11, 11, 16);
-  --foreground: rgb(248, 250, 252);
-  --card: rgba(255, 255, 255, 0.05);
-  --card-foreground: rgb(248, 250, 252);
-  --popover: rgb(11, 11, 16);
-  --popover-foreground: rgb(248, 250, 252);
-  --primary: rgb(4, 247, 124);
-  --primary-foreground: rgb(11, 11, 16);
+  /* Lucky Bingo Bear - dark forest green + gold casino theme */
+  --background: rgb(6, 24, 16);
+  --foreground: rgb(245, 247, 240);
+  --card: rgba(255, 255, 255, 0.04);
+  --card-foreground: rgb(245, 247, 240);
+  --popover: rgb(8, 28, 19);
+  --popover-foreground: rgb(245, 247, 240);
+  --primary: rgb(244, 197, 66);
+  --primary-foreground: rgb(10, 28, 18);
   --secondary: rgba(255, 255, 255, 0.05);
-  --secondary-foreground: rgb(248, 250, 252);
+  --secondary-foreground: rgb(245, 247, 240);
   --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: rgb(148, 163, 184);
-  --accent: rgb(249, 115, 22);
-  --accent-foreground: rgb(255, 255, 255);
+  --muted-foreground: rgb(160, 185, 168);
+  --accent: rgb(34, 137, 80);
+  --accent-foreground: rgb(245, 247, 240);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(244, 197, 66, 0.12);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: rgb(4, 247, 124);
-  --chart-1: rgb(37, 99, 235);
-  --chart-2: rgb(249, 115, 22);
+  --ring: rgb(244, 197, 66);
+  --chart-1: rgb(244, 197, 66);
+  --chart-2: rgb(34, 137, 80);
   --chart-3: rgb(16, 163, 127);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 1rem;
-  --sidebar: rgba(255, 255, 255, 0.05);
-  --sidebar-foreground: rgb(248, 250, 252);
-  --sidebar-primary: rgb(4, 247, 124);
-  --sidebar-primary-foreground: rgb(11, 11, 16);
-  --sidebar-accent: rgba(255, 255, 255, 0.05);
-  --sidebar-accent-foreground: rgb(248, 250, 252);
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgb(4, 247, 124);
+  --sidebar: rgba(4, 18, 12, 0.82);
+  --sidebar-foreground: rgb(213, 226, 216);
+  --sidebar-primary: rgb(244, 197, 66);
+  --sidebar-primary-foreground: rgb(10, 28, 18);
+  --sidebar-accent: rgba(244, 197, 66, 0.1);
+  --sidebar-accent-foreground: rgb(245, 247, 240);
+  --sidebar-border: rgba(244, 197, 66, 0.14);
+  --sidebar-ring: rgb(244, 197, 66);
 }
 
 .dark {
@@ -159,7 +160,7 @@
 
   .lbb-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(4, 247, 124, 0.72) rgba(255, 255, 255, 0.06);
+    scrollbar-color: rgba(244, 197, 66, 0.72) rgba(255, 255, 255, 0.06);
   }
 
   .lbb-scrollbar::-webkit-scrollbar {
@@ -174,12 +175,12 @@
 
   .lbb-scrollbar::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    border: 2px solid rgba(11, 11, 16, 0.92);
-    background: linear-gradient(180deg, #04f77c, #fbbf24);
+    border: 2px solid rgba(6, 24, 16, 0.92);
+    background: linear-gradient(180deg, #f4c542, #d99b2b);
   }
 
   .lbb-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #30e17b, #f59e0b);
+    background: linear-gradient(180deg, #fcd34d, #e0a829);
   }
 
   .animate-banner-drift {
@@ -225,19 +226,81 @@
 
   .lbb-page-shell {
     background:
-      radial-gradient(70% 52% at 82% 12%, rgba(4, 247, 124, 0.2), rgba(0, 0, 0, 0) 62%),
-      radial-gradient(52% 42% at 12% 38%, rgba(249, 115, 22, 0.12), rgba(0, 0, 0, 0) 58%),
-      linear-gradient(120deg, rgba(48, 225, 123, 0.05), rgba(0, 0, 0, 0) 35%, rgba(245, 158, 11, 0.07)),
-      rgb(11, 11, 16);
+      radial-gradient(70% 52% at 82% 12%, rgba(34, 137, 80, 0.26), rgba(0, 0, 0, 0) 62%),
+      radial-gradient(52% 42% at 12% 38%, rgba(244, 197, 66, 0.1), rgba(0, 0, 0, 0) 58%),
+      linear-gradient(120deg, rgba(16, 78, 48, 0.4), rgba(0, 0, 0, 0) 35%, rgba(244, 197, 66, 0.06)),
+      rgb(6, 24, 16);
     background-attachment: fixed;
   }
 
-  .lbb-premium-panel {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Dashboard shell - deep green casino felt */
+  .lbb-dashboard-shell {
     background:
-      radial-gradient(28rem 18rem at 82% 10%, rgba(4, 247, 124, 0.11), transparent 70%),
-      radial-gradient(24rem 18rem at 8% 90%, rgba(245, 158, 11, 0.12), transparent 72%),
-      rgba(8, 8, 10, 0.74);
+      radial-gradient(60% 45% at 85% 0%, rgba(34, 137, 80, 0.22), rgba(0, 0, 0, 0) 60%),
+      radial-gradient(50% 40% at 0% 100%, rgba(16, 78, 48, 0.35), rgba(0, 0, 0, 0) 60%),
+      linear-gradient(160deg, rgb(7, 30, 19), rgb(5, 20, 13));
+    background-attachment: fixed;
+  }
+
+  /* Generic panel used across the dashboard (sidebar, top bar, cards) */
+  .lbb-panel {
+    border: 1px solid rgba(244, 197, 66, 0.16);
+    background:
+      linear-gradient(165deg, rgba(13, 46, 29, 0.92), rgba(7, 28, 18, 0.92));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Mesa cards with accent-tinted glow (set --mesa-accent inline) */
+  .lbb-mesa-card {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--mesa-accent, #f4c542) 38%, transparent);
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--mesa-accent, #f4c542) 14%, transparent), rgba(0, 0, 0, 0) 60%),
+      linear-gradient(165deg, rgba(11, 40, 26, 0.96), rgba(6, 24, 16, 0.96));
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .lbb-mesa-card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--mesa-accent, #f4c542) 60%, transparent);
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--mesa-accent, #f4c542) 30%, transparent);
+  }
+
+  .lbb-gold-text {
+    background: linear-gradient(180deg, #fde68a 0%, #f4c542 45%, #d99b2b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lbb-gold-button {
+    background: linear-gradient(180deg, #fcd34d, #f4c542 45%, #e0a829);
+    color: rgb(10, 28, 18);
+    box-shadow: 0 10px 24px rgba(244, 197, 66, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: filter 0.18s ease, transform 0.18s ease;
+  }
+
+  .lbb-gold-button:hover {
+    filter: brightness(1.06);
+  }
+
+  .lbb-gold-button:active {
+    transform: translateY(1px);
+  }
+
+  .lbb-nav-active {
+    background: linear-gradient(180deg, #fcd34d, #f4c542 50%, #e0a829);
+    color: rgb(10, 28, 18);
+    box-shadow: 0 8px 20px rgba(244, 197, 66, 0.3);
+  }
+
+  .lbb-premium-panel {
+    border: 1px solid rgba(244, 197, 66, 0.16);
+    background:
+      radial-gradient(28rem 18rem at 82% 10%, rgba(34, 137, 80, 0.16), transparent 70%),
+      radial-gradient(24rem 18rem at 8% 90%, rgba(244, 197, 66, 0.1), transparent 72%),
+      rgba(7, 28, 18, 0.78);
     box-shadow: 0 26px 90px rgba(0, 0, 0, 0.32);
     backdrop-filter: blur(18px);
   }
@@ -259,24 +322,24 @@
     z-index: 0;
     opacity: 0.85;
     background:
-      radial-gradient(30rem 18rem at 82% 18%, rgba(4, 247, 124, 0.16), transparent 70%),
-      radial-gradient(22rem 18rem at 18% 72%, rgba(249, 115, 22, 0.12), transparent 68%);
+      radial-gradient(30rem 18rem at 82% 18%, rgba(34, 137, 80, 0.22), transparent 70%),
+      radial-gradient(22rem 18rem at 18% 72%, rgba(244, 197, 66, 0.1), transparent 68%);
     animation: lbb-ambient-shift 12s ease-in-out infinite alternate;
   }
 
   .lbb-hero-panel {
-    border: 1px solid rgba(4, 247, 124, 0.28);
+    border: 1px solid rgba(244, 197, 66, 0.28);
     background:
-      linear-gradient(90deg, rgba(0, 0, 0, 0.86), rgba(11, 11, 16, 0.72) 46%, rgba(4, 247, 124, 0.13)),
-      rgba(26, 26, 26, 0.72);
+      linear-gradient(90deg, rgba(4, 18, 12, 0.9), rgba(7, 30, 19, 0.74) 46%, rgba(34, 137, 80, 0.16)),
+      rgba(11, 40, 26, 0.72);
     box-shadow: rgba(0, 0, 0, 0.32) 0 0 8px 0;
   }
 
   .lbb-compact-card {
     min-height: 10rem;
     border-radius: 0.75rem;
-    border: 1px solid rgba(4, 247, 124, 0.22);
-    background: rgba(26, 26, 26, 0.74);
+    border: 1px solid rgba(244, 197, 66, 0.22);
+    background: rgba(11, 40, 26, 0.74);
     box-shadow: rgba(0, 0, 0, 0.24) 0 0 8px 0;
   }
 
