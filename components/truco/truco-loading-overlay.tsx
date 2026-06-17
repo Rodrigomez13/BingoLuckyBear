@@ -25,7 +25,7 @@ export function TrucoLoadingOverlay({ show, message = 'Preparando la mesa…' }:
         <div className="absolute inset-0 -z-10 animate-ping rounded-full bg-amber-400/25 blur-2xl" />
         <div className="absolute inset-0 -z-10 rounded-full bg-amber-400/15 blur-3xl" />
         <Image
-          src="/truco/golden-bear-mascot.png"
+          src="/truco/golden-bear-mascot.webp"
           alt=""
           width={150}
           height={150}

@@ -106,7 +106,7 @@ export function LobbyOperativoHome({
 
           <div className="mt-8 rounded-lg border border-amber-300/25 bg-emerald-950/50 p-4">
             <Image
-              src="/truco/golden-bear-mascot.png"
+              src="/truco/golden-bear-mascot.webp"
               alt="Lucky Bear"
               width={220}
               height={220}
@@ -262,7 +262,7 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
     <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4 lg:p-5">
       <div className="grid gap-5 xl:grid-cols-[19rem_minmax(0,1fr)]">
         <div className="flex min-h-64 items-center justify-center rounded-lg bg-[#071d12] p-4">
-          <Image src="/truco/golden-bear-mascot.png" alt="Lucky Bear" width={320} height={320} className="h-56 w-full object-contain xl:h-64" priority />
+          <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={320} height={480} className="h-56 w-full object-contain xl:h-64" priority />
         </div>
         <div className="flex min-w-0 flex-col justify-center py-1">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Lobby general</p>
