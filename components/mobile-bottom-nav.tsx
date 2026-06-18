@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Radio, Ticket, Coins, UserCircle2 } from 'lucide-react'
+import { Home, Radio, Ticket, Coins } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 interface NavItem {
@@ -15,10 +15,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Inicio', icon: Home, match: (p) => p === '/' },
-  { href: '/en-vivo', label: 'En Vivo', icon: Radio, match: (p) => p.startsWith('/en-vivo') },
-  { href: '/participar', label: 'Participar', icon: Ticket, match: (p) => p.startsWith('/participar') },
+  { href: '/en-vivo', label: 'Vivo', icon: Radio, match: (p) => p.startsWith('/en-vivo') },
+  { href: '/participar', label: 'Cartones', icon: Ticket, match: (p) => p.startsWith('/participar') },
   { href: '/truco', label: 'Truco', icon: Coins, match: (p) => p.startsWith('/truco') },
-  { href: '/mi-cuenta', label: 'Cuenta', icon: UserCircle2, match: (p) => p.startsWith('/mi-cuenta') },
 ]
 
 /** Routes where the bottom nav should be hidden (immersive / admin contexts). */
@@ -36,8 +35,8 @@ export function MobileBottomNav() {
       aria-label="Navegación principal"
       className="lbb-bottom-nav fixed inset-x-0 bottom-0 z-50 md:hidden"
     >
-      <div className="mx-auto max-w-md px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="flex items-stretch justify-between gap-1 rounded-2xl border border-white/10 bg-black/80 px-1.5 py-1.5 shadow-2xl shadow-black/50 backdrop-blur-2xl">
+      <div className="mx-auto w-full max-w-[calc(100vw-1rem)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="grid min-w-0 grid-cols-4 gap-0.5 rounded-2xl border border-white/10 bg-black/80 px-1 py-1.5 shadow-2xl shadow-black/50 backdrop-blur-2xl">
           {NAV_ITEMS.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -46,7 +45,7 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                className={`group flex min-w-0 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold uppercase tracking-normal transition-colors ${
                   active ? 'text-zinc-950' : 'text-slate-400 hover:text-amber-200'
                 }`}
               >
@@ -59,7 +58,7 @@ export function MobileBottomNav() {
                 >
                   <Icon className={`h-5 w-5 ${active ? 'scale-110' : ''} transition-transform`} />
                 </span>
-                <span className={active ? 'text-amber-100' : ''}>{item.label}</span>
+                <span className={`max-w-full truncate ${active ? 'text-amber-100' : ''}`}>{item.label}</span>
               </Link>
             )
           })}

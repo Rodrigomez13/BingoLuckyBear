@@ -5,6 +5,8 @@ import {
   Bell,
   CircleDollarSign,
   Clock3,
+  Crown,
+  Filter,
   Gift,
   Home,
   Menu,
@@ -12,6 +14,7 @@ import {
   Radio,
   RefreshCw,
   ShieldCheck,
+  Star,
   ShoppingCart,
   Swords,
   Trophy,
@@ -51,9 +54,11 @@ const navItems = [
   { href: '/', label: 'Inicio', icon: Home, active: true },
   { href: '/truco', label: 'Truco', icon: Swords },
   { href: '/participar', label: 'Bingo', icon: Radio },
-  { href: '/mi-cuenta', label: 'Mis cartones', icon: ShoppingCart },
+  { href: '/mi-cuenta', label: 'Mis mesas', icon: ShoppingCart },
+  { href: '/truco', label: 'Torneos', icon: Trophy },
   { href: '/truco/ranking', label: 'Ranking', icon: Trophy },
   { href: '/mi-cuenta/jugador', label: 'Saldo', icon: CircleDollarSign },
+  { href: '/mi-cuenta/premios', label: 'Bonos', icon: Gift },
 ]
 
 export function LobbyOperativoHome({
@@ -70,9 +75,10 @@ export function LobbyOperativoHome({
   const raffle = activeRaffle ?? nextRaffle
   const raffleName = raffle?.name ?? 'Gran Bingo Lucky Bear'
   const roomCount = rooms.filter((room) => room.status === 'playing').length
+  const activeRows = visibleRooms.length ? visibleRooms : getFallbackRooms()
 
   return (
-    <main className="min-h-screen bg-[#04130c] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#04130c] pb-24 text-white md:pb-0">
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(120deg,#03100a_0%,#052515_46%,#0a170f_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] [background-size:42px_42px]" />
 
@@ -112,15 +118,15 @@ export function LobbyOperativoHome({
               height={220}
               className="mx-auto h-32 w-32 object-contain"
             />
-            <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Jugá y ganá</p>
-            <p className="mt-1 text-sm leading-5 text-emerald-50/75">Entrá a una mesa, comprá cartones o mirá partidas activas.</p>
+            <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Invitá amigos</p>
+            <p className="mt-1 text-sm leading-5 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
             <Link href="/participar" className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200">
               Ver sorteos
             </Link>
           </div>
         </aside>
 
-        <section className="min-w-0 px-3 pb-8 pt-3 sm:px-5 lg:px-7">
+        <section className="min-w-0 overflow-x-hidden px-3 pb-8 pt-3 sm:px-5 lg:px-7">
           <header className="sticky top-3 z-40 mb-5 rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -149,71 +155,19 @@ export function LobbyOperativoHome({
             </div>
           </header>
 
-          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="min-w-0 space-y-5">
               <HeroLobby raffleName={raffleName} jackpotPrize={jackpotPrize} />
+              <HowItWorks />
 
-              <section className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Mesas activas</p>
-                    <h2 className="font-mono text-2xl font-black text-white">Truco en vivo</h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-sm font-bold text-emerald-200">
-                      {roomCount || visibleRooms.length} mesas en juego
-                    </span>
-                    <Link href="/truco" className="flex h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 hover:bg-amber-300/10">
-                      <RefreshCw className="h-4 w-4" />
-                      Ver lobby
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-                  {(visibleRooms.length ? visibleRooms : getFallbackRooms()).map((room, index) => (
-                    <RoomCard key={room.roomCode} room={room} tone={index} />
-                  ))}
-                </div>
-              </section>
-
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                <div className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="font-mono text-xl font-black text-amber-200">Pendientes de rival</h2>
-                    <span className="rounded-full bg-amber-300 px-2 py-1 text-xs font-black text-zinc-950">3</span>
-                  </div>
-                  <div className="space-y-2">
-                    {['Mesa amistosa', 'Mesa familiar', 'Mesa divertida'].map((name, index) => (
-                      <div key={name} className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.035] p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
-                        <div>
-                          <p className="font-bold text-white">{name}</p>
-                          <p className="text-sm text-emerald-50/60">Esperando rival para empezar</p>
-                        </div>
-                        <p className="font-mono text-lg font-black text-lime-300">{formatAccountBalance([50000, 80000, 100000][index])}</p>
-                        <Link href="/truco" className="flex h-10 items-center justify-center rounded-md bg-amber-300 px-4 text-sm font-black text-zinc-950 hover:bg-amber-200">
-                          Invitar
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Link href="/truco" className="relative overflow-hidden rounded-lg border border-amber-300/20 bg-[#071d12] p-4">
-                  <Image src="/truco/preview-lobby-home.webp" alt="Cartas Lucky Bear" width={320} height={190} className="mx-auto h-36 w-full object-contain opacity-80" />
-                  <p className="mt-4 font-mono text-2xl font-black text-amber-200">Apostá desde afuera</p>
-                  <p className="mt-1 text-sm leading-5 text-emerald-50/70">Elegí tu favorito durante la ventana inicial y jugá contra la casa.</p>
-                  <span className="mt-4 inline-flex h-10 items-center rounded-md border border-lime-300/40 px-4 text-sm font-black uppercase text-lime-200">
-                    Ver mesas
-                  </span>
-                </Link>
-              </section>
+              <ActiveTablesPanel rooms={activeRows} roomCount={roomCount || activeRows.length} />
+              <TrustStrip />
             </div>
 
-            <aside className="grid gap-4 md:grid-cols-3 2xl:block 2xl:space-y-4">
+            <aside className="grid gap-4 md:grid-cols-3 xl:block xl:space-y-4">
+              <TournamentsPanel />
               <QuickPanel raffle={raffle} jackpotPrize={jackpotPrize} />
               <WinnersPanel />
-              <TrustPanel />
             </aside>
           </div>
         </section>
@@ -259,25 +213,27 @@ function TopAction({ href, icon, label, badge }: { href: string; icon: React.Rea
 
 function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPrize?: string | null }) {
   return (
-    <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4 lg:p-5">
-      <div className="grid gap-5 xl:grid-cols-[19rem_minmax(0,1fr)]">
-        <div className="flex min-h-64 items-center justify-center rounded-lg bg-[#071d12] p-4">
-          <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={320} height={480} className="h-56 w-full object-contain xl:h-64" priority />
+    <section className="overflow-hidden rounded-lg border border-amber-300/15 bg-[radial-gradient(circle_at_12%_18%,rgba(250,204,21,.17),transparent_25%),linear-gradient(135deg,rgba(7,29,18,.94),rgba(2,8,5,.7))] p-4 lg:p-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(17rem,0.86fr)_minmax(0,1fr)] xl:items-center">
+        <div className="relative flex min-h-64 items-center justify-center overflow-hidden rounded-lg border border-amber-300/10 bg-emerald-950/45 p-4">
+          <span className="absolute left-5 top-5 h-3 w-3 rounded-full bg-amber-300 shadow-[0_0_26px_rgba(251,191,36,.8)]" />
+          <span className="absolute bottom-8 right-8 h-2 w-2 rounded-full bg-lime-300 shadow-[0_0_20px_rgba(190,242,100,.75)]" />
+          <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={320} height={480} className="relative z-10 h-56 w-full object-contain drop-shadow-2xl xl:h-72" priority />
         </div>
         <div className="flex min-w-0 flex-col justify-center py-1">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Lobby general</p>
-          <h1 className="mt-2 max-w-4xl font-mono text-3xl font-black leading-tight text-white sm:text-4xl xl:text-5xl 2xl:text-6xl">
-            Jugá, ganá y seguí todo desde un solo lugar.
+          <h1 className="mt-2 max-w-[18rem] break-words font-mono text-[1.8rem] font-black uppercase leading-tight text-white sm:max-w-4xl sm:text-4xl xl:text-5xl">
+            Jugá, ganá y disfrutá
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-emerald-50/75">
-            Mesas de Truco, sorteos de Bingo, saldo y premios disponibles desde tu cuenta Lucky Bear.
+          <p className="mt-3 max-w-[19rem] break-words text-base font-bold leading-7 text-amber-100 sm:max-w-2xl sm:text-lg">
+            Mesas todos los días con premios disponibles desde tu cuenta Lucky Bear.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-4">
               <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Sorteo destacado</p>
               <p className="mt-1 truncate font-mono text-xl font-black text-white">{raffleName}</p>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-4">
               <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Premio principal</p>
               <p className="mt-1 truncate font-mono text-xl font-black text-lime-300">{jackpotPrize ?? 'A confirmar'}</p>
             </div>
@@ -292,6 +248,188 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
           </div>
         </div>
       </div>
+    </section>
+  )
+}
+
+function HowItWorks() {
+  const steps = [
+    { icon: Swords, title: 'Elegí tu juego', text: 'Truco o Bingo' },
+    { icon: UsersRound, title: 'Entrá a una mesa', text: 'o creá la tuya' },
+    { icon: Star, title: 'Jugá y ganá', text: 'premios disponibles' },
+    { icon: CircleDollarSign, title: 'Usá tu saldo', text: 'desde una cuenta' },
+  ]
+
+  return (
+    <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
+      <p className="mb-4 font-mono text-lg font-black uppercase text-amber-200">Cómo funciona</p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map((step, index) => (
+          <div key={step.title} className="relative rounded-lg border border-white/10 bg-white/[0.035] p-4">
+            {index < steps.length - 1 && <span className="absolute -right-2 top-1/2 hidden h-px w-4 bg-amber-300/40 xl:block" />}
+            <step.icon className="mb-3 h-7 w-7 text-amber-300" />
+            <p className="font-black text-amber-100">{step.title}</p>
+            <p className="mt-1 text-sm text-emerald-50/65">{step.text}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; roomCount: number }) {
+  const bingoRows = [
+    { name: 'Bingo Premium', detail: '90 bolas', amount: 500000, action: 'Ver' },
+    { name: 'Bingo Suerte', detail: '75 bolas', amount: 200000, action: 'Ver' },
+  ]
+
+  return (
+    <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Mesas activas</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-mono text-2xl font-black text-white">Lobby en vivo</h2>
+            <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold text-lime-200">
+              <span className="h-2 w-2 rounded-full bg-lime-400" />
+              {roomCount} mesas en juego
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" className="hidden h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 md:flex">
+            Todas
+          </button>
+          <Link href="/truco" className="flex h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 hover:bg-amber-300/10">
+            <Filter className="h-4 w-4" />
+            Filtrar
+          </Link>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-amber-300/15">
+        <div className="hidden grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] border-b border-white/10 bg-emerald-950/45 px-4 py-3 text-xs font-black uppercase tracking-wide text-emerald-50/55 md:grid">
+          <span>Mesa</span>
+          <span>Juego</span>
+          <span>Rival</span>
+          <span>Pozo</span>
+          <span className="text-right">Ver</span>
+        </div>
+        <div className="divide-y divide-white/10">
+          {rooms.map((room, index) => (
+            <ActiveTableRow key={room.roomCode} room={room} index={index} />
+          ))}
+          {bingoRows.map((row, index) => (
+            <div key={row.name} className="grid gap-3 bg-emerald-950/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] md:items-center">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber-300/40 bg-black/35 font-mono font-black text-amber-200">{index ? 25 : 10}</span>
+                <div>
+                  <p className="font-black text-white">{row.name}</p>
+                  <p className="text-xs text-emerald-50/60">{row.detail}</p>
+                </div>
+              </div>
+              <p className="font-bold text-emerald-50/80">Bingo</p>
+              <p className="font-bold text-emerald-50/75">{index ? '56' : '78'} cartones</p>
+              <p className="font-mono font-black text-amber-100">{formatAccountBalance(row.amount)}</p>
+              <Link href="/participar" className="flex h-10 items-center justify-center rounded-md bg-amber-300 px-4 font-black uppercase text-zinc-950 hover:bg-amber-200">
+                {row.action}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Link href="/truco" className="mx-auto mt-4 flex h-11 max-w-xs items-center justify-center rounded-md border border-amber-300/30 text-sm font-black uppercase text-amber-100 hover:bg-amber-300/10">
+        Ver todas las mesas
+      </Link>
+    </section>
+  )
+}
+
+function ActiveTableRow({ room, index }: { room: PublicRoomSummary; index: number }) {
+  const isPlaying = room.status === 'playing'
+  const guest = room.guest?.name ?? 'Buscando rival'
+  const canBet = isPlaying && room.bettingOpen && room.sideBetMaxPoints > 0
+
+  return (
+    <div className="grid gap-3 bg-emerald-950/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] md:items-center">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-300/35 bg-black/35">
+          <BearLogo size={34} />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-black text-white">{room.host.name} vs {guest}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${isPlaying ? 'bg-emerald-400/15 text-emerald-200' : 'bg-amber-300 text-zinc-950'}`}>
+              {isPlaying ? 'Jugando' : 'Disponible'}
+            </span>
+            <span className="text-xs text-emerald-50/55">Mesa {index + 1}</span>
+          </div>
+        </div>
+      </div>
+      <p className="font-bold text-emerald-50/80">Truco</p>
+      <p className="font-bold text-emerald-50/75">A {room.target}</p>
+      <p className="font-mono font-black text-amber-100">{formatAccountBalance(room.prizePoolPoints)}</p>
+      <Link href="/truco" className={`flex h-10 items-center justify-center rounded-md px-4 font-black uppercase ${
+        canBet ? 'bg-amber-300 text-zinc-950 hover:bg-amber-200' : 'border border-amber-300/25 text-amber-100 hover:bg-amber-300/10'
+      }`}>
+        {canBet ? 'Apostar' : 'Ver'}
+      </Link>
+    </div>
+  )
+}
+
+function TournamentsPanel() {
+  const tournaments = [
+    { title: 'Torneo de Truco', subtitle: 'Copa de Oro', prize: 10000000, accent: 'from-amber-500/15 to-amber-950/20' },
+    { title: 'Bingo Millonario', subtitle: 'Bolsa acumulada', prize: 5000000, accent: 'from-fuchsia-500/15 to-fuchsia-950/20' },
+  ]
+
+  return (
+    <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-mono text-lg font-black uppercase text-amber-200">Torneos destacados</h2>
+        <Link href="/truco" className="text-xs font-black text-amber-300">Ver todos</Link>
+      </div>
+      <div className="space-y-3">
+        {tournaments.map((tournament) => (
+          <Link key={tournament.title} href="/truco" className={`block rounded-lg border border-amber-300/20 bg-gradient-to-br ${tournament.accent} p-3 hover:border-amber-300/45`}>
+            <div className="flex items-start gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-300/30 bg-black/25">
+                <Crown className="h-6 w-6 text-amber-300" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase text-amber-300">{tournament.title}</p>
+                <p className="text-sm font-bold text-white">{tournament.subtitle}</p>
+                <p className="mt-1 font-mono text-lg font-black text-amber-100">{formatAccountBalance(tournament.prize)}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function TrustStrip() {
+  const items = [
+    { icon: ShieldCheck, title: 'Juego limpio', text: 'Sistema anti-trampas' },
+    { icon: Bell, title: 'Avisos claros', text: 'Estados en tiempo real' },
+    { icon: Clock3, title: 'Atención rápida', text: 'Soporte disponible' },
+    { icon: UsersRound, title: 'Comunidad', text: 'Mesas y sorteos activos' },
+  ]
+
+  return (
+    <section className="grid gap-3 rounded-lg border border-amber-300/15 bg-black/20 p-4 sm:grid-cols-2 xl:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.title} className="flex items-center gap-3 rounded-lg bg-white/[0.035] p-3">
+          <item.icon className="h-7 w-7 text-amber-300" />
+          <div>
+            <p className="font-black text-amber-100">{item.title}</p>
+            <p className="text-xs text-emerald-50/60">{item.text}</p>
+          </div>
+        </div>
+      ))}
     </section>
   )
 }
