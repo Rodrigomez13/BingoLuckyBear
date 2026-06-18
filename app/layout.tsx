@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import { MobileBottomNav } from '@/components/mobile-bottom-nav'
 import { InstallPrompt } from '@/components/install-prompt'
+import { LbbSoundController } from '@/components/audio/lbb-sound-controller'
 import './globals.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
@@ -50,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${dmSans.variable} ${spaceGrotesk.variable} bg-background`}>
       <body className="font-sans antialiased pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <LbbSoundController />
         {children}
         <FloatingWhatsApp />
         <MobileBottomNav />
