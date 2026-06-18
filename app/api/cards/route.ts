@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, isSupabaseConfigured } from '@/lib/supabase/server'
 import { generateBingoNumbers } from '@/lib/bingo'
 import { nanoid } from 'nanoid'
 
@@ -23,6 +23,13 @@ function normalizeQuantity(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json(
+      { error: 'El sistema de compra no esta disponible en este momento. Intenta mas tarde.' },
+      { status: 503 },
+    )
+  }
+
   try {
     const body = await request.json()
     const { 

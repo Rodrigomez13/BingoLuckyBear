@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, isSupabaseConfigured } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,25 +39,32 @@ interface WinnerRecord {
 }
 
 async function getWinnerRecords() {
-  const supabase = await createServiceClient()
+  const emptyResult = { raffles: [] as Raffle[], winners: [] as WinnerRecord[] }
 
-  const { data: raffles } = await supabase
-    .from('raffles')
-    .select('*')
-    .eq('draw_status', 'finished')
-    .order('created_at', { ascending: false })
-
-  if (!raffles?.length) {
-    return { raffles: [] as Raffle[], winners: [] as WinnerRecord[] }
+  if (!isSupabaseConfigured()) {
+    return emptyResult
   }
 
-  const raffleIds = raffles.map((raffle) => raffle.id)
-  const { data: cards } = await supabase
-    .from('bingo_cards')
-    .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
-    .in('raffle_id', raffleIds)
+  try {
+    const supabase = await createServiceClient()
 
-  const winners = (raffles as Raffle[]).flatMap((raffle) => {
+    const { data: raffles } = await supabase
+      .from('raffles')
+      .select('*')
+      .eq('draw_status', 'finished')
+      .order('created_at', { ascending: false })
+
+    if (!raffles?.length) {
+      return emptyResult
+    }
+
+    const raffleIds = raffles.map((raffle) => raffle.id)
+    const { data: cards } = await supabase
+      .from('bingo_cards')
+      .select('id, card_number, full_name, created_at, bingo_numbers, raffle_id')
+      .in('raffle_id', raffleIds)
+
+    const winners = (raffles as Raffle[]).flatMap((raffle) => {
     const raffleCards = (cards ?? []).filter((card) => card.raffle_id === raffle.id)
     const awards = getPrizeAwards(raffleCards, raffle.drawn_numbers ?? [], getPrizeAmounts(raffle.prize, raffle.additional_prizes))
 
@@ -75,9 +82,13 @@ async function getWinnerRecords() {
         }
       })
     )
-  })
+    })
 
-  return { raffles: raffles as Raffle[], winners }
+    return { raffles: raffles as Raffle[], winners }
+  } catch (error) {
+    console.error('Error fetching winner records:', error)
+    return emptyResult
+  }
 }
 
 export default async function WinnersPage() {

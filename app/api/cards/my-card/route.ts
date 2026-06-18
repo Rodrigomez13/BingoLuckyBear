@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, isSupabaseConfigured } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ card: null, cards: [] })
+  }
+
   try {
     const sessionToken = request.nextUrl.searchParams.get('session_token')
     const raffleId = request.nextUrl.searchParams.get('raffle_id')

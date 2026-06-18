@@ -1,6 +1,18 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+/**
+ * Returns true only when the public Supabase credentials are present.
+ * Use this to short-circuit data fetching when the backend is not yet
+ * configured so the app degrades gracefully instead of throwing.
+ */
+export function isSupabaseConfigured() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  )
+}
+
 export async function createClient() {
   const cookieStore = await cookies()
 
