@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 import { createServiceClient } from '@/lib/supabase/server'
+import { isSupabaseServiceConfigured } from '@/lib/supabase/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,10 @@ interface WinnerRecord {
 }
 
 async function getWinnerRecords() {
+  if (!isSupabaseServiceConfigured()) {
+    return { raffles: [] as Raffle[], winners: [] as WinnerRecord[] }
+  }
+
   const supabase = await createServiceClient()
 
   const { data: raffles } = await supabase

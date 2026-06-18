@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { isSupabaseServiceConfigured } from '@/lib/supabase/config'
 import { getCurrentPrizeTarget, getPrizeAmounts, getPrizeAwards } from '@/lib/bingo'
 
 export async function GET() {
+  if (!isSupabaseServiceConfigured()) {
+    return NextResponse.json({ raffle: null })
+  }
+
   try {
     const supabase = await createServiceClient()
 
