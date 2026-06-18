@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, ExternalLink, FileText, Landmark, Plus, Save, Search, Ticket, Trash2, Users, WalletCards, XCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, ExternalLink, FileText, Home, Landmark, LogOut, Plus, Save, Search, ShieldCheck, Ticket, Trash2, Users, WalletCards, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -912,36 +912,45 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   }
 
   return (
-    <div className="lbb-page-shell relative min-h-screen text-zinc-100">
+    <div className="lbb-page-shell relative min-h-screen overflow-x-hidden bg-[#04130c] text-zinc-100">
       <div className="lbb-ambient" />
+      <div className="fixed inset-0 -z-10 bg-[linear-gradient(120deg,#03100a_0%,#052515_46%,#0a170f_100%)]" />
+      <div className="fixed inset-0 -z-10 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.55)_1px,transparent_1px)] [background-size:42px_42px]" />
       {/* Header */}
-      <header className="sticky top-3 z-50 px-3 sm:top-5">
-        <div className="mx-auto max-w-[1800px] rounded-2xl border border-white/10 bg-black/72 px-4 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-6 lg:px-8 2xl:px-10">
-          <div className="flex h-16 items-center justify-between">
+      <header className="sticky top-3 z-50 px-3">
+        <div className="mx-auto max-w-[1680px] rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <BearLogo size={40} />
+              <BearLogo size={46} />
               <div className="min-w-0">
-                <span className="block truncate font-mono text-base font-bold tracking-tight text-white">
-                  Panel Admin
-                </span>
-                <p className="max-w-[160px] truncate text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300 sm:max-w-none">{user.email}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">LBB Admin</p>
+                <span className="block truncate font-mono text-xl font-black tracking-tight text-white">Panel operativo</span>
+                <p className="max-w-[190px] truncate text-xs text-emerald-50/60 sm:max-w-none">{user.email}</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="shrink-0 rounded-full border-white/15 bg-transparent text-amber-200 hover:border-amber-300 hover:bg-amber-300/10"
-            >
-              <span className="hidden sm:inline">Cerrar Sesion</span>
-              <span className="sm:hidden">Salir</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" className="hidden border-emerald-300/20 bg-white/[0.03] text-emerald-100 hover:bg-emerald-300/10 sm:inline-flex">
+                <Link href="/">
+                  <Home className="mr-2 h-4 w-4" />
+                  Sitio
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="shrink-0 border-red-300/25 bg-transparent text-red-100 hover:border-red-300/50 hover:bg-red-300/10"
+              >
+                <LogOut className="mr-0 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid max-w-[1800px] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:px-8 2xl:px-10">
-        <aside className="lbb-premium-panel h-fit rounded-[1.35rem] p-3 lg:sticky lg:top-24">
-          <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Panel</p>
+      <main className="relative z-10 mx-auto grid max-w-[1680px] gap-5 px-3 py-6 sm:px-5 lg:grid-cols-[14.5rem_minmax(0,1fr)]">
+        <aside className="h-fit rounded-lg border border-amber-300/15 bg-black/25 p-3 shadow-2xl shadow-black/25 lg:sticky lg:top-24">
+          <p className="px-3 pb-3 text-xs font-black uppercase tracking-[0.18em] text-amber-300">Operación</p>
           <nav className="grid gap-2">
             <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
             <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Compradores" />
@@ -950,7 +959,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
             <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
             <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
             <div className="my-2 border-t border-white/10" />
-            <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">Gestión</p>
+            <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-50/45">Gestión</p>
             <AdminNavLink href="/admin/usuarios" icon={<Users className="h-4 w-4" />} label="Usuarios y roles" />
             <AdminNavLink href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y movimientos" />
           </nav>
@@ -959,6 +968,23 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
         <div className="min-w-0">
         {activeSection === 'overview' && (
         <>
+        <section className="mb-5 rounded-lg border border-amber-300/15 bg-[linear-gradient(135deg,rgba(7,29,18,.92),rgba(0,0,0,.46))] p-5 shadow-2xl shadow-black/20">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-300">Resumen diario</p>
+              <h1 className="mt-2 font-mono text-3xl font-black text-white sm:text-4xl">Control de sorteos, pagos y clientes</h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/65">
+                Revisá comprobantes, gestioná cartones, actualizá sorteos y accedé al módulo de saldos desde un solo lugar.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[28rem]">
+              <AdminStatusPill label="Pagos pendientes" value={String(paymentReviewCounts.pending)} tone={paymentReviewCounts.pending ? 'warning' : 'ok'} />
+              <AdminStatusPill label="OCR fallidos" value={String(paymentReviewCounts.failedOcr)} tone={paymentReviewCounts.failedOcr ? 'danger' : 'ok'} />
+              <AdminStatusPill label="Sorteos" value={String(raffles.length)} tone="neutral" />
+            </div>
+          </div>
+        </section>
+
         <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <AdminMetric
             icon={<Ticket className="h-5 w-5" />}
@@ -2438,20 +2464,44 @@ function AdminMetric({
   detail: string
 }) {
   return (
-    <Card className="rounded-[1.2rem] border-white/10 bg-white/[0.045] text-zinc-100 shadow-xl shadow-black/15">
+    <Card className="rounded-lg border-amber-300/15 bg-black/25 text-zinc-100 shadow-xl shadow-black/15">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-zinc-400">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-white">{value}</p>
-            <p className="mt-1 truncate text-xs text-amber-200">{detail}</p>
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-50/50">{label}</p>
+            <p className="mt-2 truncate font-mono text-2xl font-black text-white">{value}</p>
+            <p className="mt-1 truncate text-xs font-semibold text-amber-200">{detail}</p>
           </div>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-amber-400/15 text-amber-200">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-amber-300/20 bg-amber-300/10 text-amber-200">
             {icon}
           </div>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function AdminStatusPill({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: 'ok' | 'warning' | 'danger' | 'neutral'
+}) {
+  const toneClass = {
+    ok: 'border-emerald-300/25 bg-emerald-400/10 text-emerald-100',
+    warning: 'border-amber-300/30 bg-amber-300/12 text-amber-100',
+    danger: 'border-red-300/30 bg-red-400/10 text-red-100',
+    neutral: 'border-white/10 bg-white/[0.04] text-white',
+  }[tone]
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${toneClass}`}>
+      <p className="text-[10px] font-black uppercase tracking-wide opacity-70">{label}</p>
+      <p className="mt-1 font-mono text-2xl font-black">{value}</p>
+    </div>
   )
 }
 
@@ -2473,7 +2523,7 @@ function AdminNavButton({
       className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition ${
         active
           ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/25'
-          : 'text-zinc-300 hover:bg-white/[0.06] hover:text-white'
+          : 'text-emerald-50/72 hover:bg-white/[0.06] hover:text-white'
       }`}
     >
       {icon}
@@ -2486,7 +2536,7 @@ function AdminNavLink({ href, icon, label }: { href: string; icon: ReactNode; la
   return (
     <Link
       href={href}
-      className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+      className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-emerald-50/72 transition hover:bg-white/[0.06] hover:text-white"
     >
       {icon}
       <span>{label}</span>
