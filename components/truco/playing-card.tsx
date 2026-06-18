@@ -39,6 +39,7 @@ export function PlayingCard({
       aria-label={faceDown || !card ? 'Carta boca abajo' : `${card.rank} de ${card.suit}`}
       className={`${SIZE[size]} aspect-[5/7] group relative shrink-0 overflow-visible rounded-md bg-transparent p-0 transition-all ${interactive} ${selectedClass} ${className}`}
       data-eager={eager ? 'true' : undefined}
+      data-lbb-sound={selectable ? 'cardFlip' : undefined}
     >
       <span
         className="block h-full w-full bg-no-repeat drop-shadow-xl"
