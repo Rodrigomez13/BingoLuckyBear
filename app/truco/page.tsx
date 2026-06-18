@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { SiteHeader } from '@/components/site-header'
-import { LbbSoundController } from '@/components/audio/lbb-sound-controller'
 import { RoomLobby } from '@/components/truco/room-lobby'
 import { GameTable } from '@/components/truco/game-table'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
@@ -25,7 +24,6 @@ export default function TrucoPage() {
 
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-emerald-50">
-      <LbbSoundController />
       <div className="lbb-ambient" />
       <SiteHeader kicker="Truco Lucky Bear" activePath="truco" compact />
 
