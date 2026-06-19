@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -19,6 +22,7 @@ import {
   Swords,
   Trophy,
   UsersRound,
+  X,
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
@@ -68,6 +72,7 @@ export function LobbyOperativoHome({
   rooms,
   player,
 }: LobbyOperativoHomeProps) {
+  const [navOpen, setNavOpen] = useState(false)
   const visibleRooms = rooms.slice(0, 4)
   const playerName = player?.alias || 'Jugador'
   const balance = player?.balance ?? 0
@@ -81,51 +86,9 @@ export function LobbyOperativoHome({
     <main className="min-h-screen overflow-x-hidden bg-[#04130c] pb-24 text-white md:pb-0">
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(120deg,#03100a_0%,#052515_46%,#0a170f_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] [background-size:42px_42px]" />
+      <HomeSideMenu open={navOpen} onClose={() => setNavOpen(false)} />
 
-      <div className="mx-auto grid min-h-screen max-w-[1680px] lg:grid-cols-[14.5rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-amber-300/15 bg-black/20 p-4 lg:block">
-          <Link href="/" className="mb-7 flex items-center gap-3">
-            <BearLogo size={66} />
-            <div>
-              <p className="font-mono text-xl font-black uppercase leading-5 text-amber-300">Lucky</p>
-              <p className="font-mono text-xl font-black uppercase leading-5 text-white">Bingo</p>
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
-            </div>
-          </Link>
-
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex h-12 items-center gap-3 rounded-lg px-4 text-sm font-black uppercase tracking-wide transition ${
-                  item.active
-                    ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/30'
-                    : 'text-emerald-50/80 hover:bg-white/[0.06] hover:text-amber-200'
-                }`}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="mt-8 rounded-lg border border-amber-300/25 bg-emerald-950/50 p-4">
-            <Image
-              src="/truco/golden-bear-mascot.webp"
-              alt="Lucky Bear"
-              width={220}
-              height={220}
-              className="mx-auto h-32 w-32 object-contain"
-            />
-            <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Invitá amigos</p>
-            <p className="mt-1 text-sm leading-5 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
-            <Link href="/participar" className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200">
-              Ver sorteos
-            </Link>
-          </div>
-        </aside>
-
+      <div className="mx-auto min-h-screen max-w-[1680px]">
         <section className="min-w-0 overflow-x-hidden px-3 pb-8 pt-3 sm:px-5 lg:px-7">
           <header className="sticky top-3 z-40 mb-5 rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -148,8 +111,14 @@ export function LobbyOperativoHome({
                 <div className="hidden sm:block">
                   <UserMenu />
                 </div>
-                <button type="button" aria-label="Abrir menu" className="flex h-12 w-12 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-amber-100 lg:hidden">
+                <button
+                  type="button"
+                  aria-label="Abrir menu"
+                  onClick={() => setNavOpen(true)}
+                  className="flex h-12 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-amber-100 transition hover:border-amber-300/30 hover:bg-white/[0.07]"
+                >
                   <Menu className="h-6 w-6" />
+                  <span className="hidden text-sm font-black uppercase tracking-wide sm:inline">Menú</span>
                 </button>
               </div>
             </div>
@@ -173,6 +142,83 @@ export function LobbyOperativoHome({
         </section>
       </div>
     </main>
+  )
+}
+
+function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <>
+      {open && (
+        <button
+          type="button"
+          aria-label="Cerrar menu"
+          onClick={onClose}
+          className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+        />
+      )}
+      <aside
+        className={`fixed bottom-3 left-3 top-3 z-[80] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-amber-300/20 bg-[#031008]/95 p-4 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 ${
+          open ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'
+        }`}
+        aria-hidden={!open}
+      >
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link href="/" onClick={onClose} className="flex items-center gap-3">
+            <BearLogo size={58} />
+            <div>
+              <p className="font-mono text-lg font-black uppercase leading-5 text-amber-300">Lucky</p>
+              <p className="font-mono text-lg font-black uppercase leading-5 text-white">Bingo</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
+            </div>
+          </Link>
+          <button
+            type="button"
+            aria-label="Cerrar menu"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="space-y-1">
+          {navItems.map((item) => (
+            <Link
+              key={`${item.href}-${item.label}`}
+              href={item.href}
+              onClick={onClose}
+              className={`flex h-12 items-center gap-3 rounded-lg px-4 text-sm font-black uppercase tracking-wide transition ${
+                item.active
+                  ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/30'
+                  : 'text-emerald-50/80 hover:bg-white/[0.06] hover:text-amber-200'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-8 rounded-lg border border-amber-300/25 bg-emerald-950/50 p-4">
+          <Image
+            src="/truco/golden-bear-mascot.webp"
+            alt="Lucky Bear"
+            width={220}
+            height={220}
+            className="mx-auto h-32 w-32 object-contain"
+          />
+          <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Invitá amigos</p>
+          <p className="mt-1 text-sm leading-5 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
+          <Link
+            href="/participar"
+            onClick={onClose}
+            className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200"
+          >
+            Ver sorteos
+          </Link>
+        </div>
+      </aside>
+    </>
   )
 }
 

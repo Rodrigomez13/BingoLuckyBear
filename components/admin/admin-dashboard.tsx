@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, ExternalLink, FileText, Home, Landmark, LogOut, Plus, Save, Search, ShieldCheck, Ticket, Trash2, Users, WalletCards, XCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clock3, ExternalLink, FileText, Home, Landmark, LogOut, Menu, Plus, Save, Search, ShieldCheck, Ticket, Trash2, Users, WalletCards, X, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -112,6 +112,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
   const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>(initialPaymentAccounts)
   const [cards, setCards] = useState<AdminBingoCard[]>(initialCards)
   const [activeSection, setActiveSection] = useState<'overview' | 'clients' | 'sales' | 'paymentReviews' | 'raffles' | 'payments'>('overview')
+  const [adminNavOpen, setAdminNavOpen] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -911,11 +912,57 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
     }
   }
 
+  const openAdminSection = (section: typeof activeSection) => {
+    setActiveSection(section)
+    setAdminNavOpen(false)
+  }
+
   return (
     <div className="lbb-page-shell relative min-h-screen overflow-x-hidden bg-[#04130c] text-zinc-100">
       <div className="lbb-ambient" />
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(120deg,#03100a_0%,#052515_46%,#0a170f_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.55)_1px,transparent_1px)] [background-size:42px_42px]" />
+      {adminNavOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar navegación"
+          onClick={() => setAdminNavOpen(false)}
+          className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+        />
+      )}
+      <aside
+        className={`fixed bottom-3 left-3 top-3 z-[80] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-amber-300/15 bg-[#031008]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 ${
+          adminNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'
+        }`}
+        aria-hidden={!adminNavOpen}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3 px-2">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-300">Operación</p>
+            <p className="text-sm text-emerald-50/55">Panel admin</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Cerrar navegación"
+            onClick={() => setAdminNavOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <nav className="grid gap-2">
+          <AdminNavButton active={activeSection === 'overview'} onClick={() => openAdminSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
+          <AdminNavButton active={activeSection === 'clients'} onClick={() => openAdminSection('clients')} icon={<Users className="h-4 w-4" />} label="Compradores" />
+          <AdminNavButton active={activeSection === 'sales'} onClick={() => openAdminSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
+          <AdminNavButton active={activeSection === 'paymentReviews'} onClick={() => openAdminSection('paymentReviews')} icon={<FileText className="h-4 w-4" />} label="Comprobantes" />
+          <AdminNavButton active={activeSection === 'raffles'} onClick={() => openAdminSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
+          <AdminNavButton active={activeSection === 'payments'} onClick={() => openAdminSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
+          <div className="my-2 border-t border-white/10" />
+          <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-50/45">Gestión</p>
+          <AdminNavLink href="/admin/usuarios" icon={<Users className="h-4 w-4" />} label="Usuarios y roles" />
+          <AdminNavLink href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y movimientos" />
+        </nav>
+      </aside>
       {/* Header */}
       <header className="sticky top-3 z-50 px-3">
         <div className="mx-auto max-w-[1680px] rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
@@ -929,6 +976,15 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAdminNavOpen(true)}
+                className="border-amber-300/20 bg-white/[0.03] text-amber-100 hover:bg-amber-300/10"
+              >
+                <Menu className="mr-0 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Menú</span>
+              </Button>
               <Button asChild variant="outline" className="hidden border-emerald-300/20 bg-white/[0.03] text-emerald-100 hover:bg-emerald-300/10 sm:inline-flex">
                 <Link href="/">
                   <Home className="mr-2 h-4 w-4" />
@@ -948,23 +1004,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid max-w-[1680px] gap-5 px-3 py-6 sm:px-5 lg:grid-cols-[14.5rem_minmax(0,1fr)]">
-        <aside className="h-fit rounded-lg border border-amber-300/15 bg-black/25 p-3 shadow-2xl shadow-black/25 lg:sticky lg:top-24">
-          <p className="px-3 pb-3 text-xs font-black uppercase tracking-[0.18em] text-amber-300">Operación</p>
-          <nav className="grid gap-2">
-            <AdminNavButton active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
-            <AdminNavButton active={activeSection === 'clients'} onClick={() => setActiveSection('clients')} icon={<Users className="h-4 w-4" />} label="Compradores" />
-            <AdminNavButton active={activeSection === 'sales'} onClick={() => setActiveSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
-            <AdminNavButton active={activeSection === 'paymentReviews'} onClick={() => setActiveSection('paymentReviews')} icon={<FileText className="h-4 w-4" />} label="Comprobantes" />
-            <AdminNavButton active={activeSection === 'raffles'} onClick={() => setActiveSection('raffles')} icon={<Ticket className="h-4 w-4" />} label="Sorteos" />
-            <AdminNavButton active={activeSection === 'payments'} onClick={() => setActiveSection('payments')} icon={<Landmark className="h-4 w-4" />} label="Cuentas" />
-            <div className="my-2 border-t border-white/10" />
-            <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-50/45">Gestión</p>
-            <AdminNavLink href="/admin/usuarios" icon={<Users className="h-4 w-4" />} label="Usuarios y roles" />
-            <AdminNavLink href="/admin/saldo" icon={<WalletCards className="h-4 w-4" />} label="Saldos y movimientos" />
-          </nav>
-        </aside>
-
+      <main className="relative z-10 mx-auto max-w-[1680px] px-3 py-6 sm:px-5">
         <div className="min-w-0">
         {activeSection === 'overview' && (
         <>
