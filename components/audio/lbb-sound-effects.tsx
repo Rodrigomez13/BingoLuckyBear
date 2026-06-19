@@ -23,16 +23,27 @@ function isDisabledElement(element: Element | null) {
 
 export function LbbSoundEffects() {
   const cacheRef = useRef<Map<string, HTMLAudioElement>>(new Map())
+  const voiceVariantRef = useRef<number | null>(null)
 
   const play = useCallback((sound: string) => {
     const definition = resolveLbbSound(sound)
     if (!definition) return
 
-    let audio = cacheRef.current.get(definition.src)
+    if (voiceVariantRef.current === null) {
+      const storedVoice = window.sessionStorage.getItem('lbb-truco-voice')
+      voiceVariantRef.current = storedVoice === 'female' ? 1 : storedVoice === 'male' ? 0 : Math.random() < 0.5 ? 0 : 1
+      window.sessionStorage.setItem('lbb-truco-voice', voiceVariantRef.current === 1 ? 'female' : 'male')
+    }
+
+    const source = typeof definition.src === 'string'
+      ? definition.src
+      : definition.src[voiceVariantRef.current % definition.src.length]
+
+    let audio = cacheRef.current.get(source)
     if (!audio) {
-      audio = new Audio(definition.src)
+      audio = new Audio(source)
       audio.preload = 'auto'
-      cacheRef.current.set(definition.src, audio)
+      cacheRef.current.set(source, audio)
     }
 
     audio.pause()

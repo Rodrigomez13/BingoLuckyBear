@@ -1,12 +1,20 @@
 export type LbbSoundDefinition = {
-  src: string
+  src: string | readonly string[]
   volume?: number
 }
 
 const TRUCO_EFFECTS = '/audio/lbb/truco/mp3/effects'
 const TRUCO_VOICES = '/audio/lbb/truco/mp3/voices'
+const RECORDED_TRUCO_VOICES = `${TRUCO_VOICES}/recorded`
 const BINGO_EFFECTS = '/audio/lbb/bingo/mp3/effects'
 const BINGO_VOICES = '/audio/lbb/bingo/mp3/voices'
+
+function recordedTrucoVoice(name: string, femaleExtension = 'mp3') {
+  return [
+    `${RECORDED_TRUCO_VOICES}/male/${name}.mp3`,
+    `${RECORDED_TRUCO_VOICES}/female/${name}.${femaleExtension}`,
+  ] as const
+}
 
 export const LBB_SOUNDS: Record<string, LbbSoundDefinition> = {
   'ui.click': { src: `${TRUCO_EFFECTS}/click_madera_boton.mp3`, volume: 0.36 },
@@ -41,17 +49,19 @@ export const LBB_SOUNDS: Record<string, LbbSoundDefinition> = {
   'truco.match-win': { src: `${TRUCO_EFFECTS}/partido_ganado.mp3`, volume: 0.56 },
   'truco.invalid': { src: `${TRUCO_EFFECTS}/movimiento_invalido.mp3`, volume: 0.42 },
 
-  'truco.truco': { src: `${TRUCO_VOICES}/truco.mp3`, volume: 0.72 },
-  'truco.retruco': { src: `${TRUCO_VOICES}/retruco.mp3`, volume: 0.72 },
-  'truco.vale-cuatro': { src: `${TRUCO_VOICES}/vale_cuatro.mp3`, volume: 0.72 },
-  'truco.envido': { src: `${TRUCO_VOICES}/envido.mp3`, volume: 0.72 },
-  'truco.real-envido': { src: `${TRUCO_VOICES}/real_envido.mp3`, volume: 0.72 },
-  'truco.falta-envido': { src: `${TRUCO_VOICES}/falta_envido.mp3`, volume: 0.72 },
-  'truco.flor': { src: `${TRUCO_VOICES}/flor.mp3`, volume: 0.72 },
-  'truco.contra-flor': { src: `${TRUCO_VOICES}/contra_flor.mp3`, volume: 0.72 },
-  'truco.quiero': { src: `${TRUCO_VOICES}/quiero.mp3`, volume: 0.72 },
-  'truco.no-quiero': { src: `${TRUCO_VOICES}/no_quiero.mp3`, volume: 0.72 },
-  'truco.mazo': { src: `${TRUCO_VOICES}/me_voy_al_mazo.mp3`, volume: 0.72 },
+  'truco.truco': { src: recordedTrucoVoice('truco', 'm4a'), volume: 0.82 },
+  'truco.retruco': { src: recordedTrucoVoice('retruco'), volume: 0.82 },
+  'truco.vale-cuatro': { src: recordedTrucoVoice('vale_cuatro'), volume: 0.82 },
+  'truco.envido': { src: recordedTrucoVoice('envido'), volume: 0.82 },
+  'truco.real-envido': { src: recordedTrucoVoice('real_envido'), volume: 0.82 },
+  'truco.falta-envido': { src: recordedTrucoVoice('falta_envido'), volume: 0.82 },
+  'truco.flor': { src: recordedTrucoVoice('flor'), volume: 0.82 },
+  'truco.contra-flor': { src: recordedTrucoVoice('contra_flor'), volume: 0.82 },
+  'truco.contra-flor-al-resto': { src: recordedTrucoVoice('contra_flor_al_resto'), volume: 0.82 },
+  'truco.quiero': { src: recordedTrucoVoice('quiero'), volume: 0.82 },
+  'truco.no-quiero': { src: recordedTrucoVoice('no_quiero'), volume: 0.82 },
+  'truco.mazo': { src: recordedTrucoVoice('me_voy_al_mazo'), volume: 0.82 },
+  'truco.son-buenas': { src: recordedTrucoVoice('son_buenas'), volume: 0.82 },
   'truco.new-hand': { src: `${TRUCO_VOICES}/nueva_mano.mp3`, volume: 0.64 },
   'truco.cards-ready': { src: `${TRUCO_VOICES}/cartas_repartidas.mp3`, volume: 0.64 },
   'truco.waiting': { src: `${TRUCO_VOICES}/esperando_rival.mp3`, volume: 0.6 },
