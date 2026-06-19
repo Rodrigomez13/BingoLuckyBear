@@ -130,7 +130,7 @@ export function LobbyOperativoHome({
           <header className="sticky top-3 z-40 mb-5 rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="lg:hidden">
+                <div className="hidden sm:block lg:hidden">
                   <BearLogo size={48} />
                 </div>
                 <PlayerBadge player={player} playerName={playerName} xpPercent={xpPercent} />
