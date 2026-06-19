@@ -926,6 +926,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
         <button
           type="button"
           aria-label="Cerrar navegación"
+          data-sound="ui.close"
           onClick={() => setAdminNavOpen(false)}
           className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
         />
@@ -944,6 +945,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
           <button
             type="button"
             aria-label="Cerrar navegación"
+            data-sound="ui.close"
             onClick={() => setAdminNavOpen(false)}
             className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
           >
@@ -971,6 +973,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               <Button
                 type="button"
                 variant="outline"
+                data-sound="ui.open"
                 onClick={() => setAdminNavOpen(true)}
                 className="h-10 shrink-0 border-amber-300/20 bg-white/[0.03] px-3 text-amber-100 hover:bg-amber-300/10"
               >

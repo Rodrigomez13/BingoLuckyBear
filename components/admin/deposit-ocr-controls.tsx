@@ -56,6 +56,7 @@ export function DepositOcrControls({
         size="icon"
         variant="outline"
         disabled={disabled || busy !== null}
+        data-sound="ui.open"
         onClick={() => void run('ocr')}
         title="Leer y validar comprobante con OCR gratuito"
         className="border-sky-400/40 bg-transparent text-sky-200 hover:bg-sky-500/10"
@@ -67,6 +68,7 @@ export function DepositOcrControls({
         size="icon"
         variant="outline"
         disabled={disabled || busy !== null}
+        data-sound="ui.click"
         onClick={() => void run('manual')}
         title="Marcar comprobante como revisado manualmente"
         className="border-zinc-600 bg-transparent text-zinc-300 hover:bg-white/10"

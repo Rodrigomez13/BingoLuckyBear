@@ -36,6 +36,7 @@ export function PlayingCard({
     <Wrapper
       type={selectable ? 'button' : undefined}
       onClick={onClick}
+      data-sound={selectable ? 'truco.play-card' : undefined}
       aria-label={faceDown || !card ? 'Carta boca abajo' : `${card.rank} de ${card.suit}`}
       className={`${SIZE[size]} aspect-[5/7] group relative shrink-0 overflow-visible rounded-md bg-transparent p-0 transition-all ${interactive} ${selectedClass} ${className}`}
       data-eager={eager ? 'true' : undefined}

@@ -44,6 +44,7 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                data-sound={item.href === '/truco' ? 'truco.play' : item.href === '/participar' ? 'bingo.purchase' : 'ui.click'}
                 aria-current={active ? 'page' : undefined}
                 className={`group flex min-w-0 flex-col items-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold uppercase tracking-normal transition-colors ${
                   active ? 'text-zinc-950' : 'text-slate-400 hover:text-amber-200'

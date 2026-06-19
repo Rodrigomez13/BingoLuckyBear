@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import { MobileBottomNav } from '@/components/mobile-bottom-nav'
 import { InstallPrompt } from '@/components/install-prompt'
+import { LbbSoundEffects } from '@/components/audio/lbb-sound-effects'
 import './globals.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
@@ -54,6 +55,7 @@ export default function RootLayout({
         <FloatingWhatsApp />
         <MobileBottomNav />
         <InstallPrompt />
+        <LbbSoundEffects />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

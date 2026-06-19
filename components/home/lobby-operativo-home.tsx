@@ -96,6 +96,7 @@ export function LobbyOperativoHome({
                 <button
                   type="button"
                   aria-label="Abrir menu"
+                  data-sound="ui.open"
                   onClick={() => setNavOpen(true)}
                   className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2.5 text-amber-100 transition hover:border-amber-300/30 hover:bg-white/[0.07] sm:px-3"
                 >
@@ -113,7 +114,7 @@ export function LobbyOperativoHome({
                   <span className="block text-xs font-semibold text-emerald-50/75">Saldo disponible</span>
                   <span className="font-mono text-xl font-black text-amber-100">{formatAccountBalance(balance)}</span>
                 </Link>
-                <Link href="/mi-cuenta/jugador" aria-label="Cargar saldo" className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-300 text-zinc-950 hover:bg-amber-200">
+                <Link href="/mi-cuenta/jugador" aria-label="Cargar saldo" data-sound="wallet.approved" className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-300 text-zinc-950 hover:bg-amber-200">
                   <Plus className="h-5 w-5" />
                 </Link>
                 <TopAction href="/mi-cuenta/premios" icon={<Gift className="h-5 w-5" />} label="Bonos" badge="3" />
@@ -152,6 +153,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
         <button
           type="button"
           aria-label="Cerrar menu"
+          data-sound="ui.close"
           onClick={onClose}
           className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
         />
@@ -174,6 +176,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
           <button
             type="button"
             aria-label="Cerrar menu"
+            data-sound="ui.close"
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
           >
@@ -186,6 +189,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
             <Link
               key={`${item.href}-${item.label}`}
               href={item.href}
+              data-sound="ui.click"
               onClick={onClose}
               className={`flex h-10 items-center gap-3 rounded-md px-3 text-xs font-black uppercase tracking-wide transition ${
                 item.active
@@ -211,6 +215,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
           <p className="mt-1 text-xs leading-4 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
           <Link
             href="/participar"
+            data-sound="bingo.purchase"
             onClick={onClose}
             className="mt-3 flex h-9 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200"
           >
@@ -285,10 +290,10 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <Link href="/truco" className="flex h-12 items-center justify-center rounded-md bg-amber-300 px-6 font-black text-zinc-950 hover:bg-amber-200">
+            <Link href="/truco" data-sound="truco.play" className="flex h-12 items-center justify-center rounded-md bg-amber-300 px-6 font-black text-zinc-950 hover:bg-amber-200">
               Jugar ahora
             </Link>
-            <Link href="/participar" className="flex h-12 items-center justify-center rounded-md border border-white/15 px-6 font-black text-white hover:border-amber-300/40 hover:text-amber-200">
+            <Link href="/participar" data-sound="bingo.purchase" className="flex h-12 items-center justify-center rounded-md border border-white/15 px-6 font-black text-white hover:border-amber-300/40 hover:text-amber-200">
               Comprar cartones
             </Link>
           </div>
@@ -546,7 +551,7 @@ function QuickPanel({ raffle, jackpotPrize }: { raffle: HomeRaffle | null; jackp
         <MiniMetric label="Premio" value={jackpotPrize ?? 'Pronto'} />
         <MiniMetric label="Cartón" value={raffle?.card_price ? formatAccountBalance(raffle.card_price) : 'A definir'} />
       </div>
-      <Link href="/participar" className="mt-4 flex h-12 items-center justify-center rounded-md bg-amber-300 font-black text-zinc-950 hover:bg-amber-200">
+      <Link href="/participar" data-sound="bingo.purchase" className="mt-4 flex h-12 items-center justify-center rounded-md bg-amber-300 font-black text-zinc-950 hover:bg-amber-200">
         Comprar cartones
       </Link>
     </section>

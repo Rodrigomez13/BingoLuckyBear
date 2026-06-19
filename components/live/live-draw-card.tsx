@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { formatArgentinaDateTime } from '@/lib/date'
+import { dispatchLbbSound } from '@/components/audio/lbb-sound-effects'
 
 interface Raffle {
   id: string
@@ -49,6 +50,9 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
   const [remaining, setRemaining] = useState(() =>
     getCountdownRemainingSeconds(initialRaffle?.draw_started_at ?? null, initialRaffle?.countdown_seconds ?? null)
   )
+  const lastNumberRef = useRef<number | null>(null)
+  const awardCountRef = useRef(0)
+  const awardsInitializedRef = useRef(false)
 
   useEffect(() => {
     const loadRaffle = async () => {
@@ -85,6 +89,32 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
   const isRunning = raffle?.draw_status === 'running'
   const isFinished = raffle?.draw_status === 'finished'
   const hasStarted = isRunning || isFinished || drawnNumbers.length > 0
+
+  useEffect(() => {
+    if (!lastNumber) return
+    if (lastNumberRef.current === null) {
+      lastNumberRef.current = lastNumber
+      return
+    }
+    if (lastNumberRef.current === lastNumber) return
+
+    lastNumberRef.current = lastNumber
+    dispatchLbbSound('bingo.ball')
+    window.setTimeout(() => dispatchLbbSound(`bingo.number.${lastNumber}`), 420)
+  }, [lastNumber])
+
+  useEffect(() => {
+    if (!awardsInitializedRef.current) {
+      awardCountRef.current = prizeAwards.length
+      awardsInitializedRef.current = true
+      return
+    }
+    if (prizeAwards.length <= awardCountRef.current) return
+
+    const latestAward = prizeAwards[prizeAwards.length - 1]
+    awardCountRef.current = prizeAwards.length
+    dispatchLbbSound(latestAward?.label?.toLowerCase().includes('bingo') ? 'bingo.win' : 'bingo.line')
+  }, [prizeAwards])
 
   if (!raffle) {
     return null

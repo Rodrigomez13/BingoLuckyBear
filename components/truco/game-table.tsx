@@ -44,6 +44,7 @@ import { RulesModal } from './rules-modal'
 import { PlayerMatchPreview } from './player-match-preview'
 import { GameHistoryPanel } from './game-history-panel'
 import { normalizeTrucoRules, type TrucoRules, type TrucoScoreStyle } from '@/lib/truco/rules'
+import { dispatchLbbSound } from '@/components/audio/lbb-sound-effects'
 
 type GameMode = 'bot' | 'online'
 type OnlineStatus = 'idle' | 'syncing' | 'waiting' | 'connected' | 'offline'
@@ -84,6 +85,7 @@ export function GameTable({
   const spriteWarmedRef = useRef(false)
   const lastVersionRef = useRef<number | null>(null)
   const timeoutFiredVersionRef = useRef<number | null>(null)
+  const turnSoundRef = useRef<string | null>(null)
 
   const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
@@ -105,6 +107,17 @@ export function GameTable({
   const localIsActive = activePlayer === actor
   const turnDeadline = (state.turnStartedAt ?? 0) + TURN_TIME_LIMIT_MS
   const secondsLeft = timerActive ? Math.max(0, Math.ceil((turnDeadline - now) / 1000)) : null
+
+  useEffect(() => {
+    if (state.phase !== 'playing') return
+    const token = `${activePlayer}-${state.turnStartedAt ?? state.played.length}-${state.envidoPending ? 'envido' : ''}-${state.trucoPending ? 'truco' : ''}`
+    if (turnSoundRef.current === token) return
+    turnSoundRef.current = token
+
+    if (activePlayer === actor && !state.envidoPending && !state.trucoPending && !actionBusy) {
+      dispatchLbbSound('truco.turn')
+    }
+  }, [actionBusy, activePlayer, actor, state.envidoPending, state.phase, state.played.length, state.trucoPending, state.turnStartedAt])
 
   const loadBalance = useCallback(async () => {
     try {
