@@ -93,6 +93,15 @@ export function LobbyOperativoHome({
           <header className="sticky top-3 z-40 mb-5 rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Abrir menu"
+                  onClick={() => setNavOpen(true)}
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2.5 text-amber-100 transition hover:border-amber-300/30 hover:bg-white/[0.07] sm:px-3"
+                >
+                  <Menu className="h-5 w-5" />
+                  <span className="hidden text-xs font-black uppercase tracking-wide sm:inline">Menú</span>
+                </button>
                 <div className="hidden sm:block lg:hidden">
                   <BearLogo size={48} />
                 </div>
@@ -100,26 +109,17 @@ export function LobbyOperativoHome({
               </div>
 
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                <Link href="/mi-cuenta/jugador" className="hidden min-w-[13rem] rounded-lg border border-amber-300/20 bg-white/[0.04] px-4 py-2 sm:block">
+                <Link href="/mi-cuenta/jugador" className="hidden min-w-[12rem] rounded-lg border border-amber-300/20 bg-white/[0.04] px-3 py-1.5 sm:block">
                   <span className="block text-xs font-semibold text-emerald-50/75">Saldo disponible</span>
-                  <span className="font-mono text-2xl font-black text-amber-100">{formatAccountBalance(balance)}</span>
+                  <span className="font-mono text-xl font-black text-amber-100">{formatAccountBalance(balance)}</span>
                 </Link>
-                <Link href="/mi-cuenta/jugador" aria-label="Cargar saldo" className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-300 text-zinc-950 hover:bg-amber-200">
-                  <Plus className="h-6 w-6" />
+                <Link href="/mi-cuenta/jugador" aria-label="Cargar saldo" className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-300 text-zinc-950 hover:bg-amber-200">
+                  <Plus className="h-5 w-5" />
                 </Link>
-                <TopAction href="/mi-cuenta/premios" icon={<Gift className="h-6 w-6" />} label="Bonos" badge="3" />
+                <TopAction href="/mi-cuenta/premios" icon={<Gift className="h-5 w-5" />} label="Bonos" badge="3" />
                 <div className="hidden sm:block">
                   <UserMenu />
                 </div>
-                <button
-                  type="button"
-                  aria-label="Abrir menu"
-                  onClick={() => setNavOpen(true)}
-                  className="flex h-12 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-amber-100 transition hover:border-amber-300/30 hover:bg-white/[0.07]"
-                >
-                  <Menu className="h-6 w-6" />
-                  <span className="hidden text-sm font-black uppercase tracking-wide sm:inline">Menú</span>
-                </button>
               </div>
             </div>
           </header>
@@ -157,17 +157,17 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
         />
       )}
       <aside
-        className={`fixed bottom-3 left-3 top-3 z-[80] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-amber-300/20 bg-[#031008]/95 p-4 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 ${
+        className={`fixed bottom-2 left-2 top-2 z-[80] w-[min(18.5rem,calc(100vw-1rem))] overflow-hidden rounded-lg border border-amber-300/20 bg-[#031008]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 sm:left-3 sm:top-3 sm:bottom-3 ${
           open ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'
         }`}
         aria-hidden={!open}
       >
-        <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <Link href="/" onClick={onClose} className="flex items-center gap-3">
-            <BearLogo size={58} />
+            <BearLogo size={50} />
             <div>
-              <p className="font-mono text-lg font-black uppercase leading-5 text-amber-300">Lucky</p>
-              <p className="font-mono text-lg font-black uppercase leading-5 text-white">Bingo</p>
+              <p className="font-mono text-base font-black uppercase leading-4 text-amber-300">Lucky</p>
+              <p className="font-mono text-base font-black uppercase leading-4 text-white">Bingo</p>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
             </div>
           </Link>
@@ -175,44 +175,44 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
             type="button"
             aria-label="Cerrar menu"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-amber-100 hover:bg-white/[0.07]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-0.5">
           {navItems.map((item) => (
             <Link
               key={`${item.href}-${item.label}`}
               href={item.href}
               onClick={onClose}
-              className={`flex h-12 items-center gap-3 rounded-lg px-4 text-sm font-black uppercase tracking-wide transition ${
+              className={`flex h-10 items-center gap-3 rounded-md px-3 text-xs font-black uppercase tracking-wide transition ${
                 item.active
                   ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/30'
                   : 'text-emerald-50/80 hover:bg-white/[0.06] hover:text-amber-200'
               }`}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-4 w-4" />
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="mt-8 rounded-lg border border-amber-300/25 bg-emerald-950/50 p-4">
+        <div className="mt-4 rounded-lg border border-amber-300/25 bg-emerald-950/50 p-3">
           <Image
             src="/truco/golden-bear-mascot.webp"
             alt="Lucky Bear"
             width={220}
             height={220}
-            className="mx-auto h-32 w-32 object-contain"
+            className="mx-auto h-24 w-24 object-contain"
           />
-          <p className="mt-3 font-mono text-xl font-black uppercase text-amber-200">Invitá amigos</p>
-          <p className="mt-1 text-sm leading-5 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
+          <p className="mt-2 font-mono text-lg font-black uppercase text-amber-200">Invitá amigos</p>
+          <p className="mt-1 text-xs leading-4 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
           <Link
             href="/participar"
             onClick={onClose}
-            className="mt-4 flex h-11 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200"
+            className="mt-3 flex h-9 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200"
           >
             Ver sorteos
           </Link>
@@ -249,7 +249,7 @@ function PlayerBadge({ player, playerName, xpPercent }: { player: PlayerContext 
 
 function TopAction({ href, icon, label, badge }: { href: string; icon: React.ReactNode; label: string; badge?: string }) {
   return (
-    <Link href={href} className="relative hidden h-14 min-w-16 flex-col items-center justify-center rounded-lg border border-amber-300/15 bg-white/[0.04] px-3 text-amber-100 hover:bg-white/[0.07] md:flex">
+    <Link href={href} className="relative hidden h-12 min-w-14 flex-col items-center justify-center rounded-md border border-amber-300/15 bg-white/[0.04] px-2.5 text-amber-100 hover:bg-white/[0.07] md:flex">
       {badge && <span className="absolute -right-1 -top-1 rounded-full bg-amber-300 px-1.5 py-0.5 text-xs font-black text-zinc-950">{badge}</span>}
       {icon}
       <span className="mt-1 text-[10px] font-black uppercase">{label}</span>

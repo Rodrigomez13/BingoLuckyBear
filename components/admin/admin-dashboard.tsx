@@ -931,7 +931,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
         />
       )}
       <aside
-        className={`fixed bottom-3 left-3 top-3 z-[80] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-amber-300/15 bg-[#031008]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 ${
+        className={`fixed bottom-2 left-2 top-2 z-[80] w-[min(18.5rem,calc(100vw-1rem))] overflow-hidden rounded-lg border border-amber-300/15 bg-[#031008]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-2xl transition-transform duration-300 sm:left-3 sm:top-3 sm:bottom-3 ${
           adminNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]'
         }`}
         aria-hidden={!adminNavOpen}
@@ -950,7 +950,7 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="grid gap-2">
+        <nav className="grid gap-1">
           <AdminNavButton active={activeSection === 'overview'} onClick={() => openAdminSection('overview')} icon={<BarChart3 className="h-4 w-4" />} label="Resumen" />
           <AdminNavButton active={activeSection === 'clients'} onClick={() => openAdminSection('clients')} icon={<Users className="h-4 w-4" />} label="Compradores" />
           <AdminNavButton active={activeSection === 'sales'} onClick={() => openAdminSection('sales')} icon={<WalletCards className="h-4 w-4" />} label="Ventas" />
@@ -968,6 +968,15 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
         <div className="mx-auto max-w-[1680px] rounded-lg border border-amber-300/15 bg-[#031008]/88 px-3 py-3 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAdminNavOpen(true)}
+                className="h-10 shrink-0 border-amber-300/20 bg-white/[0.03] px-3 text-amber-100 hover:bg-amber-300/10"
+              >
+                <Menu className="mr-0 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Menú</span>
+              </Button>
               <BearLogo size={46} />
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">LBB Admin</p>
@@ -976,15 +985,6 @@ export function AdminDashboard({ user, initialRaffles, initialPaymentAccounts, i
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAdminNavOpen(true)}
-                className="border-amber-300/20 bg-white/[0.03] text-amber-100 hover:bg-amber-300/10"
-              >
-                <Menu className="mr-0 h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Menú</span>
-              </Button>
               <Button asChild variant="outline" className="hidden border-emerald-300/20 bg-white/[0.03] text-emerald-100 hover:bg-emerald-300/10 sm:inline-flex">
                 <Link href="/">
                   <Home className="mr-2 h-4 w-4" />
@@ -2560,7 +2560,7 @@ function AdminNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition ${
+      className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-left text-sm font-semibold transition ${
         active
           ? 'bg-amber-300 text-zinc-950 shadow-lg shadow-amber-950/25'
           : 'text-emerald-50/72 hover:bg-white/[0.06] hover:text-white'
@@ -2576,7 +2576,7 @@ function AdminNavLink({ href, icon, label }: { href: string; icon: ReactNode; la
   return (
     <Link
       href={href}
-      className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-emerald-50/72 transition hover:bg-white/[0.06] hover:text-white"
+      className="flex min-h-10 items-center gap-3 rounded-md px-3 text-left text-sm font-semibold text-emerald-50/72 transition hover:bg-white/[0.06] hover:text-white"
     >
       {icon}
       <span>{label}</span>
