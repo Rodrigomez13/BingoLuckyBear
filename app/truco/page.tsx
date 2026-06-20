@@ -9,6 +9,7 @@ import { RoomLobby } from '@/components/truco/room-lobby'
 import { GameTable } from '@/components/truco/game-table'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
 import { DEFAULT_TRUCO_RULES, type TrucoRules } from '@/lib/truco/rules'
+import { LbbSoundEffects } from '@/components/audio/lbb-sound-effects'
 
 type GameConfig =
   | { active: false; target: 15 | 30; rules: TrucoRules; mode: 'bot' }
@@ -26,7 +27,9 @@ export default function TrucoPage() {
   }, [])
 
   return (
-    <GameShell
+    <>
+      <LbbSoundEffects />
+      <GameShell
       active="truco"
       eyebrow="Lobby de Truco"
       title={game.active ? 'Mesa en vivo' : 'Mesas de Truco'}
@@ -54,7 +57,8 @@ export default function TrucoPage() {
           />
         )}
       </div>
-    </GameShell>
+      </GameShell>
+    </>
   )
 }
 

@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { resolveLbbSound } from '@/lib/audio/lbb-sounds'
 
+export type LbbVoice = 'male' | 'female'
+
 type LbbSoundEventDetail = {
   sound?: string
+  voice?: LbbVoice
 }
 
 declare global {
@@ -25,7 +28,7 @@ export function LbbSoundEffects() {
   const cacheRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   const voiceVariantRef = useRef<number | null>(null)
 
-  const play = useCallback((sound: string) => {
+  const play = useCallback((sound: string, voice?: LbbVoice) => {
     const definition = resolveLbbSound(sound)
     if (!definition) return
 
@@ -35,9 +38,10 @@ export function LbbSoundEffects() {
       window.sessionStorage.setItem('lbb-truco-voice', voiceVariantRef.current === 1 ? 'female' : 'male')
     }
 
+    const requestedVariant = voice === 'female' ? 1 : voice === 'male' ? 0 : voiceVariantRef.current
     const source = typeof definition.src === 'string'
       ? definition.src
-      : definition.src[voiceVariantRef.current % definition.src.length]
+      : definition.src[requestedVariant % definition.src.length]
 
     let audio = cacheRef.current.get(source)
     if (!audio) {
@@ -73,7 +77,7 @@ export function LbbSoundEffects() {
     }
 
     const onSoundEvent = (event: WindowEventMap['lbb:sound']) => {
-      if (event.detail?.sound) play(event.detail.sound)
+      if (event.detail?.sound) play(event.detail.sound, event.detail.voice)
     }
 
     window.addEventListener('pointerdown', onPointerDown, { passive: true })
@@ -88,7 +92,7 @@ export function LbbSoundEffects() {
   return null
 }
 
-export function dispatchLbbSound(sound: string) {
+export function dispatchLbbSound(sound: string, voice?: LbbVoice) {
   if (typeof window === 'undefined') return
-  window.dispatchEvent(new CustomEvent('lbb:sound', { detail: { sound } }))
+  window.dispatchEvent(new CustomEvent('lbb:sound', { detail: { sound, voice } }))
 }

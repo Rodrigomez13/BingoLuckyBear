@@ -86,6 +86,8 @@ export function GameTable({
   const lastVersionRef = useRef<number | null>(null)
   const timeoutFiredVersionRef = useRef<number | null>(null)
   const turnSoundRef = useRef<string | null>(null)
+  const spokenBotLogIdsRef = useRef<Set<string>>(new Set())
+  const botSoundReadyRef = useRef(false)
 
   const isOnline = mode === 'online' && Boolean(roomCode && onlineSecret)
   const actor: Player = isOnline ? onlineRole : 'player'
@@ -119,6 +121,49 @@ export function GameTable({
     }
   }, [actionBusy, activePlayer, actor, state.envidoPending, state.phase, state.played.length, state.trucoPending, state.turnStartedAt])
 
+  useEffect(() => {
+    if (mode !== 'bot') return
+
+    if (!botSoundReadyRef.current) {
+      state.log.forEach((entry) => spokenBotLogIdsRef.current.add(entry.id))
+      botSoundReadyRef.current = true
+      return
+    }
+
+    const newEntries = state.log.filter((entry) => !spokenBotLogIdsRef.current.has(entry.id))
+    newEntries.forEach((entry) => spokenBotLogIdsRef.current.add(entry.id))
+
+    let delay = 0
+    for (const entry of newEntries) {
+      if (entry.by === 'opponent') {
+        const sound = getBotLogSound(entry.text)
+        if (sound) {
+          const timer = setTimeout(() => dispatchLbbSound(sound, 'male'), delay)
+          timers.current.push(timer)
+          delay += sound === 'truco.play-card' ? 250 : 900
+        }
+      }
+
+      if (entry.by === 'system') {
+        const envido = getBotEnvidoResult(entry.text)
+        if (envido) {
+          delay = Math.max(delay, 900)
+          const numberTimer = setTimeout(
+            () => dispatchLbbSound(`truco.envido-value.${envido.value}`, 'male'),
+            delay,
+          )
+          timers.current.push(numberTimer)
+          delay += 1100
+
+          if (envido.playerWon) {
+            const goodTimer = setTimeout(() => dispatchLbbSound('truco.son-buenas', 'male'), delay)
+            timers.current.push(goodTimer)
+            delay += 900
+          }
+        }
+      }
+    }
+  }, [mode, state.log])
   const loadBalance = useCallback(async () => {
     try {
       const response = await fetch('/api/customer/wallet', { cache: 'no-store' })
@@ -588,6 +633,36 @@ function applyLocalAction(state: GameState, actor: Player, action: OnlineAction,
   }
 }
 
+function getBotLogSound(text: string): string | null {
+  const normalized = text.trim().toLocaleLowerCase('es-AR')
+
+  if (normalized.includes('no quiero')) return 'truco.no-quiero'
+  if (normalized === 'quiero') return 'truco.quiero'
+  if (normalized.includes('mazo')) return 'truco.mazo'
+  if (normalized.includes('falta envido')) return 'truco.falta-envido'
+  if (normalized.includes('real envido')) return 'truco.real-envido'
+  if (normalized.includes('envido')) return 'truco.envido'
+  if (normalized.includes('vale cuatro')) return 'truco.vale-cuatro'
+  if (normalized.includes('retruco')) return 'truco.retruco'
+  if (normalized === 'truco') return 'truco.truco'
+  if (normalized === 'flor') return 'truco.flor'
+  if (normalized.startsWith('juega ')) return 'truco.play-card'
+
+  return null
+}
+
+function getBotEnvidoResult(text: string): { value: number; playerWon: boolean } | null {
+  const match = text.match(/Envido: vos (\d+) - oso (\d+)\./i)
+  if (!match) return null
+
+  const value = Number(match[2])
+  if (value < 20 || value > 33) return null
+
+  return {
+    value,
+    playerWon: /Ganaste/i.test(text),
+  }
+}
 function otherPlayer(player: Player): Player {
   return player === 'player' ? 'opponent' : 'player'
 }

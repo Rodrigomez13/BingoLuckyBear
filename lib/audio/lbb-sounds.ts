@@ -72,6 +72,14 @@ export function resolveLbbSound(sound: string): LbbSoundDefinition | null {
   const explicit = LBB_SOUNDS[sound]
   if (explicit) return explicit
 
+  const envidoValueMatch = sound.match(/^truco\.envido-value\.(2\d|3[0-3])$/)
+  if (envidoValueMatch) {
+    return {
+      src: recordedTrucoVoice(envidoValueMatch[1]),
+      volume: 0.82,
+    }
+  }
+
   const numberMatch = sound.match(/^bingo\.number\.(\d{1,2})$/)
   if (numberMatch) {
     const value = Number(numberMatch[1])
