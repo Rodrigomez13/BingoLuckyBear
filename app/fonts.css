@@ -1,0 +1,22 @@
+:root {
+  --font-proxima-nova: 'Proxima Nova', 'proxima-nova', 'Helvetica Neue', Arial, sans-serif;
+  --font-dm-sans: var(--font-proxima-nova);
+  --font-space-grotesk: var(--font-proxima-nova);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-proxima-nova);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-proxima-nova);
+}
