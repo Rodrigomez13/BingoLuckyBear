@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CONTACT_LINKS } from '@/lib/contact'
 
+const QUIET_PREFIXES = ['/truco', '/juegos/golden-bear']
+
 export function FloatingWhatsApp() {
   const pathname = usePathname()
 
-  if (!CONTACT_LINKS.whatsappUrl || pathname?.startsWith('/truco')) {
+  if (!CONTACT_LINKS.whatsappUrl || QUIET_PREFIXES.some((prefix) => pathname?.startsWith(prefix))) {
     return null
   }
 
