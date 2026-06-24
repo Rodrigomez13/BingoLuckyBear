@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 
@@ -149,7 +149,7 @@ export function ViboritaGame() {
   )
 }
 
-function Control({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function Control({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (
     <button onClick={onClick} className="h-12 rounded-xl border border-amber-300/20 bg-white/[0.04] font-mono text-lg font-black text-amber-100 shadow-lg shadow-black/20 hover:bg-amber-300 hover:text-zinc-950">
       {children}
