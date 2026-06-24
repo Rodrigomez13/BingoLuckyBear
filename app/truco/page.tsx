@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { SiteHeader } from '@/components/site-header'
 import { RoomLobby } from '@/components/truco/room-lobby'
 import { GameTable } from '@/components/truco/game-table'
+import { TrucoSpeechRuntime } from '@/components/truco/truco-speech-runtime'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
 import { DEFAULT_TRUCO_RULES, type TrucoRules } from '@/lib/truco/rules'
 
@@ -26,6 +27,7 @@ export default function TrucoPage() {
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-emerald-50">
       <div className="lbb-ambient" />
       <SiteHeader kicker="Truco Lucky Bear" activePath="truco" compact />
+      {game.active && <TrucoSpeechRuntime />}
 
       <div className={`relative z-10 ${game.active ? 'pt-2 sm:pt-6' : 'pt-6'}`}>
         {game.active ? (
