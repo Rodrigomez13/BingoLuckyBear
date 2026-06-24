@@ -1,18 +1,34 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Radio, Coins, Trophy } from 'lucide-react'
+import { Gamepad2, Grid3X3, Menu, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface SiteHeaderProps {
   kicker?: string
   jackpotPrize?: string | null
-  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta' | 'truco'
+  activePath?: 'home' | 'juegos' | 'participar' | 'ganadores' | 'mi-cuenta' | 'truco' | 'golden-bear' | 'viborita'
   compact?: boolean
 }
 
-export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
+const gameLinks = [
+  { href: '/juegos', label: 'Todos los juegos', description: 'Lobby LBB', icon: Grid3X3, active: 'juegos' },
+  { href: '/participar', label: 'Bingo', description: 'Cartones y sorteos', icon: Ticket, active: 'participar' },
+  { href: '/truco', label: 'Truco', description: 'Mesas y partidas', icon: Gamepad2, active: 'truco' },
+  { href: '/juegos/golden-bear', label: 'Golden Bear', description: 'Slot LBB Original', icon: Trophy, active: 'golden-bear' },
+  { href: '/juegos/viborita', label: 'Viborita LBB', description: 'Arcade demo', icon: Gamepad2, active: 'viborita' },
+] as const
+
+export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
+  const gamesActive = gameLinks.some((link) => link.active === activePath)
+
   return (
     <header className={`${compact ? 'sticky top-3' : 'fixed left-0 right-0 top-4'} z-50 px-3 sm:top-5`}>
       <div className="mx-auto w-full max-w-6xl rounded-2xl border border-white/10 bg-black/72 px-2 shadow-2xl shadow-black/35 backdrop-blur-2xl sm:px-5">
@@ -24,7 +40,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
             </div>
             <div className="hidden min-w-0 sm:block">
               <span className="block truncate font-mono text-base font-bold tracking-normal text-white">
-                Lucky Bingo Bear
+                LuckyBingoBear
               </span>
               <p className="-mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">{kicker}</p>
             </div>
@@ -37,15 +53,52 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
                 {jackpotPrize}
               </span>
             )}
-            <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" className="hidden sm:inline-flex" />
-            <HeaderLink href="/truco" active={activePath === 'truco'} icon={<Coins className="h-4 w-4" />} label="Truco" className="hidden sm:inline-flex" />
-            <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
+            <HeaderLink href="/" active={activePath === 'home'} label="Inicio" className="hidden lg:inline-flex" />
+            <GamesDropdown active={gamesActive} />
+            <HeaderLink href="/mi-cuenta/jugador" active={activePath === 'mi-cuenta'} icon={<WalletCards className="h-4 w-4" />} label="Wallet" className="hidden md:inline-flex" />
+            <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />
             <UserMenu active={activePath === 'mi-cuenta'} />
             <MobileMenu />
           </nav>
         </div>
       </div>
     </header>
+  )
+}
+
+function GamesDropdown({ active }: { active: boolean }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={`hidden items-center gap-2 rounded-full px-2 py-2 font-semibold transition-colors sm:inline-flex ${
+            active ? 'bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/25' : 'text-slate-300 hover:text-amber-200'
+          }`}
+        >
+          <Menu className="h-4 w-4" />
+          <span>Juegos</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={12} className="w-72 border-amber-300/20 bg-zinc-950/96 p-2 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        {gameLinks.map((item) => {
+          const Icon = item.icon
+          return (
+            <DropdownMenuItem key={item.href} asChild className="rounded-xl p-0 focus:bg-amber-300/10 focus:text-amber-100">
+              <Link href={item.href} className="flex w-full items-center gap-3 rounded-xl px-3 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-amber-300/20 bg-amber-300/10 text-amber-200">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold leading-tight text-white">{item.label}</span>
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{item.description}</span>
+                </span>
+              </Link>
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LoginModal } from '@/components/auth/login-modal'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { BingoCardDisplay } from '@/components/participate/bingo-card-display'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -206,11 +206,13 @@ export default function MyAccountPage() {
   }
 
   return (
-    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="mi-cuenta" kicker="Cuenta de jugador" compact />
-
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+    <GameShell
+      active="cartones"
+      eyebrow="Cuenta de jugador"
+      title="Tus datos y cartones"
+      subtitle="Revisá tus datos, premios, cartones y accesos de cuenta."
+    >
+      <section className="mx-auto w-full pb-28">
         <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
           <div>
             <Badge className="mb-3 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
@@ -431,7 +433,7 @@ export default function MyAccountPage() {
       </Dialog>
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onAuthenticated={() => void loadAccount()} />
-    </main>
+    </GameShell>
   )
 }
 

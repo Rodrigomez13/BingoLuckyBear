@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Trophy } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -43,11 +43,13 @@ export default function TrucoRankingPage() {
   }, [])
 
   return (
-    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="truco" kicker="Ranking Truco" compact />
-
-      <section className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-[104px] sm:px-6 lg:px-8">
+    <GameShell
+      active="ranking"
+      eyebrow="Ranking Truco"
+      title="Tabla de jugadores"
+      subtitle="Partidas rankeadas, puntos y rendimiento de la comunidad."
+    >
+      <section className="mx-auto w-full max-w-5xl pb-16">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <Badge className="mb-4 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
@@ -103,6 +105,6 @@ export default function TrucoRankingPage() {
           </CardContent>
         </Card>
       </section>
-    </main>
+    </GameShell>
   )
 }

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { CalendarDays, CheckCircle2, Crown, Hash, MessageCircle, Quote, Star, Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { formatDrawnNumber, getPrizeAmounts, getPrizeAwards, getPrizeLabel } from '@/lib/bingo'
 import { formatArgentinaDate } from '@/lib/date'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -180,11 +180,13 @@ export default async function WinnersPage() {
       ]
 
   return (
-    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="ganadores" kicker="Resultados oficiales" compact />
-
-      <section className="relative z-10 mx-auto max-w-[1800px] px-4 pb-12 pt-[104px] sm:px-6 lg:px-8 2xl:px-10">
+    <GameShell
+      active="ranking"
+      eyebrow="Resultados oficiales"
+      title="Ganadores verificados"
+      subtitle="Premios publicados, cartones aprobados y resultados de sorteos cerrados."
+    >
+      <section className="mx-auto w-full max-w-[1800px] pb-12">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
           <div>
             <Badge className="mb-5 rounded-full bg-emerald-500 text-white hover:bg-emerald-500">
@@ -271,7 +273,7 @@ export default async function WinnersPage() {
           </section>
         )}
       </section>
-    </main>
+    </GameShell>
   )
 }
 

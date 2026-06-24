@@ -136,9 +136,22 @@
   }
 
   html {
+    font-size: 95%;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 92.5%;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 90%;
+    }
   }
 
   main {

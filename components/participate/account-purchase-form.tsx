@@ -280,8 +280,8 @@ export function AccountPurchaseForm({
             <div className="space-y-3">
               <Label>Forma de pago</Label>
               <div className="grid gap-2 sm:grid-cols-2">
-                <PaymentChoice active={paymentSource === 'receipt'} onClick={() => setPaymentSource('receipt')} icon={<Banknote className="h-4 w-4" />} label="Transferencia" detail="Requiere aprobación" />
-                <PaymentChoice active={paymentSource === 'balance'} onClick={() => setPaymentSource('balance')} icon={<WalletCards className="h-4 w-4" />} label="Saldo de cuenta" detail={`Disponible: ${formatAccountBalance(wallet.total_balance)}`} />
+                <PaymentChoice sound="ui.click" active={paymentSource === 'receipt'} onClick={() => setPaymentSource('receipt')} icon={<Banknote className="h-4 w-4" />} label="Transferencia" detail="Requiere aprobación" />
+                <PaymentChoice sound="wallet.approved" active={paymentSource === 'balance'} onClick={() => setPaymentSource('balance')} icon={<WalletCards className="h-4 w-4" />} label="Saldo de cuenta" detail={`Disponible: ${formatAccountBalance(wallet.total_balance)}`} />
               </div>
             </div>
 
@@ -315,7 +315,7 @@ export function AccountPurchaseForm({
 
                 <div className="space-y-2">
                   <Label htmlFor="receipt">Comprobante de transferencia</Label>
-                  <div className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition ${preview ? 'border-emerald-400 bg-emerald-500/10' : 'border-amber-400/40 bg-white/[0.03] hover:border-amber-300'}`} onClick={() => fileInputRef.current?.click()}>
+                  <div data-sound="ui.open" className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition ${preview ? 'border-emerald-400 bg-emerald-500/10' : 'border-amber-400/40 bg-white/[0.03] hover:border-amber-300'}`} onClick={() => fileInputRef.current?.click()}>
                     <input ref={fileInputRef} id="receipt" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleFileChange} className="hidden" />
                     {preview ? (
                       <div className="space-y-3">
@@ -348,7 +348,7 @@ export function AccountPurchaseForm({
               </div>
             )}
 
-            <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-full bg-amber-300 text-base font-black text-zinc-950 hover:bg-amber-200">
+            <Button type="submit" data-sound="bingo.purchase" disabled={isLoading} className="h-14 w-full rounded-full bg-amber-300 text-base font-black text-zinc-950 hover:bg-amber-200">
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
               {isLoading ? 'Registrando compra...' : paymentSource === 'receipt' ? 'Enviar compra para aprobación' : `Comprar por ${formatAccountBalance(totalAmount)}`}
             </Button>
@@ -365,16 +365,19 @@ function PaymentChoice({
   icon,
   label,
   detail,
+  sound = 'ui.click',
 }: {
   active: boolean
   onClick: () => void
   icon: React.ReactNode
   label: string
   detail: string
+  sound?: string
 }) {
   return (
     <button
       type="button"
+      data-sound={sound}
       onClick={onClick}
       className={`min-h-20 rounded-md border p-3 text-left transition ${active ? 'border-amber-300 bg-amber-300/10 text-white' : 'border-white/10 bg-black/20 text-zinc-300 hover:border-white/20'}`}
     >

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Save, Trophy, UserCircle2, WalletCards } from 'lucide-react'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -117,11 +117,13 @@ export default function PlayerAccountPage() {
   const stats = walletData?.stats
 
   return (
-    <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="mi-cuenta" kicker="Perfil de jugador" compact />
-
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-[104px] sm:px-6 lg:px-8">
+    <GameShell
+      active="saldo"
+      eyebrow="Perfil de jugador"
+      title="Saldo, ranking y avatar"
+      subtitle="Tu saldo de cuenta sirve para cartones, mesas con pozo, cargas y retiros."
+    >
+      <section className="mx-auto w-full pb-16">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <Badge className="mb-4 rounded-full bg-amber-300 text-zinc-950 hover:bg-amber-300">
@@ -273,7 +275,7 @@ export default function PlayerAccountPage() {
           </div>
         )}
       </section>
-    </main>
+    </GameShell>
   )
 }
 

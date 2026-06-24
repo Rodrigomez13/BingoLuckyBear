@@ -42,6 +42,7 @@ export function DepositActionButton({
       type="button"
       size="sm"
       disabled={disabled || busy}
+      data-sound={action === 'approve' ? 'wallet.approved' : 'ui.error'}
       onClick={run}
       variant={action === 'reject' ? 'outline' : 'default'}
       title={disabled && disabledReason ? disabledReason : action === 'approve' ? 'Aprobar depósito' : 'Rechazar depósito'}

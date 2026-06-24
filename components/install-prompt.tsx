@@ -105,12 +105,12 @@ export function InstallPrompt() {
   if (!visible || quietPath) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[58] px-3 md:bottom-5 md:left-auto md:right-5 md:max-w-sm">
-      <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-white/10 bg-zinc-950/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl md:mx-0">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/20 to-amber-300/20">
-          <BearLogo size={34} />
+    <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[46] overflow-hidden px-3 md:bottom-4 md:left-auto md:right-4 md:max-w-[20rem]">
+      <div className="mx-auto flex max-w-md items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-2.5 shadow-2xl shadow-black/60 backdrop-blur-xl md:mx-0">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400/20 to-amber-300/20">
+          <BearLogo size={30} />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <p className="text-sm font-bold text-white">Instalá la app</p>
           {iosHint ? (
             <p className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-slate-300">
@@ -120,17 +120,17 @@ export function InstallPrompt() {
               </span>
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-slate-400">Acceso directo a los sorteos desde tu celular.</p>
+            <p className="mt-0.5 truncate text-xs text-slate-400 sm:whitespace-normal">Acceso directo a los sorteos desde tu celular.</p>
           )}
         </div>
         {!iosHint && (
           <button
             type="button"
             onClick={install}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-amber-300 px-3 py-2 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-400 to-amber-300 px-2.5 py-2 text-xs font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 sm:px-3 sm:text-sm"
           >
             <Download className="h-4 w-4" />
-            Instalar
+            <span className="hidden min-[420px]:inline">Instalar</span>
           </button>
         )}
         <button

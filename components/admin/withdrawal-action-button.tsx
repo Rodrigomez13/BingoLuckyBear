@@ -135,6 +135,7 @@ export function WithdrawalActionButton({
         size="sm"
         disabled={disabled}
         variant={approving ? 'default' : 'outline'}
+        data-sound={approving ? 'ui.open' : 'ui.error'}
         onClick={openDialog}
         className={approving
           ? 'bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300'
@@ -237,8 +238,9 @@ export function WithdrawalActionButton({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="border-white/15 bg-transparent text-zinc-200">Cancelar</Button>
+            <Button variant="outline" data-sound="ui.close" onClick={() => setOpen(false)} className="border-white/15 bg-transparent text-zinc-200">Cancelar</Button>
             <Button
+              data-sound={approving ? 'wallet.approved' : 'ui.error'}
               onClick={submit}
               disabled={busy || (approving && (reference.trim().length < 3 || !verified))}
               className={approving ? 'bg-emerald-400 font-bold text-zinc-950 hover:bg-emerald-300' : 'bg-rose-500 font-bold text-white hover:bg-rose-400'}

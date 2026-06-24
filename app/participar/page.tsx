@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { LiveDrawCard } from '@/components/live/live-draw-card'
 import { ChevronDown, Clock, Eye, Hash, Loader2, Mail, MessageCircle, Radio, Trophy, UserCircle2 } from 'lucide-react'
 import { CONTACT_LINKS } from '@/lib/contact'
-import { SiteHeader } from '@/components/site-header'
+import { GameShell } from '@/components/lobby/game-shell'
 import { getWinningLines } from '@/lib/bingo'
 
 interface Raffle {
@@ -206,13 +206,20 @@ export default function ParticipatePage() {
   const profileComplete = isProfileComplete(profile)
 
   return (
-    <div className="lbb-page-shell relative min-h-screen text-zinc-100">
-      <div className="lbb-ambient" />
-      <SiteHeader activePath="participar" kicker="Participar" compact />
-
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        {activeRaffle && <div className="mx-auto max-w-5xl"><LiveDrawCard initialRaffle={activeRaffle} compact /></div>}
-        <div className={activeRaffle ? 'mt-8' : ''}>
+    <GameShell
+      active="bingo"
+      eyebrow="Lobby de Bingo"
+      title={activeRaffle ? activeRaffle.name : 'Sorteos Lucky Bear'}
+      subtitle={activeRaffle ? 'Comprá cartones, seguí el estado y guardá tus números.' : 'La cartelera se mantiene lista para el próximo sorteo.'}
+      aside={<BingoLobbyAside raffle={activeRaffle} cardsCount={existingCards.length} approved={approvedCards.length} pending={pendingCards.length} rejected={rejectedCards.length} />}
+    >
+      <main className="relative z-10 mx-auto w-full">
+        {activeRaffle && (
+          <section className="rounded-lg border border-amber-300/15 bg-black/25 p-3 sm:p-4">
+            <LiveDrawCard initialRaffle={activeRaffle} compact />
+          </section>
+        )}
+        <div className={activeRaffle ? 'mt-5' : ''}>
           {!activeRaffle ? (
             <NoActiveRaffle />
           ) : salesClosed ? (
@@ -252,6 +259,74 @@ export default function ParticipatePage() {
           )}
         </div>
       </main>
+    </GameShell>
+  )
+}
+
+function BingoLobbyAside({
+  raffle,
+  cardsCount,
+  approved,
+  pending,
+  rejected,
+}: {
+  raffle: Raffle | null
+  cardsCount: number
+  approved: number
+  pending: number
+  rejected: number
+}) {
+  return (
+    <>
+      <section className="rounded-lg border border-amber-300/15 bg-black/25 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-300 text-zinc-950">
+            <Trophy className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Sorteo</p>
+            <h2 className="font-mono text-xl font-black text-white">{raffle?.name ?? 'Próximo sorteo'}</h2>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <SideMetric label="Cartones" value={String(cardsCount)} />
+          <SideMetric label="Aprobados" value={String(approved)} />
+          <SideMetric label="Pendientes" value={String(pending)} />
+          <SideMetric label="Rechazados" value={String(rejected)} />
+        </div>
+        <p className="mt-4 text-sm leading-5 text-emerald-50/65">
+          Los cartones aprobados participan oficialmente. Los pendientes se activan cuando el pago queda validado.
+        </p>
+      </section>
+
+      <section className="rounded-lg border border-amber-300/15 bg-black/25 p-4">
+        <p className="font-mono text-xl font-black text-amber-200">Cómo participar</p>
+        <div className="mt-3 space-y-3">
+          {['Elegí la cantidad de cartones', 'Pagá con saldo o comprobante', 'Guardá tus números para el sorteo'].map((step, index) => (
+            <div key={step} className="flex gap-3 rounded-md bg-white/[0.035] p-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-300 font-mono text-sm font-black text-zinc-950">{index + 1}</span>
+              <p className="text-sm font-semibold leading-5 text-emerald-50/80">{step}</p>
+            </div>
+          ))}
+        </div>
+        {CONTACT_LINKS.whatsappGroupUrl && (
+          <Button asChild className="mt-4 h-11 w-full bg-[#25d366] font-black text-zinc-950 hover:bg-[#30e17b]">
+            <Link href={CONTACT_LINKS.whatsappGroupUrl} target="_blank" rel="noreferrer">
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Unirme al grupo
+            </Link>
+          </Button>
+        )}
+      </section>
+    </>
+  )
+}
+
+function SideMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-white/[0.035] px-3 py-2 text-center">
+      <p className="font-mono text-xl font-black text-white">{value}</p>
+      <p className="text-[9px] font-black uppercase tracking-wide text-emerald-50/45">{label}</p>
     </div>
   )
 }
