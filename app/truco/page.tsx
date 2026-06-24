@@ -27,7 +27,7 @@ export default function TrucoPage() {
       <div className="lbb-ambient" />
       <SiteHeader kicker="Truco Lucky Bear" activePath="truco" compact />
 
-      <div className="relative z-10 pt-6">
+      <div className={`relative z-10 ${game.active ? 'pt-2 sm:pt-6' : 'pt-6'}`}>
         {game.active ? (
           <GameTable
             target={game.target}
