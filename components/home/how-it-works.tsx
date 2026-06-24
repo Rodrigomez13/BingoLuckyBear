@@ -1,24 +1,24 @@
-import { CreditCard, FileCheck2, Radio } from 'lucide-react'
+import { Gamepad2, History, WalletCards } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 const steps = [
   {
     step: '01',
-    title: 'Compras tu carton',
-    description: 'Elegis el sorteo, cargas tus datos y adjuntas el comprobante para quedar participando.',
-    icon: CreditCard,
+    title: 'Cargás o recibís créditos LBB',
+    description: 'Tu saldo queda centralizado en una wallet única para usarlo en todos los juegos disponibles.',
+    icon: WalletCards,
   },
   {
     step: '02',
-    title: 'Tu jugada se marca sola',
-    description: 'Cuando el sorteo inicia, las bolillas se aplican automaticamente a tu carton.',
-    icon: FileCheck2,
+    title: 'Elegís dónde jugar',
+    description: 'Entrás a Bingo, Truco, Golden Bear o cualquier juego nuevo sin crear saldos separados.',
+    icon: Gamepad2,
   },
   {
     step: '03',
-    title: 'Te avisamos si ganas',
-    description: 'Si tu carton sale premiado, recibis un WhatsApp con el premio, el monto y los datos del pago.',
-    icon: Radio,
+    title: 'Todo queda registrado',
+    description: 'Apuestas, compras, premios y movimientos vuelven al mismo historial de cuenta.',
+    icon: History,
   },
 ]
 
@@ -27,14 +27,12 @@ export function HowItWorks() {
     <section id="como-funciona" className="lbb-scroll-reveal py-10 sm:py-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-8 max-w-3xl text-center">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-300">Como participar</p>
-          <h2
-            className="text-4xl font-bold leading-tight tracking-normal text-white md:text-5xl"
-          >
-              Jugar es simple
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-amber-300">Cómo funciona la plataforma</p>
+          <h2 className="text-4xl font-bold leading-tight tracking-normal text-white md:text-5xl">
+            Una wallet. Muchos juegos.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-400">
-            Compras tu carton una vez y el sistema se encarga de seguir la jugada hasta el resultado.
+            LuckyBingoBear concentra tus créditos y movimientos para que cada juego sea una experiencia distinta dentro del mismo ecosistema.
           </p>
         </div>
 
