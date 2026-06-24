@@ -12,6 +12,7 @@ import {
   nextTrucoRaiseLabel,
 } from '@/lib/truco/engine'
 import { Button } from '@/components/ui/button'
+import { speakTrucoLine } from './truco-speech'
 
 const ENVIDO_RAISE_OPTIONS: { call: EnvidoCall; label: string }[] = [
   { call: 'envido', label: 'Envido' },
@@ -45,6 +46,9 @@ export function ActionButtons({
   const pendingTrucoForPlayer = Boolean(state.trucoPending && state.trucoPending.by !== player)
   const canEnvido = canCallEnvido(state, player)
   const canFlor = canCallFlor(state, player)
+  const speakThen = (line: string, action: () => void) => {
+    void speakTrucoLine(line, 'player').finally(action)
+  }
 
   if (pendingEnvidoForPlayer) {
     const raiseOptions = ENVIDO_RAISE_OPTIONS.filter((option) => canRaiseEnvido(state, player, option.call))
@@ -58,17 +62,17 @@ export function ActionButtons({
         {raiseOptions.length > 0 && (
           <div className="mb-2 grid grid-cols-3 gap-1.5">
             {raiseOptions.map((option) => (
-              <ActionBtn key={option.call} onClick={() => onEnvido(option.call)}>
+              <ActionBtn key={option.call} onClick={() => speakThen(option.label, () => onEnvido(option.call))}>
                 {option.label}
               </ActionBtn>
             ))}
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={() => onRespond(true)} className={mainButtonClass('green')}>
+          <Button onClick={() => speakThen('Quiero', () => onRespond(true))} className={mainButtonClass('green')}>
             Quiero
           </Button>
-          <Button onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
+          <Button onClick={() => speakThen('No quiero', () => onRespond(false))} variant="outline" className={mainButtonClass('red')}>
             No quiero
           </Button>
         </div>
@@ -91,29 +95,29 @@ export function ActionButtons({
               El tanto está primero
             </p>
             {canFlor && (
-              <Button onClick={onFlor} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
+              <Button onClick={() => speakThen('Flor', onFlor)} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
                 Flor
               </Button>
             )}
             {canEnvido && (
               <div className="grid grid-cols-3 gap-1.5">
-                <ActionBtn onClick={() => onEnvido('envido')}>Envido</ActionBtn>
-                <ActionBtn onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
-                <ActionBtn onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+                <ActionBtn onClick={() => speakThen('Envido', () => onEnvido('envido'))}>Envido</ActionBtn>
+                <ActionBtn onClick={() => speakThen('Real Envido', () => onEnvido('real-envido'))}>Real</ActionBtn>
+                <ActionBtn onClick={() => speakThen('Falta Envido', () => onEnvido('falta-envido'))}>Falta</ActionBtn>
               </div>
             )}
           </div>
         )}
         <div className={raiseLabel ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
-          <Button onClick={() => onRespond(true)} className={mainButtonClass('green')}>
+          <Button onClick={() => speakThen('Quiero', () => onRespond(true))} className={mainButtonClass('green')}>
             Quiero
           </Button>
           {raiseLabel && (
-            <Button onClick={onTruco} className={mainButtonClass('amber')}>
+            <Button onClick={() => speakThen(raiseLabel, onTruco)} className={mainButtonClass('amber')}>
               {compact ? shortTrucoLabel(raiseLabel) : raiseLabel}
             </Button>
           )}
-          <Button onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
+          <Button onClick={() => speakThen('No quiero', () => onRespond(false))} variant="outline" className={mainButtonClass('red')}>
             No quiero
           </Button>
         </div>
@@ -128,24 +132,24 @@ export function ActionButtons({
     return (
       <div className={panelClass(true)}>
         {canFlor && (
-          <Button onClick={onFlor} className="mb-2 h-9 w-full rounded-xl bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200">
+          <Button onClick={() => speakThen('Flor', onFlor)} className="mb-2 h-9 w-full rounded-xl bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200">
             Flor
           </Button>
         )}
         <div className="grid grid-cols-5 gap-1.5">
-          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
-          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
-          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+          <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Envido', () => onEnvido('envido'))}>Envido</ActionBtn>
+          <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Real Envido', () => onEnvido('real-envido'))}>Real</ActionBtn>
+          <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Falta Envido', () => onEnvido('falta-envido'))}>Falta</ActionBtn>
           <Button
             disabled={!canTruco}
-            onClick={onTruco}
+            onClick={() => speakThen(trucoLabel, onTruco)}
             className="h-11 rounded-xl bg-amber-400 px-1 text-[10px] font-black leading-tight text-amber-950 hover:bg-amber-300 disabled:opacity-30"
           >
             {shortTrucoLabel(trucoLabel)}
           </Button>
           <Button
             disabled={state.phase !== 'playing'}
-            onClick={onMazo}
+            onClick={() => speakThen('Me voy al mazo', onMazo)}
             variant="outline"
             className="h-11 rounded-xl border-rose-400/40 bg-rose-950/20 px-1 text-[10px] font-black text-rose-100 hover:bg-rose-500/10 disabled:opacity-30"
           >
@@ -160,7 +164,7 @@ export function ActionButtons({
     <div className={panelClass(false)}>
       <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>
       {canFlor && (
-        <Button onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
+        <Button onClick={() => speakThen('Flor', onFlor)} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
           Flor
         </Button>
       )}
@@ -168,9 +172,9 @@ export function ActionButtons({
         <div>
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Envido</p>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
-            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
-            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Envido', () => onEnvido('envido'))}>Envido</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Real Envido', () => onEnvido('real-envido'))}>Real</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => speakThen('Falta Envido', () => onEnvido('falta-envido'))}>Falta</ActionBtn>
           </div>
         </div>
         <div>
@@ -178,14 +182,14 @@ export function ActionButtons({
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <Button
               disabled={!canTruco}
-              onClick={onTruco}
+              onClick={() => speakThen(trucoLabel, onTruco)}
               className="h-9 bg-amber-400 px-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
               {trucoLabel}
             </Button>
             <Button
               disabled={state.phase !== 'playing'}
-              onClick={onMazo}
+              onClick={() => speakThen('Me voy al mazo', onMazo)}
               variant="outline"
               className="h-9 border-rose-400/40 bg-transparent px-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
