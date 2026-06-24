@@ -119,14 +119,16 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#04130c]">
-      <LobbyOperativoHome
-        activeRaffle={activeRaffle}
-        nextRaffle={nextRaffle}
-        jackpotPrize={jackpotPrize}
-        rooms={rooms}
-        player={player}
-      />
       <LobbyImmersiveEffects />
+      <div className="relative z-10">
+        <LobbyOperativoHome
+          activeRaffle={activeRaffle}
+          nextRaffle={nextRaffle}
+          jackpotPrize={jackpotPrize}
+          rooms={rooms}
+          player={player}
+        />
+      </div>
     </div>
   )
 }
