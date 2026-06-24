@@ -3,25 +3,29 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import type { ComponentType, ReactNode } from 'react'
 import {
   BadgeQuestionMark,
   Bell,
+  Bot,
   CircleDollarSign,
   Clock3,
   Crown,
   Filter,
+  Gamepad2,
   Gift,
+  Grid3X3,
   Home,
   Menu,
   Plus,
-  Radio,
-  RefreshCw,
   ShieldCheck,
+  Sparkles,
   Star,
-  ShoppingCart,
   Swords,
+  Ticket,
   Trophy,
   UsersRound,
+  WalletCards,
   X,
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
@@ -54,15 +58,85 @@ interface LobbyOperativoHomeProps {
   player: PlayerContext | null
 }
 
+type IconType = ComponentType<{ className?: string }>
+
 const navItems = [
   { href: '/', label: 'Inicio', icon: Home, active: true },
+  { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
+  { href: '/participar', label: 'Bingo', icon: Ticket },
   { href: '/truco', label: 'Truco', icon: Swords },
-  { href: '/participar', label: 'Bingo', icon: Radio },
-  { href: '/mi-cuenta', label: 'Mis mesas', icon: ShoppingCart },
-  { href: '/truco', label: 'Torneos', icon: Trophy },
-  { href: '/truco/ranking', label: 'Ranking', icon: Trophy },
-  { href: '/mi-cuenta/jugador', label: 'Saldo', icon: CircleDollarSign },
-  { href: '/mi-cuenta/premios', label: 'Bonos', icon: Gift },
+  { href: '/juegos/golden-bear', label: 'Golden Bear', icon: Trophy },
+  { href: '/juegos/viborita', label: 'Viborita', icon: Gamepad2 },
+  { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards },
+  { href: '/ganadores', label: 'Historial', icon: Crown },
+]
+
+const gameCards = [
+  {
+    id: 'bingo',
+    title: 'Bingo LBB',
+    subtitle: 'Sorteos y cartones',
+    href: '/participar',
+    cta: 'Comprar cartón',
+    status: 'Disponible',
+    description: 'Cartones digitales, resultados publicados y premios acreditados al saldo central.',
+    icon: Ticket,
+    logo: 'B',
+    gradient: 'from-emerald-400/20 via-amber-300/10 to-black/20',
+    sound: 'bingo.purchase',
+  },
+  {
+    id: 'truco',
+    title: 'Truco',
+    subtitle: 'Mesas online y bot',
+    href: '/truco',
+    cta: 'Ver mesas',
+    status: 'Mesas activas',
+    description: 'Partidas contra el oso, salas públicas, ranking y apuestas desde la wallet LBB.',
+    icon: Swords,
+    logo: 'T',
+    gradient: 'from-sky-400/18 via-emerald-300/10 to-black/20',
+    sound: 'truco.play',
+  },
+  {
+    id: 'golden-bear',
+    title: 'Golden Bear',
+    subtitle: 'Slot LBB Original',
+    href: '/juegos/golden-bear',
+    cta: 'Entrar al slot',
+    status: 'Cascadas + bonus',
+    description: 'Giros, free spins, compra de bonus y premios integrados al saldo central.',
+    icon: Trophy,
+    logo: 'GB',
+    gradient: 'from-amber-300/24 via-orange-500/12 to-black/20',
+    sound: 'slot.spin',
+  },
+  {
+    id: 'viborita',
+    title: 'Viborita LBB',
+    subtitle: 'Arcade clásico',
+    href: '/juegos/viborita',
+    cta: 'Jugar demo',
+    status: 'Nuevo demo',
+    description: 'Una versión original tipo Snake, preparada para sumar desafíos con créditos LBB.',
+    icon: Gamepad2,
+    logo: 'S',
+    gradient: 'from-lime-400/18 via-emerald-300/10 to-black/20',
+    sound: 'ui.click',
+  },
+  {
+    id: 'platformer',
+    title: 'Aventura 2D',
+    subtitle: 'Plataforma',
+    href: '/juegos',
+    cta: 'Próximamente',
+    status: 'En diseño',
+    description: 'Base visual para sumar juegos 2D propios sin depender de assets externos.',
+    icon: Bot,
+    logo: '2D',
+    gradient: 'from-fuchsia-400/14 via-violet-400/10 to-black/20',
+    sound: 'ui.click',
+  },
 ]
 
 export function LobbyOperativoHome({
@@ -78,7 +152,7 @@ export function LobbyOperativoHome({
   const balance = player?.balance ?? 0
   const xpPercent = player ? Math.min(100, Math.round((player.xp / player.nextLevelXp) * 100)) : 0
   const raffle = activeRaffle ?? nextRaffle
-  const raffleName = raffle?.name ?? 'Gran Bingo Lucky Bear'
+  const raffleName = raffle?.name ?? 'Bingo LBB'
   const roomCount = rooms.filter((room) => room.status === 'playing').length
   const activeRows = visibleRooms.length ? visibleRooms : getFallbackRooms()
 
@@ -111,13 +185,13 @@ export function LobbyOperativoHome({
 
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <Link href="/mi-cuenta/jugador" className="hidden min-w-[12rem] rounded-lg border border-amber-300/20 bg-white/[0.04] px-3 py-1.5 sm:block">
-                  <span className="block text-xs font-semibold text-emerald-50/75">Saldo disponible</span>
+                  <span className="block text-xs font-semibold text-emerald-50/75">Saldo LBB</span>
                   <span className="font-mono text-xl font-black text-amber-100">{formatAccountBalance(balance)}</span>
                 </Link>
                 <Link href="/mi-cuenta/jugador" aria-label="Cargar saldo" data-sound="wallet.approved" className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-300 text-zinc-950 hover:bg-amber-200">
                   <Plus className="h-5 w-5" />
                 </Link>
-                <TopAction href="/mi-cuenta/premios" icon={<Gift className="h-5 w-5" />} label="Bonos" badge="3" />
+                <TopAction href="/juegos" icon={<Grid3X3 className="h-5 w-5" />} label="Juegos" />
                 <div className="hidden sm:block">
                   <UserMenu />
                 </div>
@@ -128,8 +202,8 @@ export function LobbyOperativoHome({
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="min-w-0 space-y-5">
               <HeroLobby raffleName={raffleName} jackpotPrize={jackpotPrize} />
+              <GamesPlatformGrid />
               <HowItWorks />
-
               <ActiveTablesPanel rooms={activeRows} roomCount={roomCount || activeRows.length} />
               <TrustStrip />
             </div>
@@ -170,7 +244,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
             <div>
               <p className="font-mono text-base font-black uppercase leading-4 text-amber-300">Lucky</p>
               <p className="font-mono text-base font-black uppercase leading-4 text-white">Bingo</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear Games</p>
             </div>
           </Link>
           <button
@@ -211,15 +285,15 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
             height={220}
             className="mx-auto h-24 w-24 object-contain"
           />
-          <p className="mt-2 font-mono text-lg font-black uppercase text-amber-200">Invitá amigos</p>
-          <p className="mt-1 text-xs leading-4 text-emerald-50/75">Compartí Lucky Bear y sumá beneficios para jugar.</p>
+          <p className="mt-2 font-mono text-lg font-black uppercase text-amber-200">Un saldo LBB</p>
+          <p className="mt-1 text-xs leading-4 text-emerald-50/75">Usalo en Bingo, Truco, Slots y próximos juegos.</p>
           <Link
-            href="/participar"
-            data-sound="bingo.purchase"
+            href="/juegos"
+            data-sound="ui.click"
             onClick={onClose}
             className="mt-3 flex h-9 items-center justify-center rounded-md bg-amber-300 text-xs font-black uppercase text-zinc-950 hover:bg-amber-200"
           >
-            Ver sorteos
+            Elegir juego
           </Link>
         </div>
       </aside>
@@ -239,7 +313,7 @@ function PlayerBadge({ player, playerName, xpPercent }: { player: PlayerContext 
       </div>
       <div className="min-w-0">
         <p className="truncate font-mono text-lg font-black text-white">¡Hola, {playerName}!</p>
-        <p className="truncate text-sm text-emerald-50/70">Bienvenido a Lucky Bingo Bear</p>
+        <p className="truncate text-sm text-emerald-50/70">Bienvenido a LuckyBingoBear Games</p>
         <div className="mt-1 hidden items-center gap-2 sm:flex">
           <span className="rounded-full border border-lime-300/30 px-2 py-0.5 text-[10px] font-black text-lime-200">NIVEL {player?.level ?? 1}</span>
           <span className="h-2 w-28 overflow-hidden rounded-full bg-black/40">
@@ -252,7 +326,7 @@ function PlayerBadge({ player, playerName, xpPercent }: { player: PlayerContext 
   )
 }
 
-function TopAction({ href, icon, label, badge }: { href: string; icon: React.ReactNode; label: string; badge?: string }) {
+function TopAction({ href, icon, label, badge }: { href: string; icon: ReactNode; label: string; badge?: string }) {
   return (
     <Link href={href} className="relative hidden h-12 min-w-14 flex-col items-center justify-center rounded-md border border-amber-300/15 bg-white/[0.04] px-2.5 text-amber-100 hover:bg-white/[0.07] md:flex">
       {badge && <span className="absolute -right-1 -top-1 rounded-full bg-amber-300 px-1.5 py-0.5 text-xs font-black text-zinc-950">{badge}</span>}
@@ -272,16 +346,16 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
           <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={320} height={480} className="relative z-10 h-56 w-full object-contain drop-shadow-2xl xl:h-72" priority />
         </div>
         <div className="flex min-w-0 flex-col justify-center py-1">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Lobby general</p>
-          <h1 className="mt-2 max-w-[18rem] break-words font-mono text-[1.8rem] font-black uppercase leading-tight text-white sm:max-w-4xl sm:text-4xl xl:text-5xl">
-            Jugá, ganá y disfrutá
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Lobby multiplataforma</p>
+          <h1 className="mt-2 max-w-[20rem] break-words font-mono text-[1.8rem] font-black uppercase leading-tight text-white sm:max-w-4xl sm:text-4xl xl:text-5xl">
+            Elegí tu juego y usá tus créditos LBB
           </h1>
-          <p className="mt-3 max-w-[19rem] break-words text-base font-bold leading-7 text-amber-100 sm:max-w-2xl sm:text-lg">
-            Mesas todos los días con premios disponibles desde tu cuenta Lucky Bear.
+          <p className="mt-3 max-w-[21rem] break-words text-base font-bold leading-7 text-amber-100 sm:max-w-2xl sm:text-lg">
+            Bingo, Truco, Slots, arcade y nuevos juegos conectados a una misma wallet central.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Sorteo destacado</p>
+              <p className="text-xs font-black uppercase tracking-wide text-emerald-50/55">Bingo destacado</p>
               <p className="mt-1 truncate font-mono text-xl font-black text-white">{raffleName}</p>
             </div>
             <div className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] p-4">
@@ -290,11 +364,11 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <Link href="/truco" data-sound="truco.play" className="flex h-12 items-center justify-center rounded-md bg-amber-300 px-6 font-black text-zinc-950 hover:bg-amber-200">
-              Jugar ahora
+            <Link href="/juegos" data-sound="ui.click" className="flex h-12 items-center justify-center rounded-md bg-amber-300 px-6 font-black text-zinc-950 hover:bg-amber-200">
+              Ver juegos
             </Link>
-            <Link href="/participar" data-sound="bingo.purchase" className="flex h-12 items-center justify-center rounded-md border border-white/15 px-6 font-black text-white hover:border-amber-300/40 hover:text-amber-200">
-              Comprar cartones
+            <Link href="/mi-cuenta/jugador" data-sound="wallet.approved" className="flex h-12 items-center justify-center rounded-md border border-white/15 px-6 font-black text-white hover:border-amber-300/40 hover:text-amber-200">
+              Ver wallet
             </Link>
           </div>
         </div>
@@ -303,12 +377,69 @@ function HeroLobby({ raffleName, jackpotPrize }: { raffleName: string; jackpotPr
   )
 }
 
+function GamesPlatformGrid() {
+  return (
+    <section id="juegos" className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Juegos disponibles</p>
+          <h2 className="font-mono text-2xl font-black uppercase text-white">Lobby de plataforma</h2>
+        </div>
+        <Link href="/juegos" className="rounded-md border border-amber-300/25 px-3 py-2 text-xs font-black uppercase text-amber-100 hover:bg-amber-300/10">
+          Ver todos
+        </Link>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {gameCards.map((game) => (
+          <GameCard key={game.id} game={game} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function GameCard({ game }: { game: (typeof gameCards)[number] }) {
+  const Icon = game.icon
+  const disabled = game.cta === 'Próximamente'
+  return (
+    <Link
+      href={game.href}
+      data-sound={game.sound}
+      className={`group relative flex min-h-[17rem] flex-col overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br ${game.gradient} p-4 shadow-xl shadow-black/25 transition hover:-translate-y-0.5 hover:border-amber-300/45 ${disabled ? 'opacity-80' : ''}`}
+    >
+      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-300/10 blur-2xl transition group-hover:bg-amber-300/18" />
+      <div className="relative mb-4 flex items-start justify-between gap-3">
+        <GameIdentity logo={game.logo} icon={Icon} title={game.title} />
+        <span className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200">
+          {game.status}
+        </span>
+      </div>
+      <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
+      <h3 className="relative mt-1 text-xl font-black text-white">{game.title}</h3>
+      <p className="relative mt-3 flex-1 text-sm leading-5 text-emerald-50/72">{game.description}</p>
+      <span className={`relative mt-4 flex h-10 items-center justify-center rounded-md text-xs font-black uppercase ${disabled ? 'border border-amber-300/25 text-amber-100' : 'bg-amber-300 text-zinc-950 group-hover:bg-amber-200'}`}>
+        {game.cta}
+      </span>
+    </Link>
+  )
+}
+
+function GameIdentity({ logo, icon: Icon, title }: { logo: string; icon: IconType; title: string }) {
+  return (
+    <span className="relative grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/35 bg-black/45 shadow-inner">
+      <span className="absolute inset-1 rounded-xl bg-[radial-gradient(circle_at_35%_28%,rgba(250,204,21,.35),transparent_45%),linear-gradient(145deg,rgba(6,78,59,.75),rgba(0,0,0,.2))]" />
+      <span className="relative font-mono text-xl font-black text-amber-100 drop-shadow">{logo}</span>
+      <Icon className="absolute bottom-1.5 right-1.5 h-4 w-4 text-lime-300" aria-label={title} />
+    </span>
+  )
+}
+
 function HowItWorks() {
   const steps = [
-    { icon: Swords, title: 'Elegí tu juego', text: 'Truco o Bingo' },
-    { icon: UsersRound, title: 'Entrá a una mesa', text: 'o creá la tuya' },
-    { icon: Star, title: 'Jugá y ganá', text: 'premios disponibles' },
-    { icon: CircleDollarSign, title: 'Usá tu saldo', text: 'desde una cuenta' },
+    { icon: Grid3X3, title: 'Elegí tu juego', text: 'Bingo, Truco, Slots o Arcade' },
+    { icon: WalletCards, title: 'Usá saldo LBB', text: 'una sola wallet central' },
+    { icon: Star, title: 'Jugá y registrá', text: 'movimientos claros' },
+    { icon: CircleDollarSign, title: 'Cobranzas y premios', text: 'todo vuelve al mismo saldo' },
   ]
 
   return (
@@ -338,12 +469,12 @@ function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; r
     <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Mesas activas</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Actividad de juegos</p>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-mono text-2xl font-black text-white">Lobby en vivo</h2>
+            <h2 className="font-mono text-2xl font-black text-white">Mesas y salas activas</h2>
             <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold text-lime-200">
               <span className="h-2 w-2 rounded-full bg-lime-400" />
-              {roomCount} mesas en juego
+              {roomCount} actividades abiertas
             </span>
           </div>
         </div>
@@ -351,7 +482,7 @@ function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; r
           <button type="button" className="hidden h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 md:flex">
             Todas
           </button>
-          <Link href="/truco" className="flex h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 hover:bg-amber-300/10">
+          <Link href="/juegos" className="flex h-10 items-center gap-2 rounded-md border border-amber-300/25 px-3 text-sm font-black text-amber-100 hover:bg-amber-300/10">
             <Filter className="h-4 w-4" />
             Filtrar
           </Link>
@@ -360,9 +491,9 @@ function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; r
 
       <div className="overflow-hidden rounded-lg border border-amber-300/15">
         <div className="hidden grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] border-b border-white/10 bg-emerald-950/45 px-4 py-3 text-xs font-black uppercase tracking-wide text-emerald-50/55 md:grid">
-          <span>Mesa</span>
+          <span>Mesa / sala</span>
           <span>Juego</span>
-          <span>Rival</span>
+          <span>Estado</span>
           <span>Pozo</span>
           <span className="text-right">Ver</span>
         </div>
@@ -373,7 +504,7 @@ function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; r
           {bingoRows.map((row, index) => (
             <div key={row.name} className="grid gap-3 bg-emerald-950/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] md:items-center">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber-300/40 bg-black/35 font-mono font-black text-amber-200">{index ? 25 : 10}</span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber-300/40 bg-black/35 font-mono font-black text-amber-200">B</span>
                 <div>
                   <p className="font-black text-white">{row.name}</p>
                   <p className="text-xs text-emerald-50/60">{row.detail}</p>
@@ -390,8 +521,8 @@ function ActiveTablesPanel({ rooms, roomCount }: { rooms: PublicRoomSummary[]; r
         </div>
       </div>
 
-      <Link href="/truco" className="mx-auto mt-4 flex h-11 max-w-xs items-center justify-center rounded-md border border-amber-300/30 text-sm font-black uppercase text-amber-100 hover:bg-amber-300/10">
-        Ver todas las mesas
+      <Link href="/juegos" className="mx-auto mt-4 flex h-11 max-w-xs items-center justify-center rounded-md border border-amber-300/30 text-sm font-black uppercase text-amber-100 hover:bg-amber-300/10">
+        Ver lobby completo
       </Link>
     </section>
   )
@@ -405,8 +536,8 @@ function ActiveTableRow({ room, index }: { room: PublicRoomSummary; index: numbe
   return (
     <div className="grid gap-3 bg-emerald-950/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1.25fr)_0.8fr_0.7fr_0.8fr_6rem] md:items-center">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-300/35 bg-black/35">
-          <BearLogo size={34} />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-300/35 bg-black/35 font-mono font-black text-amber-100">
+          T
         </span>
         <div className="min-w-0">
           <p className="truncate font-black text-white">{room.host.name} vs {guest}</p>
@@ -432,19 +563,20 @@ function ActiveTableRow({ room, index }: { room: PublicRoomSummary; index: numbe
 
 function TournamentsPanel() {
   const tournaments = [
-    { title: 'Torneo de Truco', subtitle: 'Copa de Oro', prize: 10000000, accent: 'from-amber-500/15 to-amber-950/20' },
-    { title: 'Bingo Millonario', subtitle: 'Bolsa acumulada', prize: 5000000, accent: 'from-fuchsia-500/15 to-fuchsia-950/20' },
+    { title: 'Torneo de Truco', subtitle: 'Copa de Oro', prize: 10000000, href: '/truco', accent: 'from-amber-500/15 to-amber-950/20' },
+    { title: 'Bingo Millonario', subtitle: 'Bolsa acumulada', prize: 5000000, href: '/participar', accent: 'from-fuchsia-500/15 to-fuchsia-950/20' },
+    { title: 'Arcade semanal', subtitle: 'Desafíos 2D', prize: 0, href: '/juegos/viborita', accent: 'from-lime-500/15 to-emerald-950/20' },
   ]
 
   return (
     <section className="rounded-lg border border-amber-300/15 bg-black/20 p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="font-mono text-lg font-black uppercase text-amber-200">Torneos destacados</h2>
-        <Link href="/truco" className="text-xs font-black text-amber-300">Ver todos</Link>
+        <h2 className="font-mono text-lg font-black uppercase text-amber-200">Destacados</h2>
+        <Link href="/juegos" className="text-xs font-black text-amber-300">Ver todos</Link>
       </div>
       <div className="space-y-3">
         {tournaments.map((tournament) => (
-          <Link key={tournament.title} href="/truco" className={`block rounded-lg border border-amber-300/20 bg-gradient-to-br ${tournament.accent} p-3 hover:border-amber-300/45`}>
+          <Link key={tournament.title} href={tournament.href} className={`block rounded-lg border border-amber-300/20 bg-gradient-to-br ${tournament.accent} p-3 hover:border-amber-300/45`}>
             <div className="flex items-start gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-300/30 bg-black/25">
                 <Crown className="h-6 w-6 text-amber-300" />
@@ -452,7 +584,7 @@ function TournamentsPanel() {
               <div className="min-w-0">
                 <p className="text-xs font-black uppercase text-amber-300">{tournament.title}</p>
                 <p className="text-sm font-bold text-white">{tournament.subtitle}</p>
-                <p className="mt-1 font-mono text-lg font-black text-amber-100">{formatAccountBalance(tournament.prize)}</p>
+                <p className="mt-1 font-mono text-lg font-black text-amber-100">{tournament.prize ? formatAccountBalance(tournament.prize) : 'Demo'}</p>
               </div>
             </div>
           </Link>
@@ -464,10 +596,10 @@ function TournamentsPanel() {
 
 function TrustStrip() {
   const items = [
-    { icon: ShieldCheck, title: 'Juego limpio', text: 'Sistema anti-trampas' },
-    { icon: Bell, title: 'Avisos claros', text: 'Estados en tiempo real' },
-    { icon: Clock3, title: 'Atención rápida', text: 'Soporte disponible' },
-    { icon: UsersRound, title: 'Comunidad', text: 'Mesas y sorteos activos' },
+    { icon: ShieldCheck, title: 'Wallet central', text: 'Un saldo para todos los juegos' },
+    { icon: Bell, title: 'Estados claros', text: 'Actividad y movimientos visibles' },
+    { icon: Clock3, title: 'Rápido', text: 'Entrá, elegí y jugá' },
+    { icon: UsersRound, title: 'Escalable', text: 'Lista para nuevos juegos' },
   ]
 
   return (
@@ -482,51 +614,6 @@ function TrustStrip() {
         </div>
       ))}
     </section>
-  )
-}
-
-function RoomCard({ room, tone }: { room: PublicRoomSummary; tone: number }) {
-  const tones = [
-    'border-amber-300/65 bg-emerald-950/65',
-    'border-red-300/45 bg-red-950/35',
-    'border-lime-300/45 bg-green-950/50',
-    'border-fuchsia-300/45 bg-purple-950/45',
-  ]
-  const isPlaying = room.status === 'playing'
-  const guest = room.guest?.name ?? 'Buscando rival'
-  const canBet = isPlaying && room.bettingOpen && room.sideBetMaxPoints > 0
-
-  return (
-    <article className={`rounded-lg border p-4 shadow-xl shadow-black/25 ${tones[tone % tones.length]}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="flex items-center gap-2 font-mono text-lg font-black uppercase text-amber-100">
-            <Trophy className="h-5 w-5 text-amber-300" />
-            Mesa {tone + 1}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-white">{room.host.name} vs {guest}</p>
-        </div>
-        <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${isPlaying ? 'bg-emerald-400/15 text-emerald-200' : 'bg-amber-300 text-zinc-950'}`}>
-          {isPlaying ? 'Jugando' : 'Disponible'}
-        </span>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <MiniMetric label="Partida" value={`A ${room.target}`} />
-        <MiniMetric label="Pozo" value={formatAccountBalance(room.prizePoolPoints)} />
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-emerald-50/65">
-          {canBet ? `Apuestas hasta ${formatAccountBalance(room.sideBetMaxPoints)}` : isPlaying ? 'Mesa en curso' : 'Entrá como rival'}
-        </p>
-        <Link href="/truco" className={`flex h-11 min-w-28 items-center justify-center rounded-md px-3 text-sm font-black uppercase ${
-          canBet ? 'bg-amber-300 text-zinc-950 hover:bg-amber-200' : 'border border-amber-300/25 text-amber-100 hover:bg-amber-300/10'
-        }`}>
-          {canBet ? 'Apostar' : room.canJoin ? 'Entrar' : 'Ver'}
-        </Link>
-      </div>
-    </article>
   )
 }
 
@@ -572,29 +659,6 @@ function WinnersPanel() {
             <p className="text-xs text-emerald-50/55">{['Bingo suerte', 'Truco real', 'Mesa dorada'][index]}</p>
           </div>
           <p className="font-mono font-black text-lime-300">{formatAccountBalance([300000, 200000, 150000][index])}</p>
-        </div>
-      ))}
-    </section>
-  )
-}
-
-function TrustPanel() {
-  const items = [
-    { icon: ShieldCheck, title: 'Juego limpio', text: 'Acciones validadas' },
-    { icon: Bell, title: 'Avisos claros', text: 'Estados en tiempo real' },
-    { icon: UsersRound, title: 'Comunidad', text: 'Mesas y sorteos activos' },
-    { icon: Clock3, title: 'Rápido', text: 'Entrá y jugá' },
-  ]
-
-  return (
-    <section className="grid gap-2 rounded-lg border border-amber-300/15 bg-black/20 p-4 sm:grid-cols-2 xl:grid-cols-1">
-      {items.map((item) => (
-        <div key={item.title} className="flex items-center gap-3 rounded-md bg-white/[0.035] p-3">
-          <item.icon className="h-5 w-5 text-lime-300" />
-          <div>
-            <p className="font-bold text-white">{item.title}</p>
-            <p className="text-xs text-emerald-50/60">{item.text}</p>
-          </div>
         </div>
       ))}
     </section>
