@@ -26,49 +26,59 @@
 .feature:nth-child(1){font-size:0}.feature:nth-child(1):after{content:"Cascadas";font-size:.58rem}
 .feature:nth-child(2){font-size:0}.feature:nth-child(2):after{content:"Bonus";font-size:.58rem}
 .feature:nth-child(3){font-size:0}.feature:nth-child(3):after{content:"Wilds";font-size:.58rem}
+
 .action-group{grid-template-columns:56px 56px minmax(120px,1fr) minmax(110px,1fr)!important}
-.bonus-buy-btn{width:auto!important;height:54px!important;border-radius:18px!important;padding:6px 10px!important;color:#2a0d02!important;background:linear-gradient(180deg,#fff3a8,#f3b735 58%,#b86a18)!important;border:2px solid #fff0a6!important;box-shadow:0 5px 0 #6c1c04,0 10px 20px rgba(0,0,0,.24)!important;font-size:.62rem!important;line-height:1.05!important}
+.utility-btn,.round-btn,.bet-view,.spin-btn{position:relative;overflow:hidden}
+.utility-btn,.round-btn,.bet-view{border-color:rgba(255,210,92,.28)!important;background:linear-gradient(180deg,rgba(96,36,6,.92),rgba(28,9,2,.96))!important;box-shadow:inset 0 1px 0 rgba(255,240,166,.16),0 4px 0 rgba(61,18,3,.9),0 10px 20px rgba(0,0,0,.2)!important;color:#ffe8a8!important}
+.utility-btn:before,.round-btn:before,.spin-btn:before,.bonus-buy-btn:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent,rgba(255,255,255,.18),transparent);transform:translateX(-130%);transition:transform .45s ease}
+.utility-btn:hover:before,.round-btn:hover:before,.spin-btn:hover:before,.bonus-buy-btn:hover:before{transform:translateX(130%)}
+.utility-btn.active{color:var(--gb-mint)!important;border-color:rgba(69,242,167,.55)!important;background:linear-gradient(180deg,rgba(10,76,48,.96),rgba(4,23,14,.98))!important}
+.spin-btn{border-radius:999px!important;background:radial-gradient(circle at 34% 18%,#fff9c6 0 7%,transparent 8%),linear-gradient(180deg,#ffe15f,#ffae21 48%,#f06a0c 76%,#8e2900)!important;border:3px solid #fff0a6!important;box-shadow:0 8px 0 #651f00,0 16px 34px rgba(255,120,10,.34),inset 0 0 22px rgba(255,255,255,.34)!important;text-transform:uppercase!important;letter-spacing:.06em!important}
+.bonus-buy-btn{width:auto!important;height:54px!important;border-radius:18px!important;padding:6px 10px!important;color:#2a0d02!important;background:linear-gradient(180deg,#fff7b6,#f3b735 58%,#b86a18)!important;border:2px solid #fff0a6!important;box-shadow:0 5px 0 #6c1c04,0 10px 20px rgba(0,0,0,.24),inset 0 0 16px rgba(255,255,255,.25)!important;font-size:.62rem!important;line-height:1.05!important}
 .bonus-buy-btn span{display:block;font-weight:1000;text-transform:uppercase;letter-spacing:.04em}.bonus-buy-btn small{display:block;margin-top:2px;font-size:.56rem;font-weight:1000;color:#4b1607}
 
 html.embedded body{background-color:#090503;background-image:linear-gradient(180deg,rgba(4,21,13,.28),rgba(30,9,3,.72)),url("assets/golden-bear-western-bg.webp")}
-html.embedded .topbar{display:none!important}
-html.embedded .shell{height:100svh;min-height:0;padding-top:0;grid-template-rows:minmax(0,1fr) 86px;gap:0}
+html.embedded .topbar{display:flex!important}
+html.embedded .shell{height:100svh;min-height:0;padding:4px 6px 5px;grid-template-rows:48px minmax(0,1fr) 104px;gap:4px;overflow:hidden}
 html.embedded .game-layout{padding-top:0}
 html.embedded .machine{height:100%;min-height:0}
+html.embedded .topbar{min-height:46px;height:46px;border-radius:0 0 12px 12px}
 
 @media(max-width:760px){
   html,body{height:100%;overflow:hidden}
   body{background-color:#090503;background-image:radial-gradient(circle at 50% 0,rgba(255,224,137,.22),transparent 32%),linear-gradient(180deg,rgba(4,21,13,.2),rgba(30,9,3,.7)),url("assets/golden-bear-western-bg.webp")}
-  .shell{height:100svh;min-height:0;grid-template-rows:48px minmax(0,1fr) 82px;overflow:hidden;padding:4px 6px 5px;gap:0}
-  .topbar{min-height:46px;height:46px;border-radius:0 0 9px 9px}
-  .brand-copy strong{font-size:.9rem;line-height:1.05}
+  .shell{height:100svh;min-height:0;grid-template-rows:48px minmax(0,1fr) 104px;overflow:hidden;padding:4px 6px 5px;gap:4px}
+  .topbar{min-height:46px;height:46px;border-radius:0 0 12px 12px;padding-inline:7px}
+  .brand-copy strong{font-size:.82rem;line-height:1.05;max-width:148px}
+  .brand-copy span{display:none!important}
   .game-icon{width:34px;height:34px}.game-icon img{width:54px}
-  .brand-badge,#fullBtn,#infoBtn{display:none!important}
-  .top-actions{gap:4px}.top-actions .icon-btn{width:34px;height:34px}
-  .game-layout{height:100%;min-height:0;overflow:hidden;padding-top:5px}
+  .brand-badge{display:none!important}
+  #infoBtn,#fullBtn{display:inline-grid!important}
+  .top-actions{gap:4px}.top-actions .icon-btn{width:32px;height:32px;font-size:.86rem}
+  .game-layout{height:100%;min-height:0;overflow:hidden;padding-top:0}
   .machine{
     height:100%;
     min-height:0;
     overflow:hidden;
     border-width:6px;
     padding:4px;
-    grid-template-rows:40px minmax(0,1fr) 34px;
+    grid-template-rows:38px minmax(0,1fr) 32px;
     background:linear-gradient(#8d3b13,#4b1607) padding-box,repeating-linear-gradient(90deg,#2b0d03 0 8px,#b86a18 9px 20px,#4b1607 21px 32px) border-box;
   }
-  .machine-top{min-height:40px;padding:3px 8px;grid-template-columns:1fr auto}
-  .ways-label:before{font-size:.58rem;letter-spacing:.1em}
-  .ways-label:after{font-size:.9rem;line-height:1.05}
-  .multiplier{width:52px;height:31px;font-size:1rem}
+  .machine-top{min-height:38px;padding:3px 8px;grid-template-columns:1fr auto}
+  .ways-label:before{font-size:.56rem;letter-spacing:.1em}
+  .ways-label:after{font-size:.82rem;line-height:1.05}
+  .multiplier{width:50px;height:30px;font-size:.96rem}
   .feature-label{display:none!important}
   .screen{
-    align-self:start;
+    align-self:center;
     justify-self:center;
-    width:min(100%,calc((100svh - 186px) * 6 / 7));
+    width:min(100%,calc((100svh - 228px) * 6 / 7));
     height:auto;
-    max-height:calc(100svh - 186px);
+    max-height:calc(100svh - 228px);
     aspect-ratio:6 / 7;
     min-height:0;
-    margin-top:3px;
+    margin-top:0;
     overflow:hidden;
     background:radial-gradient(circle at 50% 34%,rgba(255,224,137,.14),transparent 36%),#250504;
   }
@@ -80,39 +90,55 @@ html.embedded .machine{height:100%;min-height:0}
     max-height:100%;
     aspect-ratio:6 / 7;
   }
-  .ticker{min-height:34px;line-height:1.15;font-size:.64rem;padding:4px 8px}
-  .control-deck{min-height:82px;flex-shrink:0;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
-  .action-group{grid-template-columns:40px minmax(94px,.8fr) minmax(86px,1fr)!important}
-  .action-group #autoBtn{display:none!important}
-  .bonus-buy-btn{height:50px!important;border-radius:14px!important;font-size:.54rem!important;padding-inline:7px!important}.bonus-buy-btn small{font-size:.5rem}
+  .ticker{min-height:32px;line-height:1.15;font-size:.58rem;padding:4px 8px}
+  .control-deck{min-height:104px;flex-shrink:0;border-radius:16px;padding:6px;grid-template-columns:1fr;grid-template-rows:38px 54px;gap:6px;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
+  .money-group{display:none!important}
+  .bet-controls{width:100%;min-width:0;grid-template-columns:40px minmax(86px,1fr) 40px;gap:6px}
+  .round-btn,.bet-view{height:38px;border-radius:12px}.bet-view{padding:4px}.bet-view span{font-size:.49rem}.bet-view strong{font-size:.92rem}
+  .action-group{width:100%;min-width:0;grid-template-columns:42px 52px minmax(92px,1fr) minmax(104px,1.15fr)!important;gap:6px}
+  .action-group #autoBtn{display:block!important}
+  .utility-btn{height:48px!important;border-radius:13px!important;font-size:.52rem!important;line-height:1.05!important}
+  .bonus-buy-btn{height:48px!important;border-radius:13px!important;font-size:.5rem!important;padding-inline:6px!important}.bonus-buy-btn small{font-size:.46rem}
+  .spin-btn{height:50px!important;min-width:0;font-size:.86rem!important}
   .win-card{width:min(92vw,420px);padding:16px 14px}
   .win-card strong{font-size:clamp(2rem,12vw,4.2rem)}
-  html.embedded .shell{grid-template-rows:minmax(0,1fr) 82px;padding:0 5px 5px}
+  html.embedded .shell{grid-template-rows:48px minmax(0,1fr) 104px;padding:4px 5px 5px;gap:4px}
   html.embedded .game-layout{padding-top:0}
-  html.embedded .screen{width:min(100%,calc((100svh - 138px) * 6 / 7));max-height:calc(100svh - 138px)}
+  html.embedded .screen{width:min(100%,calc((100svh - 228px) * 6 / 7));max-height:calc(100svh - 228px)}
 }
 
 @media(max-width:430px){
-  .shell{grid-template-rows:46px minmax(0,1fr) 76px;padding-inline:5px}
+  .shell{grid-template-rows:46px minmax(0,1fr) 100px;padding-inline:5px}
   .topbar{min-height:44px;height:44px;padding-inline:7px}
-  .machine{grid-template-rows:36px minmax(0,1fr) 31px}
-  .machine-top{min-height:36px}
-  .screen{width:min(100%,calc((100svh - 174px) * 6 / 7));max-height:calc(100svh - 174px);margin-top:2px}
-  .ticker{font-size:.58rem;padding-inline:6px}
-  .control-deck{min-height:76px}
-  .bet-controls{flex-basis:116px;width:116px}
-  .round-btn,.bet-view{height:39px}.spin-btn{height:50px}
-  html.embedded .shell{grid-template-rows:minmax(0,1fr) 76px}
-  html.embedded .screen{width:min(100%,calc((100svh - 126px) * 6 / 7));max-height:calc(100svh - 126px)}
+  .brand-copy strong{max-width:116px;font-size:.76rem}
+  .machine{grid-template-rows:34px minmax(0,1fr) 30px}
+  .machine-top{min-height:34px}
+  .screen{width:min(100%,calc((100svh - 216px) * 6 / 7));max-height:calc(100svh - 216px);margin-top:0}
+  .ticker{font-size:.54rem;padding-inline:6px}
+  .control-deck{min-height:100px;grid-template-rows:36px 52px}
+  .bet-controls{grid-template-columns:38px minmax(72px,1fr) 38px}
+  .round-btn,.bet-view{height:36px}.spin-btn{height:48px!important}
+  .top-actions .icon-btn{width:30px;height:30px}
+  html.embedded .shell{grid-template-rows:46px minmax(0,1fr) 100px}
+  html.embedded .screen{width:min(100%,calc((100svh - 216px) * 6 / 7));max-height:calc(100svh - 216px)}
+}
+
+@media(max-width:370px){
+  .brand-copy strong{max-width:92px}
+  .top-actions{gap:3px}.top-actions .icon-btn{width:28px;height:28px;font-size:.78rem}
+  .action-group{grid-template-columns:38px 46px minmax(78px,1fr) minmax(96px,1.05fr)!important;gap:5px}
+  .utility-btn{font-size:.48rem!important}.spin-btn{font-size:.78rem!important}
 }
 
 @media(max-width:760px) and (orientation:landscape){
-  .shell{grid-template-rows:42px minmax(0,1fr) 66px}
-  .topbar{height:40px;min-height:40px}
-  .machine{grid-template-rows:32px minmax(0,1fr) 28px}
-  .screen{width:min(100%,calc((100svh - 154px) * 6 / 7));max-height:calc(100svh - 154px)}
-  .brand-copy strong{font-size:.82rem}
-  .control-deck{min-height:66px}
-  html.embedded .shell{grid-template-rows:minmax(0,1fr) 66px}
-  html.embedded .screen{width:min(100%,calc((100svh - 106px) * 6 / 7));max-height:calc(100svh - 106px)}
+  .shell{grid-template-rows:40px minmax(0,1fr) 70px}
+  .topbar{height:38px;min-height:38px}
+  .machine{grid-template-rows:30px minmax(0,1fr) 26px}
+  .screen{width:min(100%,calc((100svh - 152px) * 6 / 7));max-height:calc(100svh - 152px)}
+  .brand-copy strong{font-size:.72rem}
+  .control-deck{min-height:70px;grid-template-columns:130px minmax(0,1fr);grid-template-rows:1fr;gap:6px}
+  .bet-controls{height:50px;align-self:center}.action-group{align-self:center}
+  .round-btn,.bet-view{height:40px}.utility-btn,.bonus-buy-btn{height:46px!important}.spin-btn{height:48px!important}
+  html.embedded .shell{grid-template-rows:40px minmax(0,1fr) 70px}
+  html.embedded .screen{width:min(100%,calc((100svh - 152px) * 6 / 7));max-height:calc(100svh - 152px)}
 }
