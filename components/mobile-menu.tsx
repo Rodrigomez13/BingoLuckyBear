@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles } from 'lucide-react'
+import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles, Swords } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
 
 interface MenuLink {
   href: string
@@ -20,12 +21,19 @@ const PLATFORM_LINKS: MenuLink[] = [
   { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards },
 ]
 
-const GAME_LINKS: MenuLink[] = [
-  { href: '/participar', label: 'Bingo', icon: Ticket },
-  { href: '/truco', label: 'Truco', icon: Gamepad2 },
-  { href: '/juegos/golden-bear', label: 'Golden Bear', icon: Trophy },
-  { href: '/juegos/viborita', label: 'Viborita LBB', icon: Sparkles },
-]
+const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Sparkles,
+}
+
+const GAME_LINKS: MenuLink[] = ACTIVE_PLATFORM_GAMES.map((game) => ({
+  href: game.href,
+  label: game.name,
+  icon: gameIcons[game.id],
+}))
 
 const SECONDARY_LINKS: MenuLink[] = [
   { href: '/ganadores', label: 'Historial y ganadores', icon: Trophy },

@@ -24,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
+import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
 import { UserMenu } from '@/components/user-menu'
 import { LOBBY_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
@@ -54,17 +55,7 @@ interface LobbyOperativoHomeProps {
 }
 
 type IconType = ComponentType<{ className?: string }>
-
-const navItems = [
-  { href: '/', label: 'Inicio', icon: Home, active: true },
-  { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
-  { href: '/participar', label: 'Bingo', icon: Ticket },
-  { href: '/truco', label: 'Truco', icon: Swords },
-  { href: '/juegos/golden-bear', label: 'Golden Bear', icon: Trophy },
-  { href: '/juegos/viborita', label: 'Viborita', icon: Gamepad2 },
-  { href: '/mi-cuenta/jugador', label: 'Perfil', icon: UserCircle2 },
-  { href: '/ganadores', label: 'Historial', icon: Crown },
-]
+type HomeNavItem = { href: string; label: string; icon: IconType; active?: boolean }
 
 const studioPillars = [
   { icon: ShieldCheck, title: 'Rondas validadas', text: 'Cada juego con créditos debe resolver saldo y resultado desde backend.' },
@@ -80,6 +71,16 @@ const gameIcons: Record<PlatformGameId, IconType> = {
   viborita: Gamepad2,
   future_games: Bot,
 }
+
+const navItems: HomeNavItem[] = [
+  { href: '/', label: 'Inicio', icon: Home, active: true },
+  { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
+  ...LOBBY_PLATFORM_GAMES
+    .filter((game) => game.releaseStage !== 'roadmap')
+    .map((game) => ({ href: game.href, label: game.shortName, icon: gameIcons[game.id] })),
+  { href: '/mi-cuenta/jugador', label: 'Perfil', icon: UserCircle2 },
+  { href: '/ganadores', label: 'Historial', icon: Crown },
+]
 
 export function LobbyOperativoHome({
   activeRaffle,
@@ -330,6 +331,9 @@ function GameCard({ game }: { game: PlatformGame }) {
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-300/10 blur-2xl transition group-hover:bg-amber-300/20" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
+      <div className="relative mb-4">
+        <GameShowcaseVisual game={game} compact />
+      </div>
       <div className="relative mb-4 flex items-start justify-between gap-3">
         <GameIdentity logo={game.logo} icon={Icon} title={game.name} hero={hero} />
         <span className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200">

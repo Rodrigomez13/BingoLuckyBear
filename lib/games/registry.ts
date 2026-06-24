@@ -1,7 +1,7 @@
 export type PlatformGameId = 'bingo' | 'truco' | 'golden_bear' | 'viborita' | 'future_games'
 
 export type PlatformGameCategory = 'sorteos' | 'cartas' | 'slots' | 'arcade' | 'roadmap'
-export type PlatformGameReleaseStage = 'live' | 'preview' | 'roadmap'
+export type PlatformGameReleaseStage = 'live' | 'preview' | 'roadmap' | 'disabled'
 export type PlatformGameWalletMode = 'general_balance' | 'progress_only' | 'none'
 
 export type PlatformGame = {
@@ -134,7 +134,7 @@ export const ACTIVE_PLATFORM_GAMES = PLATFORM_GAMES
   .filter((game) => game.releaseStage !== 'roadmap')
   .sort((left, right) => left.sortOrder - right.sortOrder)
 
-export const LOBBY_PLATFORM_GAMES = PLATFORM_GAMES
+export const LOBBY_PLATFORM_GAMES = [...PLATFORM_GAMES]
   .sort((left, right) => left.sortOrder - right.sortOrder)
 
 export function getPlatformGame(id: PlatformGameId) {

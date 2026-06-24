@@ -1,46 +1,20 @@
 import Link from 'next/link'
 import type { ComponentType } from 'react'
-import { ArrowRight, BarChart3, Gamepad2, Settings, Ticket, Trophy, WalletCards } from 'lucide-react'
+import { ArrowRight, BarChart3, Gamepad2, Settings, Sparkles, Swords, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { requireAdminPage } from '@/lib/auth/roles'
+import { LOBBY_PLATFORM_GAMES, walletModeLabel, type PlatformGameId } from '@/lib/games/registry'
 
 export const dynamic = 'force-dynamic'
 
 type IconType = ComponentType<{ className?: string }>
 
-const games = [
-  {
-    name: 'Bingo LBB',
-    href: '/admin',
-    status: 'Operativo',
-    description: 'Sorteos, cartones, comprobantes y resultados en vivo.',
-    icon: Ticket,
-    config: ['sorteos', 'cartones', 'premios', 'comprobantes'],
-  },
-  {
-    name: 'Truco',
-    href: '/admin/games',
-    status: 'Mesas y créditos',
-    description: 'Partidas contra bot, mesas online, espectadores y apuestas laterales.',
-    icon: Gamepad2,
-    config: ['entradas', 'pozos', 'comisiones', 'mesas públicas'],
-  },
-  {
-    name: 'Golden Bear',
-    href: '/admin/games/golden-bear',
-    status: 'Configurable',
-    description: 'Slot LBB Original con apuesta, bonus, free spins y saldo central.',
-    icon: Trophy,
-    config: ['apuestas', 'bonus buy', 'giros gratis', 'visibilidad'],
-  },
-  {
-    name: 'Próximos juegos',
-    href: '/admin/games',
-    status: 'Placeholder',
-    description: 'Estructura lista para nuevas experiencias dentro de la wallet LBB.',
-    icon: Settings,
-    config: ['habilitación', 'economía', 'límites', 'métricas'],
-  },
-]
+const gameIcons: Record<PlatformGameId, IconType> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Sparkles,
+}
 
 export default async function AdminGamesPage() {
   await requireAdminPage()
@@ -68,8 +42,9 @@ export default async function AdminGamesPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {games.map((game) => {
-            const Icon = game.icon
+          {LOBBY_PLATFORM_GAMES.map((game) => {
+            const Icon = gameIcons[game.id]
+            const config = [game.category, walletModeLabel(game.walletMode), game.releaseStage, game.featured ? 'destacado' : 'catálogo']
             return (
               <div key={game.name} className="flex min-h-[20rem] flex-col rounded-[1.5rem] border border-white/10 bg-black/45 p-5 shadow-2xl shadow-black/35">
                 <div className="mb-5 flex items-start justify-between gap-3">
@@ -77,19 +52,19 @@ export default async function AdminGamesPage() {
                     <Icon className="h-6 w-6" />
                   </span>
                   <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">
-                    {game.status}
+                    {game.statusLabel}
                   </span>
                 </div>
                 <h2 className="text-2xl font-black text-white">{game.name}</h2>
                 <p className="mt-3 flex-1 text-sm leading-6 text-slate-400">{game.description}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {game.config.map((item) => (
+                  {config.map((item) => (
                     <span key={item} className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300">
                       {item}
                     </span>
                   ))}
                 </div>
-                <Link href={game.href} className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 px-4 py-3 text-sm font-black text-zinc-950 hover:bg-amber-200">
+                <Link href={game.adminHref ?? '/admin/games'} className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 px-4 py-3 text-sm font-black text-zinc-950 hover:bg-amber-200">
                   Configurar
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -99,7 +74,7 @@ export default async function AdminGamesPage() {
         </div>
 
         <div className="mt-6 rounded-[1.5rem] border border-amber-300/15 bg-amber-300/5 p-5 text-sm leading-6 text-amber-50/85">
-          Siguiente mejora recomendada: crear una tabla `platform_games` para que nombre, estado, orden, visibilidad, reglas económicas y métricas vengan de base de datos en lugar de constantes internas.
+          El registro `platform_games` ya queda creado por migración para evolucionar a configuración dinámica desde base de datos. El registry de código mantiene sincronizados lobby, menú y panel mientras activamos esa administración completa.
         </div>
       </div>
     </main>

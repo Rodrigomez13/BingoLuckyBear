@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Gamepad2, Grid3X3, Menu, Ticket, Trophy, WalletCards } from 'lucide-react'
+import type { ComponentType } from 'react'
+import { Gamepad2, Grid3X3, Menu, Swords, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,13 +20,41 @@ interface SiteHeaderProps {
   compact?: boolean
 }
 
-const gameLinks = [
+type HeaderActivePath = NonNullable<SiteHeaderProps['activePath']>
+type HeaderGameLink = {
+  href: string
+  label: string
+  description: string
+  icon: ComponentType<{ className?: string }>
+  active: HeaderActivePath
+}
+
+const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Grid3X3,
+}
+
+const activePathByGame: Record<PlatformGameId, HeaderActivePath> = {
+  bingo: 'participar',
+  truco: 'truco',
+  golden_bear: 'golden-bear',
+  viborita: 'viborita',
+  future_games: 'juegos',
+}
+
+const gameLinks: HeaderGameLink[] = [
   { href: '/juegos', label: 'Todos los juegos', description: 'Lobby LBB', icon: Grid3X3, active: 'juegos' },
-  { href: '/participar', label: 'Bingo', description: 'Cartones y sorteos', icon: Ticket, active: 'participar' },
-  { href: '/truco', label: 'Truco', description: 'Mesas y partidas', icon: Gamepad2, active: 'truco' },
-  { href: '/juegos/golden-bear', label: 'Golden Bear', description: 'Slot LBB Original', icon: Trophy, active: 'golden-bear' },
-  { href: '/juegos/viborita', label: 'Viborita LBB', description: 'Arcade LBB', icon: Gamepad2, active: 'viborita' },
-] as const
+  ...ACTIVE_PLATFORM_GAMES.map((game) => ({
+    href: game.href,
+    label: game.name,
+    description: game.subtitle,
+    icon: gameIcons[game.id],
+    active: activePathByGame[game.id],
+  })),
+]
 
 export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
   const gamesActive = gameLinks.some((link) => link.active === activePath)
