@@ -74,7 +74,7 @@ async function buyBonus() {
 
   const aligned = await alignBetToBonusPrice()
   if (!aligned) {
-    if (ticker) ticker.textContent = 'El monto de bonus no coincide con una apuesta disponible. Revisá la configuración admin.'
+    if (ticker) ticker.textContent = 'El bonus no está disponible con la configuración actual.'
     return
   }
 

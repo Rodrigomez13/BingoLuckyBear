@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
-import { formatAccountBalance } from '@/lib/economy/format'
+import { LOBBY_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
 type HomeRaffle = {
@@ -66,85 +66,20 @@ const navItems = [
   { href: '/ganadores', label: 'Historial', icon: Crown },
 ]
 
-const gameCards = [
-  {
-    id: 'golden-bear',
-    title: 'Golden Bear',
-    label: 'LBB Original',
-    href: '/juegos/golden-bear',
-    cta: 'Entrar al slot',
-    status: 'Demo premium',
-    description: 'Slot de cascadas, bonus y free spins. Primer juego nativo para llevar a motor server-side.',
-    icon: Trophy,
-    logo: 'GB',
-    hero: true,
-    gradient: 'from-amber-300/26 via-orange-500/16 to-black/30',
-    sound: 'slot.spin',
-  },
-  {
-    id: 'truco',
-    title: 'Truco',
-    label: 'Mesas online',
-    href: '/truco',
-    cta: 'Ver mesas',
-    status: 'Bot + online',
-    description: 'Partidas rápidas, salas públicas, modo bot y ranking competitivo.',
-    icon: Swords,
-    logo: 'T',
-    hero: true,
-    gradient: 'from-sky-400/18 via-emerald-300/12 to-black/30',
-    sound: 'truco.play',
-  },
-  {
-    id: 'bingo',
-    title: 'Bingo LBB',
-    label: 'Sorteos',
-    href: '/participar',
-    cta: 'Ver cartones',
-    status: 'Disponible',
-    description: 'Cartones digitales, sorteos programados y experiencia visual para premios.',
-    icon: Ticket,
-    logo: 'B',
-    hero: false,
-    gradient: 'from-emerald-400/18 via-amber-300/10 to-black/30',
-    sound: 'bingo.purchase',
-  },
-  {
-    id: 'viborita',
-    title: 'Viborita LBB',
-    label: 'Arcade',
-    href: '/juegos/viborita',
-    cta: 'Jugar demo',
-    status: 'Nuevo',
-    description: 'Arcade clásico propio, pensado para desafíos, niveles y ranking semanal.',
-    icon: Gamepad2,
-    logo: 'S',
-    hero: false,
-    gradient: 'from-lime-400/18 via-emerald-300/10 to-black/30',
-    sound: 'ui.click',
-  },
-  {
-    id: 'platformer',
-    title: 'Aventura 2D',
-    label: 'Próximo',
-    href: '/juegos',
-    cta: 'En diseño',
-    status: 'Roadmap',
-    description: 'Base para juegos de plataforma 2D con personaje, misiones y progresión.',
-    icon: Bot,
-    logo: '2D',
-    hero: false,
-    gradient: 'from-fuchsia-400/16 via-violet-400/10 to-black/30',
-    sound: 'ui.click',
-  },
-]
-
 const studioPillars = [
-  { icon: ShieldCheck, title: 'Modo demo premium', text: 'Primero experiencia, después economía real con motor auditado.' },
+  { icon: ShieldCheck, title: 'Rondas validadas', text: 'Cada juego con créditos debe resolver saldo y resultado desde backend.' },
   { icon: Zap, title: 'Juegos nativos', text: 'Golden Bear, Truco y arcades propios como motivo central de visita.' },
   { icon: Activity, title: 'Lobby vivo', text: 'Mesas, torneos, últimos eventos y destacados en tiempo real.' },
   { icon: Star, title: 'Retención', text: 'Misiones, niveles, logros y torneos semanales para volver a jugar.' },
 ]
+
+const gameIcons: Record<PlatformGameId, IconType> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Bot,
+}
 
 export function LobbyOperativoHome({
   activeRaffle,
@@ -329,7 +264,7 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
         <div className="relative flex min-h-72 items-center justify-center overflow-hidden rounded-[1.5rem] border border-amber-300/10 bg-emerald-950/45 p-4">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(250,204,21,.20),transparent_35%),linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.28))]" />
           <span className="absolute left-5 top-5 rounded-full border border-amber-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">LBB Original</span>
-          <span className="absolute bottom-5 right-5 rounded-full border border-lime-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-lime-200">Demo premium</span>
+          <span className="absolute bottom-5 right-5 rounded-full border border-lime-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-lime-200">Saldo LBB</span>
           <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={340} height={500} className="relative z-10 h-64 w-full object-contain drop-shadow-2xl xl:h-80" priority />
         </div>
         <div className="relative flex min-w-0 flex-col justify-center py-1">
@@ -338,10 +273,10 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
             Un lobby de juegos propios con estética LBB
           </h1>
           <p className="mt-4 max-w-2xl break-words text-base font-semibold leading-7 text-amber-100/90 sm:text-lg">
-            Golden Bear, Truco, Bingo, arcade y próximos juegos nativos. Menos landing informativa, más entrada directa a jugar.
+            Golden Bear, Truco, Bingo, arcade y próximos juegos nativos. Menos vueltas, más entrada directa a jugar.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {['LBB Originals', 'Demo gratis', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
+            {['LBB Originals', 'Saldo único', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
               <span key={item} className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-emerald-50/80">
                 {item}
               </span>
@@ -375,7 +310,7 @@ function GamesPlatformGrid() {
         </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_0.9fr] 2xl:grid-cols-5">
-        {gameCards.map((game) => (
+        {LOBBY_PLATFORM_GAMES.map((game) => (
           <GameCard key={game.id} game={game} />
         ))}
       </div>
@@ -383,25 +318,26 @@ function GamesPlatformGrid() {
   )
 }
 
-function GameCard({ game }: { game: (typeof gameCards)[number] }) {
-  const Icon = game.icon
-  const disabled = game.cta === 'En diseño'
+function GameCard({ game }: { game: PlatformGame }) {
+  const Icon = gameIcons[game.id]
+  const disabled = game.releaseStage === 'roadmap'
+  const hero = game.featured
   return (
     <Link
       href={game.href}
       data-sound={game.sound}
-      className={`group relative flex min-h-[18rem] flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-gradient-to-br ${game.gradient} p-4 shadow-xl shadow-black/25 transition hover:-translate-y-1 hover:border-amber-300/45 ${game.hero ? 'xl:min-h-[20rem]' : ''} ${disabled ? 'opacity-80' : ''}`}
+      className={`group relative flex min-h-[18rem] flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-gradient-to-br ${game.accent} p-4 shadow-xl shadow-black/25 transition hover:-translate-y-1 hover:border-amber-300/45 ${hero ? 'xl:min-h-[20rem]' : ''} ${disabled ? 'opacity-80' : ''}`}
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-300/10 blur-2xl transition group-hover:bg-amber-300/20" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
       <div className="relative mb-4 flex items-start justify-between gap-3">
-        <GameIdentity logo={game.logo} icon={Icon} title={game.title} hero={game.hero} />
+        <GameIdentity logo={game.logo} icon={Icon} title={game.name} hero={hero} />
         <span className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200">
-          {game.status}
+          {game.statusLabel}
         </span>
       </div>
-      <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.label}</p>
-      <h3 className="relative mt-1 text-2xl font-black text-white">{game.title}</h3>
+      <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
+      <h3 className="relative mt-1 text-2xl font-black text-white">{game.name}</h3>
       <p className="relative mt-3 flex-1 text-sm leading-5 text-emerald-50/72">{game.description}</p>
       <span className={`relative mt-4 flex h-11 items-center justify-center rounded-xl text-xs font-black uppercase ${disabled ? 'border border-amber-300/25 text-amber-100' : 'bg-amber-300 text-zinc-950 group-hover:bg-amber-200'}`}>
         {game.cta}
@@ -429,10 +365,10 @@ function OriginalsShowcase() {
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Plan de producto</p>
           <h2 className="mt-2 font-mono text-2xl font-black uppercase text-white">Golden Bear como primer LBB Original</h2>
           <p className="mt-3 text-sm leading-6 text-emerald-50/70">
-            Primero demo premium y retención. Después motor autoritativo, auditoría de giros, RTP calibrado, sesiones y panel admin fuerte.
+            Primer juego insignia de slots con wallet central, rondas trazables, cascadas visuales y controles operativos para crecer con orden.
           </p>
           <Link href="/juegos/golden-bear" className="mt-4 inline-flex h-11 items-center rounded-xl bg-amber-300 px-5 text-sm font-black text-zinc-950 hover:bg-amber-200">
-            Probar demo
+            Entrar al slot
           </Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -529,7 +465,7 @@ function FeaturedOriginalPanel() {
 function TournamentsPanel() {
   const tournaments = [
     { title: 'Copa Truco', subtitle: 'Mesas rápidas', href: '/truco' },
-    { title: 'Arcade semanal', subtitle: 'Ranking demo', href: '/juegos/viborita' },
+    { title: 'Arcade semanal', subtitle: 'Ranking LBB', href: '/juegos/viborita' },
     { title: 'Bingo destacado', subtitle: 'Sorteo activo', href: '/participar' },
   ]
 
@@ -556,8 +492,8 @@ function StudioRoadmapPanel() {
     <section className="rounded-[1.5rem] border border-amber-300/15 bg-black/20 p-4">
       <h2 className="font-mono text-lg font-black uppercase text-amber-200">Próximo salto</h2>
       <div className="mt-3 space-y-2 text-sm text-emerald-50/70">
-        <p>1. Demo premium sin fricción.</p>
-        <p>2. Motor server-side para Golden Bear.</p>
+        <p>1. Entrada rápida sin fricción.</p>
+        <p>2. Motor validado por servidor para Golden Bear.</p>
         <p>3. Historial, RTP real y auditoría.</p>
         <p>4. Misiones, ranking y logros.</p>
       </div>

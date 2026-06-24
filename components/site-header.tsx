@@ -23,7 +23,7 @@ const gameLinks = [
   { href: '/participar', label: 'Bingo', description: 'Cartones y sorteos', icon: Ticket, active: 'participar' },
   { href: '/truco', label: 'Truco', description: 'Mesas y partidas', icon: Gamepad2, active: 'truco' },
   { href: '/juegos/golden-bear', label: 'Golden Bear', description: 'Slot LBB Original', icon: Trophy, active: 'golden-bear' },
-  { href: '/juegos/viborita', label: 'Viborita LBB', description: 'Arcade demo', icon: Gamepad2, active: 'viborita' },
+  { href: '/juegos/viborita', label: 'Viborita LBB', description: 'Arcade LBB', icon: Gamepad2, active: 'viborita' },
 ] as const
 
 export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {

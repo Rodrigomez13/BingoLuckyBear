@@ -95,7 +95,7 @@ export function ViboritaGame() {
             Juegos
           </Link>
           <div className="text-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Arcade demo</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Arcade LBB</p>
             <h1 className="font-mono text-xl font-black uppercase text-white">Viborita LBB</h1>
           </div>
           <button onClick={reset} className="inline-flex h-10 items-center gap-2 rounded-xl bg-amber-300 px-3 text-sm font-black text-zinc-950 hover:bg-amber-200">
@@ -126,7 +126,7 @@ export function ViboritaGame() {
           <aside className="rounded-[1.5rem] border border-amber-300/15 bg-black/40 p-4">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Puntaje</p>
             <p className="mt-2 font-mono text-5xl font-black text-white">{score}</p>
-            <p className="mt-2 text-sm leading-6 text-emerald-50/65">Demo propio inspirado en juegos arcade clásicos. Preparado para conectar desafíos, créditos LBB y rankings.</p>
+            <p className="mt-2 text-sm leading-6 text-emerald-50/65">Arcade propio inspirado en juegos clásicos. Preparado para conectar desafíos, créditos LBB y rankings.</p>
             <div className="mt-5 grid grid-cols-3 gap-2">
               <span />
               <Control onClick={() => setDir('up')}>↑</Control>
