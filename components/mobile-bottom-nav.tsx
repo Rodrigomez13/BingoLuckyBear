@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Radio, Ticket, Coins, Trophy } from 'lucide-react'
+import { Home, Radio, Grid3X3, WalletCards, MoreHorizontal } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 interface NavItem {
@@ -14,10 +14,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Inicio', icon: Home, match: (p) => p === '/' },
+  { href: '/juegos', label: 'Juegos', icon: Grid3X3, match: (p) => p === '/juegos' || p.startsWith('/juegos/') || p.startsWith('/participar') || p.startsWith('/truco') },
   { href: '/en-vivo', label: 'En Vivo', icon: Radio, match: (p) => p.startsWith('/en-vivo') },
-  { href: '/participar', label: 'Bingo', icon: Ticket, match: (p) => p.startsWith('/participar') },
-  { href: '/truco', label: 'Truco', icon: Coins, match: (p) => p.startsWith('/truco') },
-  { href: '/juegos/golden-bear', label: 'Golden', icon: Trophy, match: (p) => p.startsWith('/juegos/golden-bear') },
+  { href: '/mi-cuenta/jugador', label: 'Wallet', icon: WalletCards, match: (p) => p.startsWith('/mi-cuenta') },
+  { href: '/ganadores', label: 'Más', icon: MoreHorizontal, match: (p) => p.startsWith('/ganadores') },
 ]
 
 const HIDDEN_PREFIXES = ['/admin', '/truco', '/juegos/golden-bear']
