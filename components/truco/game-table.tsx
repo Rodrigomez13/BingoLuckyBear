@@ -355,21 +355,21 @@ export function GameTable({
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
 
   const shellClass = isFullscreen
-    ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
-    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-7xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
+    ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-2 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
+    : 'relative mx-auto flex h-[calc(100svh-4.75rem)] max-w-7xl flex-col overflow-hidden px-2 pb-2 text-emerald-50 sm:h-[calc(100svh-5.5rem)] sm:px-4 lg:h-auto lg:min-h-[calc(100svh-5.5rem)] lg:overflow-visible lg:pb-10'
 
   const tableHeightClass = isFullscreen
-    ? 'h-[calc(100svh-11rem)] min-h-[300px]'
-    : 'h-[calc(100svh-18rem)] min-h-[300px]'
+    ? 'h-full min-h-0 lg:h-[calc(100svh-11rem)] lg:min-h-[300px]'
+    : 'h-full min-h-0 lg:h-[calc(100svh-18rem)] lg:min-h-[300px]'
 
   return (
     <div ref={gameShellRef} className={shellClass}>
-      <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4">
-        <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+      <div className="mb-1 flex shrink-0 items-center justify-between gap-2 sm:mb-4">
+        <Button disabled={exitBusy} onClick={() => void handleExit()} variant="outline" size="sm" className="h-8 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:h-9 sm:px-3">
           <ArrowLeft className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">{exitBusy ? 'Saliendo' : 'Salir'}</span>
         </Button>
         <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-          <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 sm:px-4 sm:py-1.5">
+          <div className="flex max-w-full items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-2.5 py-0.5 sm:px-4 sm:py-1.5">
             <span className={`h-2 w-2 shrink-0 rounded-full ${state.turn === actor ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
             <span className="truncate text-xs font-bold text-amber-100 sm:text-sm">{turnLabel}</span>
             {secondsLeft !== null && (
@@ -391,12 +391,12 @@ export function GameTable({
           )}
           {isOnline && <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-wider text-emerald-100/45 sm:text-[10px]">{statusLabel}</span>}
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1">
           <Button
             onClick={() => setScoreStyle((value) => (value === 'numeric' ? 'traditional' : 'numeric'))}
             variant="outline"
             size="sm"
-            className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3"
+            className="h-8 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:h-9 sm:px-3"
             aria-label={scoreStyle === 'numeric' ? 'Cambiar a anotación tradicional' : 'Cambiar a anotación numérica'}
             title={scoreStyle === 'numeric' ? 'Anotación numérica' : 'Anotación tradicional'}
           >
@@ -404,11 +404,11 @@ export function GameTable({
             <span className="hidden sm:ml-1.5 sm:inline">{scoreStyle === 'numeric' ? 'Números' : 'Palitos'}</span>
           </Button>
           <RulesModal compact />
-          <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
+          <Button onClick={toggleFullscreen} variant="outline" size="sm" className="h-8 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:h-9 sm:px-3" aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
           {!isOnline && (
-            <Button onClick={handleRestart} variant="outline" size="sm" className="h-9 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:px-3">
+            <Button onClick={handleRestart} variant="outline" size="sm" className="hidden h-8 border-white/15 bg-transparent px-2 text-emerald-100 hover:bg-white/5 sm:inline-flex sm:h-9 sm:px-3">
               <RotateCcw className="h-4 w-4 sm:mr-1.5" /> <span className="hidden sm:inline">Reiniciar</span>
             </Button>
           )}
@@ -416,13 +416,13 @@ export function GameTable({
       </div>
 
       {waitingForRival && (
-        <div className="mb-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-center text-xs font-semibold text-amber-100 sm:mb-4 sm:text-sm">
+        <div className="mb-1 shrink-0 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-center text-xs font-semibold text-amber-100 sm:mb-4 sm:py-2 sm:text-sm">
           Esperando rival. Si la mesa es privada, compartí el enlace o código por privado.
         </div>
       )}
 
       {botPhrase && (
-        <div className="mb-2 rounded-xl border border-sky-300/25 bg-sky-400/10 px-3 py-2 text-center text-xs font-semibold text-sky-100 sm:mb-4 sm:text-sm">
+        <div className="mb-1 shrink-0 rounded-xl border border-sky-300/25 bg-sky-400/10 px-3 py-1.5 text-center text-xs font-semibold text-sky-100 sm:mb-4 sm:py-2 sm:text-sm">
           {botPhrase}
         </div>
       )}
@@ -439,7 +439,7 @@ export function GameTable({
         florEnabled={activeRules.florEnabled}
       />
 
-      <div className="mb-2 lg:hidden">
+      <div className="mb-1 shrink-0 lg:hidden">
         <ScoreBoard
           scores={state.scores}
           target={state.targetScore}
@@ -452,19 +452,21 @@ export function GameTable({
         />
       </div>
 
-      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid min-h-0 flex-1 gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-4">
         <div className={`relative overflow-hidden rounded-[1.5rem] border-2 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-2 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:border-4 sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
           <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
 
-          <div className="relative flex h-full flex-col items-center justify-between gap-1 sm:gap-3">
+          <div className="relative flex h-full min-h-0 flex-col items-center justify-between gap-1 sm:gap-3">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
 
-            <div className="w-full rounded-xl border border-amber-300/10 bg-black/20 py-0.5 sm:rounded-2xl sm:py-1.5">
+            <div className="min-h-0 w-full flex-1 rounded-xl border border-amber-300/10 bg-black/20 py-0.5 sm:rounded-2xl sm:py-1.5">
               <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
             </div>
 
-            <PlayerHand cards={state.hands[actor]} canPlay={playerTurn} onPlay={handlePlay} />
+            <div className="shrink-0 pb-0.5">
+              <PlayerHand cards={state.hands[actor]} canPlay={playerTurn} onPlay={handlePlay} />
+            </div>
           </div>
         </div>
 
@@ -491,11 +493,11 @@ export function GameTable({
         </aside>
       </div>
 
-      <div className="mt-2 lg:hidden">
+      <div className="mt-2 hidden sm:block lg:hidden">
         <GameHistoryPanel log={state.log} perspective={actor} rivalLabel={rivalLabel} compact />
       </div>
 
-      <div className="fixed inset-x-2 bottom-2 z-[70] lg:hidden">
+      <div className="mt-2 shrink-0 pb-[max(0.15rem,env(safe-area-inset-bottom))] lg:hidden">
         <ActionButtons
           state={state}
           player={actor}
