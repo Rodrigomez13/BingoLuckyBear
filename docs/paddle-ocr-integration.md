@@ -4,19 +4,29 @@ PaddleOCR queda integrado como motor externo opcional. El flujo queda asi:
 
 1. Si el comprobante es PDF con texto seleccionable, Next.js extrae el texto directamente.
 2. Si es imagen y `PADDLE_OCR_ENDPOINT` existe, Next.js envia el archivo al servicio PaddleOCR.
-3. Si PaddleOCR no esta configurado o falla, se usa el OCR actual con Tesseract.
-4. El texto vuelve al parser del proyecto, que valida monto, numero de operacion, cuenta destino, DNI del emisor y duplicados.
+3. Si el proyecto se despliega con Vercel Services, Next.js tambien puede usar `PADDLE_OCR_URL`, que Vercel inyecta automaticamente para el servicio `paddle-ocr`.
+4. Si PaddleOCR no esta configurado o falla, se usa el OCR actual con Tesseract.
+5. El texto vuelve al parser del proyecto, que valida monto, numero de operacion, cuenta destino, DNI del emisor y duplicados.
 
-Esta separacion mantiene gratis el OCR, pero evita meter dependencias grandes en Vercel.
+Esta separacion mantiene el OCR como un servicio independiente y evita bloquear el frontend si el motor OCR pesado falla.
 
 ## Variables
+
+Para un servicio externo:
 
 ```bash
 PADDLE_OCR_ENDPOINT=https://tu-servicio-ocr.example.com/ocr
 PADDLE_OCR_API_KEY=un-token-largo
 ```
 
-`PADDLE_OCR_API_KEY` debe repetirse en el contenedor PaddleOCR.
+Para Vercel Services, `PADDLE_OCR_URL` queda inyectada automaticamente. Si no aparece o queres forzar el endpoint, configura:
+
+```bash
+PADDLE_OCR_ENDPOINT=https://www.luckybingbear.com/paddle-ocr/ocr
+PADDLE_OCR_API_KEY=un-token-largo
+```
+
+`PADDLE_OCR_API_KEY` debe repetirse en el contenedor o servicio PaddleOCR.
 
 ## Probar sin transferencia real
 
@@ -39,4 +49,4 @@ PADDLE_OCR_API_KEY=change-me
 
 ## Recomendacion operativa
 
-Para produccion barata, lo mas razonable es una VM chica o una PC propia siempre encendida con Docker. Si el servicio queda dormido, la app no se cae: vuelve al OCR actual y deja el comprobante para revision manual.
+Para produccion barata, lo mas razonable sigue siendo una VM chica, mini PC, VPS o servicio de contenedores. Vercel Services puede servir para integrar todo en un mismo dominio, pero PaddleOCR instala dependencias pesadas y modelos grandes. Si el servicio OCR falla, la app no se cae: vuelve al OCR actual y deja el comprobante para revision manual.
