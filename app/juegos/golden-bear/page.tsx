@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Golden Bear Megaways | Lucky Bingo Bear',
-  description: 'Golden Bear Megaways, una experiencia exclusiva de Lucky Bingo Bear.',
+  title: 'Golden Bear Lucky Ways | Lucky Bingo Bear',
+  description: 'Golden Bear Lucky Ways, una experiencia exclusiva de Lucky Bingo Bear.',
 }
 
 export default async function GoldenBearPage() {
@@ -15,7 +15,7 @@ export default async function GoldenBearPage() {
   return (
     <main className="fixed inset-0 z-[100] bg-black">
       <iframe
-        title="Golden Bear Megaways"
+        title="Golden Bear Lucky Ways"
         src="/games/golden-bear/index.html"
         className="h-full w-full border-0"
         allow="autoplay; fullscreen"
