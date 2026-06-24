@@ -34,6 +34,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
   const avatarSrc = player?.avatar_image_src || getCustomerAvatarImageSrc(avatar.key)
   const alias = player?.alias || user?.email?.split('@')[0] || 'Jugador'
   const totalBalance = Number(payload?.wallet?.total_balance ?? 0)
+  const balanceLabel = formatAccountBalance(totalBalance)
 
   const load = async () => {
     try {
@@ -125,18 +126,18 @@ export function UserMenu({ active = false }: { active?: boolean }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="account-menu"
-        className={`inline-flex max-w-[11rem] items-center gap-2 rounded-full border px-2 py-1 font-semibold transition sm:max-w-[16rem] ${
+        className={`inline-flex max-w-[10.75rem] items-center gap-1.5 rounded-full border px-1.5 py-1 font-semibold transition sm:max-w-[16rem] sm:gap-2 sm:px-2 ${
           active
             ? 'border-amber-300/30 bg-amber-300/10 text-amber-100'
             : 'border-white/10 bg-white/5 text-slate-200 hover:border-amber-300/30 hover:text-amber-100'
         }`}
       >
         <AvatarBubble src={avatarSrc} label={avatar.label} size="sm" />
-        <span className="hidden min-w-0 text-left sm:block">
-          <span className="block truncate text-sm leading-tight">{alias}</span>
-          <span className="block truncate text-[9px] font-bold leading-tight text-amber-300">{formatAccountBalance(totalBalance)}</span>
+        <span className="min-w-0 text-left">
+          <span className="hidden truncate text-sm leading-tight sm:block">{alias}</span>
+          <span className="block max-w-[5.4rem] truncate text-[10px] font-black leading-tight text-amber-300 sm:max-w-none sm:text-[9px]">{balanceLabel}</span>
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition sm:h-4 sm:w-4 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -151,7 +152,7 @@ export function UserMenu({ active = false }: { active?: boolean }) {
               <div className="min-w-0">
                 <p className="truncate font-bold text-white">{alias}</p>
                 <p className="truncate text-xs text-zinc-400">{user.email}</p>
-                <p className="mt-1 text-xs font-black text-emerald-300">Saldo total: {formatAccountBalance(totalBalance)}</p>
+                <p className="mt-1 text-xs font-black text-emerald-300">Saldo total: {balanceLabel}</p>
                 {isAdmin && <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{access?.role === 'operator' ? 'Operador' : 'Administrador'}</p>}
               </div>
             </div>
