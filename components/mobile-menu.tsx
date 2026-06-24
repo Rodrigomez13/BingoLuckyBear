@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Radio, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Sparkles } from 'lucide-react'
+import { Menu, X, Radio, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Sparkles, Grid3X3, WalletCards } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
 
@@ -16,7 +16,9 @@ interface MenuLink {
 
 const PRIMARY_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
-  { href: '/en-vivo', label: 'Sorteo en vivo', icon: Radio },
+  { href: '/juegos', label: 'Todos los juegos', icon: Grid3X3 },
+  { href: '/en-vivo', label: 'En Vivo', icon: Radio },
+  { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards },
 ]
 
 const GAME_LINKS: MenuLink[] = [
@@ -26,9 +28,9 @@ const GAME_LINKS: MenuLink[] = [
 ]
 
 const SECONDARY_LINKS: MenuLink[] = [
-  { href: '/ganadores', label: 'Ganadores', icon: Trophy },
-  { href: '/truco/ranking', label: 'Ranking e historial', icon: BarChart3 },
-  { href: '/#como-funciona', label: 'Cómo jugar', icon: HelpCircle },
+  { href: '/ganadores', label: 'Historial y ganadores', icon: Trophy },
+  { href: '/truco/ranking', label: 'Ranking de Truco', icon: BarChart3 },
+  { href: '/#como-funciona', label: 'Cómo funciona', icon: HelpCircle },
 ]
 
 export function MobileMenu() {
@@ -87,7 +89,7 @@ export function MobileMenu() {
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
                 <BearLogo size={34} />
-                <span className="font-mono text-sm font-bold text-white">Lucky Bingo Bear</span>
+                <span className="font-mono text-sm font-bold text-white">LuckyBingoBear</span>
               </Link>
               <button
                 type="button"
@@ -100,7 +102,7 @@ export function MobileMenu() {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-3 py-4">
-              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Navegación</p>
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Plataforma</p>
               <ul className="flex flex-col gap-1">
                 {PRIMARY_LINKS.map((link) => (
                   <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
@@ -124,12 +126,12 @@ export function MobileMenu() {
 
             <div className="border-t border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <Link
-                href="/participar"
+                href="/juegos"
                 onClick={() => setOpen(false)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-amber-300 px-4 py-3 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/20"
               >
-                <Ticket className="h-4 w-4" />
-                Jugar Bingo
+                <Grid3X3 className="h-4 w-4" />
+                Elegir juego
               </Link>
             </div>
           </div>
