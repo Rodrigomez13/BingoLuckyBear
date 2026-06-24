@@ -22,16 +22,27 @@ const PADDLE_TIMEOUT_MS = 45_000
 const IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff'])
 
 export function isPaddleOcrConfigured() {
-  return Boolean(process.env.PADDLE_OCR_ENDPOINT?.trim())
+  return Boolean(process.env.PADDLE_OCR_ENDPOINT?.trim() || process.env.PADDLE_OCR_URL?.trim())
+}
+
+function appendOcrPath(url: URL) {
+  const basePath = url.pathname.replace(/\/+$/, '')
+  url.pathname = basePath.endsWith('/ocr') ? basePath : `${basePath}/ocr`
+  return url
 }
 
 function getPaddleEndpoint() {
-  const raw = process.env.PADDLE_OCR_ENDPOINT?.trim()
-  if (!raw) return null
+  const explicitEndpoint = process.env.PADDLE_OCR_ENDPOINT?.trim()
+  if (explicitEndpoint) {
+    const url = new URL(explicitEndpoint)
+    if (!url.pathname || url.pathname === '/') url.pathname = '/ocr'
+    return url
+  }
 
-  const url = new URL(raw)
-  if (!url.pathname || url.pathname === '/') url.pathname = '/ocr'
-  return url
+  const serviceUrl = process.env.PADDLE_OCR_URL?.trim()
+  if (!serviceUrl) return null
+
+  return appendOcrPath(new URL(serviceUrl))
 }
 
 function getResponseText(data: PaddleOcrResponse) {
