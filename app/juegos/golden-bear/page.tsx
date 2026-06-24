@@ -15,13 +15,13 @@ export default async function GoldenBearPage() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#050805] text-white">
-      <SiteHeader activePath="golden-bear" kicker="Juegos LBB" />
-      <main className="mx-auto flex min-h-screen w-full max-w-[1540px] flex-col px-2 pb-3 pt-24 sm:px-4 sm:pt-28">
+      <SiteHeader activePath="golden-bear" kicker="Juegos LBB" compact />
+      <main className="mx-auto flex min-h-screen w-full max-w-[1540px] flex-col px-1 pb-1 pt-[4.75rem] sm:px-4 sm:pt-24">
         <section className="relative flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-amber-300/20 bg-black/55 shadow-2xl shadow-black/50 backdrop-blur-xl">
           <iframe
             title="Golden Bear Lucky Ways"
             src="/games/golden-bear/index.html?embed=1"
-            className="h-[calc(100svh-7.25rem)] min-h-[520px] w-full border-0 sm:h-[calc(100svh-8rem)]"
+            className="h-[calc(100svh-5rem)] min-h-0 w-full border-0 sm:h-[calc(100svh-6.5rem)]"
             allow="autoplay; fullscreen"
           />
         </section>
