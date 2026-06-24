@@ -26,6 +26,15 @@
 .feature:nth-child(1){font-size:0}.feature:nth-child(1):after{content:"Cascadas";font-size:.58rem}
 .feature:nth-child(2){font-size:0}.feature:nth-child(2):after{content:"Bonus";font-size:.58rem}
 .feature:nth-child(3){font-size:0}.feature:nth-child(3):after{content:"Wilds";font-size:.58rem}
+.action-group{grid-template-columns:56px 56px minmax(120px,1fr) minmax(110px,1fr)!important}
+.bonus-buy-btn{width:auto!important;height:54px!important;border-radius:18px!important;padding:6px 10px!important;color:#2a0d02!important;background:linear-gradient(180deg,#fff3a8,#f3b735 58%,#b86a18)!important;border:2px solid #fff0a6!important;box-shadow:0 5px 0 #6c1c04,0 10px 20px rgba(0,0,0,.24)!important;font-size:.62rem!important;line-height:1.05!important}
+.bonus-buy-btn span{display:block;font-weight:1000;text-transform:uppercase;letter-spacing:.04em}.bonus-buy-btn small{display:block;margin-top:2px;font-size:.56rem;font-weight:1000;color:#4b1607}
+
+html.embedded body{background-color:#090503;background-image:linear-gradient(180deg,rgba(4,21,13,.28),rgba(30,9,3,.72)),url("assets/golden-bear-western-bg.webp")}
+html.embedded .topbar{display:none!important}
+html.embedded .shell{height:100svh;min-height:0;padding-top:0;grid-template-rows:minmax(0,1fr) 86px;gap:0}
+html.embedded .game-layout{padding-top:0}
+html.embedded .machine{height:100%;min-height:0}
 
 @media(max-width:760px){
   html,body{height:100%;overflow:hidden}
@@ -73,8 +82,14 @@
   }
   .ticker{min-height:34px;line-height:1.15;font-size:.64rem;padding:4px 8px}
   .control-deck{min-height:82px;flex-shrink:0;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
+  .action-group{grid-template-columns:40px minmax(94px,.8fr) minmax(86px,1fr)!important}
+  .action-group #autoBtn{display:none!important}
+  .bonus-buy-btn{height:50px!important;border-radius:14px!important;font-size:.54rem!important;padding-inline:7px!important}.bonus-buy-btn small{font-size:.5rem}
   .win-card{width:min(92vw,420px);padding:16px 14px}
   .win-card strong{font-size:clamp(2rem,12vw,4.2rem)}
+  html.embedded .shell{grid-template-rows:minmax(0,1fr) 82px;padding:0 5px 5px}
+  html.embedded .game-layout{padding-top:0}
+  html.embedded .screen{width:min(100%,calc((100svh - 138px) * 6 / 7));max-height:calc(100svh - 138px)}
 }
 
 @media(max-width:430px){
@@ -85,8 +100,10 @@
   .screen{width:min(100%,calc((100svh - 174px) * 6 / 7));max-height:calc(100svh - 174px);margin-top:2px}
   .ticker{font-size:.58rem;padding-inline:6px}
   .control-deck{min-height:76px}
-  .bet-controls{flex-basis:124px;width:124px}
+  .bet-controls{flex-basis:116px;width:116px}
   .round-btn,.bet-view{height:39px}.spin-btn{height:50px}
+  html.embedded .shell{grid-template-rows:minmax(0,1fr) 76px}
+  html.embedded .screen{width:min(100%,calc((100svh - 126px) * 6 / 7));max-height:calc(100svh - 126px)}
 }
 
 @media(max-width:760px) and (orientation:landscape){
@@ -96,4 +113,6 @@
   .screen{width:min(100%,calc((100svh - 154px) * 6 / 7));max-height:calc(100svh - 154px)}
   .brand-copy strong{font-size:.82rem}
   .control-deck{min-height:66px}
+  html.embedded .shell{grid-template-rows:minmax(0,1fr) 66px}
+  html.embedded .screen{width:min(100%,calc((100svh - 106px) * 6 / 7));max-height:calc(100svh - 106px)}
 }
