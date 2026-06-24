@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Gamepad2, Menu, Radio, Ticket, Trophy } from 'lucide-react'
+import { Gamepad2, Grid3X3, Menu, Radio, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
@@ -14,17 +14,18 @@ import {
 interface SiteHeaderProps {
   kicker?: string
   jackpotPrize?: string | null
-  activePath?: 'home' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta' | 'truco' | 'golden-bear'
+  activePath?: 'home' | 'juegos' | 'participar' | 'en-vivo' | 'ganadores' | 'mi-cuenta' | 'truco' | 'golden-bear'
   compact?: boolean
 }
 
 const gameLinks = [
+  { href: '/juegos', label: 'Todos los juegos', description: 'Lobby LBB', icon: Grid3X3, active: 'juegos' },
   { href: '/participar', label: 'Bingo', description: 'Cartones y sorteos', icon: Ticket, active: 'participar' },
   { href: '/truco', label: 'Truco', description: 'Mesas y partidas', icon: Gamepad2, active: 'truco' },
-  { href: '/juegos/golden-bear', label: 'Golden Bear', description: 'Lucky Ways', icon: Trophy, active: 'golden-bear' },
+  { href: '/juegos/golden-bear', label: 'Golden Bear', description: 'Slots LBB Original', icon: Trophy, active: 'golden-bear' },
 ] as const
 
-export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
+export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
   const gamesActive = gameLinks.some((link) => link.active === activePath)
 
   return (
@@ -38,7 +39,7 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
             </div>
             <div className="hidden min-w-0 sm:block">
               <span className="block truncate font-mono text-base font-bold tracking-normal text-white">
-                Lucky Bingo Bear
+                LuckyBingoBear
               </span>
               <p className="-mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">{kicker}</p>
             </div>
@@ -51,9 +52,11 @@ export function SiteHeader({ kicker = 'Bingo digital en vivo', jackpotPrize, act
                 {jackpotPrize}
               </span>
             )}
-            <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" className="hidden sm:inline-flex" />
+            <HeaderLink href="/" active={activePath === 'home'} label="Inicio" className="hidden lg:inline-flex" />
             <GamesDropdown active={gamesActive} />
-            <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Ganadores" className="hidden md:inline-flex" />
+            <HeaderLink href="/en-vivo" active={activePath === 'en-vivo'} icon={<Radio className="h-4 w-4" />} label="En Vivo" className="hidden sm:inline-flex" />
+            <HeaderLink href="/mi-cuenta/jugador" active={activePath === 'mi-cuenta'} icon={<WalletCards className="h-4 w-4" />} label="Wallet" className="hidden md:inline-flex" />
+            <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />
             <UserMenu active={activePath === 'mi-cuenta'} />
             <MobileMenu />
           </nav>
@@ -77,7 +80,7 @@ function GamesDropdown({ active }: { active: boolean }) {
           <span>Juegos</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={12} className="w-64 border-amber-300/20 bg-zinc-950/96 p-2 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
+      <DropdownMenuContent align="end" sideOffset={12} className="w-72 border-amber-300/20 bg-zinc-950/96 p-2 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur-xl">
         {gameLinks.map((item) => {
           const Icon = item.icon
           return (
