@@ -124,32 +124,64 @@ export function ActionButtons({
   const canTruco = isPlayerTurn && canCallTruco(state, player)
   const trucoLabel = ['Truco', 'Retruco', 'Vale Cuatro'][state.trucoLevel] ?? 'Vale Cuatro'
 
+  if (compact) {
+    return (
+      <div className={panelClass(true)}>
+        {canFlor && (
+          <Button onClick={onFlor} className="mb-2 h-9 w-full rounded-xl bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200">
+            Flor
+          </Button>
+        )}
+        <div className="grid grid-cols-5 gap-1.5">
+          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
+          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
+          <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+          <Button
+            disabled={!canTruco}
+            onClick={onTruco}
+            className="h-11 rounded-xl bg-amber-400 px-1 text-[10px] font-black leading-tight text-amber-950 hover:bg-amber-300 disabled:opacity-30"
+          >
+            {shortTrucoLabel(trucoLabel)}
+          </Button>
+          <Button
+            disabled={state.phase !== 'playing'}
+            onClick={onMazo}
+            variant="outline"
+            className="h-11 rounded-xl border-rose-400/40 bg-rose-950/20 px-1 text-[10px] font-black text-rose-100 hover:bg-rose-500/10 disabled:opacity-30"
+          >
+            Mazo
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={panelClass(compact)}>
-      {!compact && <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>}
+    <div className={panelClass(false)}>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>
       {canFlor && (
         <Button onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
           Flor
         </Button>
       )}
-      <div className={compact ? 'grid grid-cols-5 gap-1.5' : 'space-y-3'}>
-        <div className={compact ? 'col-span-3' : ''}>
-          {!compact && <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Envido</p>}
+      <div className="space-y-3">
+        <div>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Envido</p>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
             <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
             <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
           </div>
         </div>
-        <div className={compact ? 'col-span-2' : ''}>
-          {!compact && <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Truco</p>}
+        <div>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Truco</p>
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <Button
               disabled={!canTruco}
               onClick={onTruco}
               className="h-9 bg-amber-400 px-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
-              {compact ? shortTrucoLabel(trucoLabel) : trucoLabel}
+              {trucoLabel}
             </Button>
             <Button
               disabled={state.phase !== 'playing'}
@@ -168,14 +200,14 @@ export function ActionButtons({
 
 function panelClass(compact: boolean) {
   return compact
-    ? 'rounded-2xl border border-amber-300/25 bg-[#06140e]/95 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-3'
+    ? 'rounded-[1.25rem] border border-amber-300/30 bg-[#06140e]/98 p-2 shadow-[0_-14px_45px_rgba(0,0,0,0.58)] backdrop-blur-2xl supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3'
     : 'rounded-2xl border border-amber-300/20 bg-[#06140e]/80 p-4'
 }
 
 function mainButtonClass(kind: 'green' | 'red' | 'amber') {
-  if (kind === 'green') return 'h-9 bg-emerald-500 text-xs font-bold text-emerald-950 hover:bg-emerald-400 sm:h-10 sm:text-sm'
-  if (kind === 'amber') return 'h-9 bg-amber-400 px-1 text-xs font-bold text-amber-950 hover:bg-amber-300 sm:h-10 sm:text-sm'
-  return 'h-9 border-rose-400/40 bg-transparent text-xs font-bold text-rose-200 hover:bg-rose-500/10 sm:h-10 sm:text-sm'
+  if (kind === 'green') return 'h-10 rounded-xl bg-emerald-500 text-xs font-black text-emerald-950 hover:bg-emerald-400 sm:h-10 sm:text-sm'
+  if (kind === 'amber') return 'h-10 rounded-xl bg-amber-400 px-1 text-xs font-black text-amber-950 hover:bg-amber-300 sm:h-10 sm:text-sm'
+  return 'h-10 rounded-xl border-rose-400/40 bg-rose-950/20 text-xs font-black text-rose-100 hover:bg-rose-500/10 sm:h-10 sm:text-sm'
 }
 
 function shortTrucoLabel(label: string) {
@@ -206,7 +238,7 @@ function ActionBtn({
       disabled={disabled}
       onClick={onClick}
       variant="outline"
-      className="h-9 border-emerald-300/30 bg-transparent px-1.5 text-[10px] font-bold text-emerald-100 hover:bg-emerald-400/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-xs"
+      className="h-11 rounded-xl border-emerald-300/30 bg-emerald-950/20 px-1 text-[10px] font-black leading-tight text-emerald-50 hover:bg-emerald-400/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-xs"
     >
       {children}
     </Button>
