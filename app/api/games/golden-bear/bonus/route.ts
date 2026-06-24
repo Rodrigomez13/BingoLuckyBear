@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { ensurePlayerAccount } from '@/lib/wallet/server'
 import { normalizeGoldenBearSettings } from '@/lib/games/golden-bear/config'
-import { playGoldenBearRound } from '../../../../../../new_games/js/round.mjs'
+import { playGoldenBearRound } from '../../../../../new_games/js/round.mjs'
 
 export const runtime = 'nodejs'
 
