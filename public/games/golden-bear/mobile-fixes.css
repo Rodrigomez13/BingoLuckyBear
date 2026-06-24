@@ -1,0 +1,142 @@
+/* Golden Bear Lucky Ways responsive polish.
+   Mobile follows a classic slot layout: compact top controls, proportional reels, credit/bet/action deck. */
+:root{
+  --gb-wood-dark:#1e0903;
+  --gb-wood:#4b1607;
+  --gb-gold:#f3b735;
+  --gb-gold-light:#ffe089;
+  --gb-emerald:#04150d;
+  --gb-mint:#45f2a7;
+}
+
+.game-logo span,.brand-copy strong{letter-spacing:-.045em}
+.screen{isolation:isolate}
+.bear-art{object-fit:contain;object-position:center bottom}
+.mega-ribbon{font-size:0!important;text-align:center}
+.mega-ribbon:after{content:"CAMINO DORADO";font-size:.68rem;letter-spacing:.14em}
+.ways-label{font-size:0!important;text-align:left}
+.ways-label strong{display:none!important}
+.ways-label:before{content:"Golden Bear";display:block;color:#ffd477;font-family:Georgia,serif;font-size:.72rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 2px #321000}
+.ways-label:after{content:"Lucky Ways";display:block;color:#fff2a4;font-family:Georgia,serif;font-size:1.16rem;font-weight:1000;letter-spacing:.02em;text-transform:uppercase;text-shadow:0 2px #321000}
+.feature-label strong{letter-spacing:.03em}
+.feature-strip{grid-template-columns:repeat(3,1fr)}
+.feature:nth-child(1) b:before{content:"∞"}.feature:nth-child(1) b{font-size:0}.feature:nth-child(1) b:before{font-size:.88rem}
+.feature:nth-child(2) b:before{content:"★"}.feature:nth-child(2) b{font-size:0}.feature:nth-child(2) b:before{font-size:.88rem}
+.feature:nth-child(3) b:before{content:"W"}.feature:nth-child(3) b{font-size:0}.feature:nth-child(3) b:before{font-size:.88rem}
+.feature:nth-child(1){font-size:0}.feature:nth-child(1):after{content:"Cascadas";font-size:.58rem}
+.feature:nth-child(2){font-size:0}.feature:nth-child(2):after{content:"Bonus";font-size:.58rem}
+.feature:nth-child(3){font-size:0}.feature:nth-child(3):after{content:"Wilds";font-size:.58rem}
+
+.action-group{grid-template-columns:56px 56px minmax(120px,1fr) minmax(110px,1fr)!important}
+.utility-btn,.round-btn,.bet-view,.spin-btn{position:relative;overflow:hidden}
+.utility-btn,.round-btn,.bet-view{border-color:rgba(255,210,92,.28)!important;background:linear-gradient(180deg,rgba(96,36,6,.92),rgba(28,9,2,.96))!important;box-shadow:inset 0 1px 0 rgba(255,240,166,.16),0 4px 0 rgba(61,18,3,.9),0 10px 20px rgba(0,0,0,.2)!important;color:#ffe8a8!important}
+.utility-btn:before,.round-btn:before,.spin-btn:before,.bonus-buy-btn:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent,rgba(255,255,255,.18),transparent);transform:translateX(-130%);transition:transform .45s ease}
+.utility-btn:hover:before,.round-btn:hover:before,.spin-btn:hover:before,.bonus-buy-btn:hover:before{transform:translateX(130%)}
+.utility-btn.active{color:var(--gb-mint)!important;border-color:rgba(69,242,167,.55)!important;background:linear-gradient(180deg,rgba(10,76,48,.96),rgba(4,23,14,.98))!important}
+.spin-btn{border-radius:999px!important;background:radial-gradient(circle at 34% 18%,#fff9c6 0 7%,transparent 8%),linear-gradient(180deg,#ffe15f,#ffae21 48%,#f06a0c 76%,#8e2900)!important;border:3px solid #fff0a6!important;box-shadow:0 8px 0 #651f00,0 16px 34px rgba(255,120,10,.34),inset 0 0 22px rgba(255,255,255,.34)!important;text-transform:uppercase!important;letter-spacing:.06em!important}
+.bonus-buy-btn{width:auto!important;height:54px!important;border-radius:18px!important;padding:6px 10px!important;color:#2a0d02!important;background:linear-gradient(180deg,#fff7b6,#f3b735 58%,#b86a18)!important;border:2px solid #fff0a6!important;box-shadow:0 5px 0 #6c1c04,0 10px 20px rgba(0,0,0,.24),inset 0 0 16px rgba(255,255,255,.25)!important;font-size:.62rem!important;line-height:1.05!important}
+.bonus-buy-btn span{display:block;font-weight:1000;text-transform:uppercase;letter-spacing:.04em}.bonus-buy-btn small{display:block;margin-top:2px;font-size:.56rem;font-weight:1000;color:#4b1607}
+
+html.embedded body{background-color:#090503;background-image:linear-gradient(180deg,rgba(4,21,13,.28),rgba(30,9,3,.72)),url("assets/golden-bear-western-bg.webp")}
+html.embedded .topbar{display:flex!important}
+html.embedded .shell{height:100svh;min-height:0;padding:4px 6px 5px;grid-template-rows:48px minmax(0,1fr) 132px;gap:4px;overflow:hidden}
+html.embedded .game-layout{padding-top:0;align-items:center}
+html.embedded .machine{height:auto;min-height:0;align-self:center}
+html.embedded .topbar{min-height:46px;height:46px;border-radius:0 0 12px 12px}
+
+@media(max-width:760px){
+  html,body{height:100%;overflow:hidden}
+  body{background-color:#090503;background-image:radial-gradient(circle at 50% 0,rgba(255,224,137,.22),transparent 32%),linear-gradient(180deg,rgba(4,21,13,.2),rgba(30,9,3,.7)),url("assets/golden-bear-western-bg.webp")}
+  .shell{height:100svh;min-height:0;grid-template-rows:48px minmax(0,1fr) 132px;overflow:hidden;padding:4px 6px 5px;gap:4px}
+  .topbar{min-height:46px;height:46px;border-radius:0 0 12px 12px;padding-inline:7px}
+  .brand-copy strong{font-size:.82rem;line-height:1.05;max-width:148px}
+  .brand-copy span{display:none!important}
+  .game-icon{width:34px;height:34px}.game-icon img{width:54px}
+  .brand-badge{display:none!important}
+  #infoBtn,#fullBtn,#historyBtn,#settingsBtn,#soundBtn{display:inline-grid!important}
+  .top-actions{gap:4px}.top-actions .icon-btn{width:32px;height:32px;font-size:.86rem}
+  .game-layout{height:100%;min-height:0;overflow:hidden;padding-top:0;display:grid;place-items:center}
+  .machine{
+    width:100%;
+    height:auto;
+    min-height:0;
+    max-height:100%;
+    overflow:hidden;
+    border-width:6px;
+    padding:4px;
+    grid-template-rows:34px auto 0;
+    background:linear-gradient(#8d3b13,#4b1607) padding-box,repeating-linear-gradient(90deg,#2b0d03 0 8px,#b86a18 9px 20px,#4b1607 21px 32px) border-box;
+  }
+  .machine-top{min-height:34px;padding:2px 8px;grid-template-columns:1fr auto}
+  .ways-label:before{font-size:.54rem;letter-spacing:.1em}
+  .ways-label:after{font-size:.78rem;line-height:1.05}
+  .multiplier{width:48px;height:28px;font-size:.92rem}
+  .feature-label{display:none!important}
+  .screen{
+    align-self:center;
+    justify-self:center;
+    width:min(100%,calc((100svh - 238px) * 6 / 7));
+    height:auto;
+    max-height:calc(100svh - 238px);
+    aspect-ratio:6 / 7;
+    min-height:0;
+    margin:0 auto;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 34%,rgba(255,224,137,.14),transparent 36%),#250504;
+  }
+  canvas{display:block;width:100%;height:100%;min-height:0!important;max-height:100%;aspect-ratio:6 / 7}
+  .ticker{display:none!important;min-height:0!important;padding:0!important;border:0!important}
+  .control-deck{min-height:132px;flex-shrink:0;border-radius:16px;padding:6px;display:grid;grid-template-columns:1fr;grid-template-rows:28px 38px 54px;gap:6px;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
+  .money-group{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;min-width:0}
+  .money-box{height:28px;border-radius:10px;padding:3px 7px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;background:linear-gradient(180deg,rgba(20,7,1,.88),rgba(5,2,0,.96));border-color:rgba(255,210,92,.22)}
+  .money-box span{font-size:.48rem;margin:0;color:#ffdc8b}.money-box strong{font-size:.78rem;margin:0;text-align:right;color:#fff3bd}
+  .bet-controls{width:100%;min-width:0;grid-template-columns:38px minmax(86px,1fr) 38px;gap:6px}
+  .round-btn,.bet-view{height:38px;border-radius:12px}.bet-view{padding:4px}.bet-view span{font-size:.49rem}.bet-view strong{font-size:.92rem}
+  .action-group{width:100%;min-width:0;grid-template-columns:42px 52px minmax(94px,1fr) minmax(104px,1.1fr)!important;gap:6px}
+  .action-group #autoBtn{display:block!important}
+  .utility-btn{height:48px!important;border-radius:13px!important;font-size:.52rem!important;line-height:1.05!important}
+  .bonus-buy-btn{height:48px!important;border-radius:13px!important;font-size:.5rem!important;padding-inline:6px!important}.bonus-buy-btn small{font-size:.46rem}
+  .spin-btn{height:50px!important;min-width:0;font-size:.86rem!important}
+  .win-card{width:min(92vw,420px);padding:16px 14px}.win-card strong{font-size:clamp(2rem,12vw,4.2rem)}
+  html.embedded .shell{grid-template-rows:48px minmax(0,1fr) 132px;padding:4px 5px 5px;gap:4px}
+  html.embedded .game-layout{padding-top:0}
+  html.embedded .screen{width:min(100%,calc((100svh - 238px) * 6 / 7));max-height:calc(100svh - 238px)}
+}
+
+@media(max-width:430px){
+  .shell{grid-template-rows:46px minmax(0,1fr) 128px;padding-inline:5px}
+  .topbar{min-height:44px;height:44px;padding-inline:7px}
+  .brand-copy strong{max-width:108px;font-size:.74rem}
+  .machine{grid-template-rows:32px auto 0}
+  .machine-top{min-height:32px}
+  .screen{width:min(100%,calc((100svh - 228px) * 6 / 7));max-height:calc(100svh - 228px);margin-top:0}
+  .control-deck{min-height:128px;grid-template-rows:26px 36px 52px}
+  .money-box{height:26px}.money-box strong{font-size:.72rem}
+  .bet-controls{grid-template-columns:36px minmax(70px,1fr) 36px}
+  .round-btn,.bet-view{height:36px}.spin-btn{height:48px!important}
+  .top-actions .icon-btn{width:29px;height:29px}
+  .action-group{grid-template-columns:38px 46px minmax(82px,1fr) minmax(96px,1.05fr)!important;gap:5px}
+  .utility-btn{font-size:.48rem!important}.spin-btn{font-size:.78rem!important}.bonus-buy-btn{font-size:.45rem!important}
+  html.embedded .shell{grid-template-rows:46px minmax(0,1fr) 128px}
+  html.embedded .screen{width:min(100%,calc((100svh - 228px) * 6 / 7));max-height:calc(100svh - 228px)}
+}
+
+@media(max-width:370px){
+  .brand-copy strong{max-width:84px}
+  .top-actions{gap:3px}.top-actions .icon-btn{width:27px;height:27px;font-size:.74rem}
+  .action-group{grid-template-columns:36px 42px minmax(72px,1fr) minmax(88px,1fr)!important;gap:4px}
+  .utility-btn{font-size:.44rem!important}.spin-btn{font-size:.72rem!important}.bonus-buy-btn small{font-size:.4rem}
+}
+
+@media(max-width:760px) and (orientation:landscape){
+  .shell{grid-template-rows:40px minmax(0,1fr) 72px}
+  .topbar{height:38px;min-height:38px}
+  .machine{grid-template-rows:30px auto 0}
+  .screen{width:min(100%,calc((100svh - 112px) * 6 / 7));max-height:calc(100svh - 112px)}
+  .brand-copy strong{font-size:.72rem}
+  .control-deck{min-height:72px;grid-template-columns:120px 130px minmax(0,1fr);grid-template-rows:1fr;gap:6px}
+  .money-group{display:none!important}.bet-controls{height:50px;align-self:center}.action-group{align-self:center}
+  .round-btn,.bet-view{height:40px}.utility-btn,.bonus-buy-btn{height:46px!important}.spin-btn{height:48px!important}
+  html.embedded .shell{grid-template-rows:40px minmax(0,1fr) 72px}
+  html.embedded .screen{width:min(100%,calc((100svh - 112px) * 6 / 7));max-height:calc(100svh - 112px)}
+}
