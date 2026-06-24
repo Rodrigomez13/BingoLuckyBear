@@ -13,7 +13,6 @@ import {
   Crown,
   Filter,
   Gamepad2,
-  Gift,
   Grid3X3,
   Home,
   Menu,
