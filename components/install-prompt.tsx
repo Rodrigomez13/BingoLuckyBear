@@ -11,6 +11,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = 'lbb-install-dismissed'
+const SESSION_DISMISS_KEY = 'lbb-install-dismissed-session'
+const QUIET_PREFIXES = ['/truco', '/juegos/golden-bear', '/mi-cuenta', '/participar', '/admin']
 
 export function InstallPrompt() {
   const pathname = usePathname()
@@ -18,7 +20,6 @@ export function InstallPrompt() {
   const [visible, setVisible] = useState(false)
   const [iosHint, setIosHint] = useState(false)
 
-  // Register the service worker once on mount.
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
@@ -44,22 +45,23 @@ export function InstallPrompt() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Already installed (running as PWA)?
+    const quietPath = QUIET_PREFIXES.some((prefix) => pathname?.startsWith(prefix))
+    if (quietPath) return
+
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       // @ts-expect-error iOS Safari
       window.navigator.standalone === true
     if (standalone) return
 
-    // Recently dismissed?
     try {
+      if (sessionStorage.getItem(SESSION_DISMISS_KEY) === '1') return
       const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0)
-      if (dismissedAt && Date.now() - dismissedAt < 1000 * 60 * 60 * 24 * 14) return
+      if (dismissedAt && Date.now() - dismissedAt < 1000 * 60 * 60 * 24 * 21) return
     } catch {
       /* ignore */
     }
 
-    // iOS: no beforeinstallprompt, show manual hint.
     const ua = window.navigator.userAgent.toLowerCase()
     const isIos = /iphone|ipad|ipod/.test(ua)
     const isSafari = /safari/.test(ua) && !/crios|fxios|edgios/.test(ua)
@@ -67,22 +69,23 @@ export function InstallPrompt() {
       const timer = setTimeout(() => {
         setIosHint(true)
         setVisible(true)
-      }, 2500)
+      }, 18000)
       return () => clearTimeout(timer)
     }
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault()
       setDeferred(event as BeforeInstallPromptEvent)
-      setVisible(true)
+      window.setTimeout(() => setVisible(true), 12000)
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [])
+  }, [pathname])
 
   const dismiss = () => {
     setVisible(false)
     try {
+      sessionStorage.setItem(SESSION_DISMISS_KEY, '1')
       localStorage.setItem(DISMISS_KEY, String(Date.now()))
     } catch {
       /* ignore */
@@ -94,14 +97,10 @@ export function InstallPrompt() {
     await deferred.prompt()
     await deferred.userChoice
     setDeferred(null)
-    setVisible(false)
+    dismiss()
   }
 
-  const quietPath = pathname?.startsWith('/truco')
-    || pathname?.startsWith('/mi-cuenta')
-    || pathname?.startsWith('/participar')
-    || pathname?.startsWith('/admin')
-
+  const quietPath = QUIET_PREFIXES.some((prefix) => pathname?.startsWith(prefix))
   if (!visible || quietPath) return null
 
   return (
