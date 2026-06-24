@@ -17,14 +17,14 @@ export function GameHistoryPanel({
   const visibleLog = log.slice(-24).reverse()
 
   return (
-    <div className={`rounded-2xl border border-amber-300/20 bg-[#06140e]/80 ${compact ? 'p-2' : 'p-4'} shadow-xl shadow-black/30`}>
+    <div className={`rounded-2xl border border-amber-300/20 bg-[#06140e]/80 ${compact ? 'hidden p-2 sm:block' : 'p-4'} shadow-xl shadow-black/30`}>
       <div className={`${compact ? 'mb-1.5' : 'mb-3'} flex items-center justify-between gap-2`}>
         <h3 className={`${compact ? 'text-[10px]' : 'text-xs'} font-black uppercase tracking-[0.2em] text-amber-300`}>Historial</h3>
         <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-100/45">
           real time
         </span>
       </div>
-      <ScrollArea className={`${compact ? 'h-24' : 'h-56'} lbb-scrollbar pr-2`}>
+      <ScrollArea className={`${compact ? 'h-20' : 'h-56'} lbb-scrollbar pr-2`}>
         {visibleLog.length === 0 ? (
           <p className="rounded-xl border border-dashed border-white/10 bg-black/20 p-3 text-xs text-emerald-100/45">
             Los cantos, puntos y jugadas aparecerán acá.
