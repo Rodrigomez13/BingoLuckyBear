@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Radio, Coins, Trophy, Ticket, Home, BarChart3, HelpCircle } from 'lucide-react'
+import { Menu, X, Radio, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Sparkles } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
 
@@ -17,8 +17,12 @@ interface MenuLink {
 const PRIMARY_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/en-vivo', label: 'Sorteo en vivo', icon: Radio },
-  { href: '/participar', label: 'Comprar cartones', icon: Ticket },
-  { href: '/truco', label: 'Truco online', icon: Coins },
+]
+
+const GAME_LINKS: MenuLink[] = [
+  { href: '/participar', label: 'Bingo', icon: Ticket },
+  { href: '/truco', label: 'Truco', icon: Gamepad2 },
+  { href: '/juegos/golden-bear', label: 'Golden Bear', icon: Sparkles },
 ]
 
 const SECONDARY_LINKS: MenuLink[] = [
@@ -36,12 +40,10 @@ export function MobileMenu() {
     setMounted(true)
   }, [])
 
-  // Close on route change
   useEffect(() => {
     setOpen(false)
   }, [pathname])
 
-  // Lock body scroll while open
   useEffect(() => {
     if (open) {
       const original = document.body.style.overflow
@@ -52,7 +54,6 @@ export function MobileMenu() {
     }
   }, [open])
 
-  // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
@@ -75,7 +76,6 @@ export function MobileMenu() {
 
       {open && mounted && createPortal(
         <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Menú de navegación">
-          {/* Backdrop */}
           <button
             type="button"
             aria-label="Cerrar menú"
@@ -83,7 +83,6 @@ export function MobileMenu() {
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
 
-          {/* Panel */}
           <div className="absolute right-0 top-0 flex h-full w-[min(84vw,20rem)] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
@@ -101,9 +100,16 @@ export function MobileMenu() {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-3 py-4">
-              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Jugar</p>
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Navegación</p>
               <ul className="flex flex-col gap-1">
                 {PRIMARY_LINKS.map((link) => (
+                  <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
+                ))}
+              </ul>
+
+              <p className="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/70">Juegos</p>
+              <ul className="flex flex-col gap-1">
+                {GAME_LINKS.map((link) => (
                   <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
                 ))}
               </ul>
@@ -123,7 +129,7 @@ export function MobileMenu() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-amber-300 px-4 py-3 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/20"
               >
                 <Ticket className="h-4 w-4" />
-                Conseguir mi cartón
+                Jugar Bingo
               </Link>
             </div>
           </div>
