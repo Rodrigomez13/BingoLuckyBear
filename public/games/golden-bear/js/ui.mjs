@@ -29,7 +29,7 @@ export function createUi({ elements, money, playSound, getTurbo }) {
     if (!elements.lineDetails) return
     elements.lineTotal.textContent = `$ ${money(amount || 0)}`
     elements.lineDetails.innerHTML = details?.length
-      ? details.map(detail => `<div class="detail-row"><b>${detail.symbol} · ${detail.reels} reels · ${detail.ways} formas · ×${multiplier}</b><span>$ ${money(detail.value)}</span></div>`).join('')
+      ? details.map(detail => `<div class="detail-row"><b>${detail.symbol} · ${detail.reels} reels · multiplicador ×${multiplier}</b><span>$ ${money(detail.value)}</span></div>`).join('')
       : '<div class="detail-row"><b>Sin pagos</b><span>$ 0</span></div>'
     elements.lineDetails.classList.remove('flash')
     void elements.lineDetails.offsetWidth
