@@ -207,11 +207,11 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
 
         <div className="mt-4 rounded-2xl border border-amber-300/25 bg-emerald-950/50 p-3">
           <Image
-            src="/truco/golden-bear-mascot.webp"
+            src="/lbb/visuals/slot-game.webp"
             alt="Lucky Bear"
             width={220}
             height={220}
-            className="mx-auto h-24 w-24 object-contain"
+            className="h-28 w-full rounded-xl object-cover"
           />
           <p className="mt-2 font-mono text-lg font-black uppercase text-amber-200">LBB Originals</p>
           <p className="mt-1 text-xs leading-4 text-emerald-50/75">Slots, cartas, arcade y próximos juegos propios.</p>
@@ -258,23 +258,30 @@ function TopAction({ href, icon, label }: { href: string; icon: React.ReactNode;
 
 function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
   return (
-    <section className="relative overflow-hidden rounded-[2rem] border border-amber-300/15 bg-[radial-gradient(circle_at_14%_18%,rgba(250,204,21,.20),transparent_24%),linear-gradient(135deg,rgba(7,29,18,.96),rgba(2,8,5,.78))] p-4 shadow-2xl shadow-black/35 lg:p-5">
+    <section className="relative overflow-hidden rounded-[2rem] border border-amber-300/18 bg-[radial-gradient(circle_at_14%_18%,rgba(250,204,21,.20),transparent_24%),linear-gradient(135deg,rgba(7,29,18,.96),rgba(2,8,5,.78))] p-4 shadow-2xl shadow-black/35 lg:p-5">
       <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-amber-300/10 blur-3xl" />
       <div className="absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-emerald-400/10 blur-3xl" />
       <div className="grid gap-5 xl:grid-cols-[minmax(17rem,0.78fr)_minmax(0,1fr)] xl:items-center">
-        <div className="relative flex min-h-72 items-center justify-center overflow-hidden rounded-[1.5rem] border border-amber-300/10 bg-emerald-950/45 p-4">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(250,204,21,.20),transparent_35%),linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.28))]" />
+        <div className="relative flex min-h-72 items-center justify-center overflow-hidden rounded-[1.5rem] border border-amber-300/20 bg-emerald-950/45 p-4 shadow-2xl shadow-black/35 xl:min-h-[30rem]">
+          <Image
+            src="/lbb/visuals/lbb-universe-hero.webp"
+            alt="Lucky Bingo Bear: universo de juegos"
+            width={1600}
+            height={900}
+            className="absolute inset-0 h-full w-full scale-[1.02] object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(250,204,21,.10),transparent_35%),linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.48)),linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.02),rgba(0,0,0,.35))]" />
           <span className="absolute left-5 top-5 rounded-full border border-amber-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">LBB Original</span>
           <span className="absolute bottom-5 right-5 rounded-full border border-lime-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-lime-200">Saldo LBB</span>
-          <Image src="/truco/golden-bear-mascot.webp" alt="Lucky Bear" width={340} height={500} className="relative z-10 h-64 w-full object-contain drop-shadow-2xl xl:h-80" priority />
         </div>
         <div className="relative flex min-w-0 flex-col justify-center py-1">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-300">LuckyBingoBear Games</p>
           <h1 className="mt-2 max-w-4xl break-words font-mono text-[2.35rem] font-black uppercase leading-[0.94] text-white sm:text-5xl xl:text-6xl">
-            Un lobby de juegos propios con estética LBB
+            Tu plataforma de juegos, una sola cuenta
           </h1>
           <p className="mt-4 max-w-2xl break-words text-base font-semibold leading-7 text-amber-100/90 sm:text-lg">
-            Golden Bear, Truco, Bingo, arcade y próximos juegos nativos. Menos vueltas, más entrada directa a jugar.
+            Golden Bear, Truco, Bingo, arcade y próximos juegos nativos con saldo general, lobby directo y una estética dorada pensada para entrar y jugar.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {['LBB Originals', 'Saldo único', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
@@ -288,7 +295,7 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
               Jugar Golden Bear
             </Link>
             <Link href="/juegos" data-sound="ui.click" className="flex h-12 items-center justify-center rounded-xl border border-white/15 px-6 font-black text-white hover:border-amber-300/40 hover:text-amber-200">
-              Ver todos los juegos
+              Elegir juego
             </Link>
           </div>
           {jackpotPrize && <p className="mt-4 text-xs font-semibold text-emerald-50/45">Bingo destacado hoy: premio principal {jackpotPrize}</p>}
@@ -458,7 +465,7 @@ function FeaturedOriginalPanel() {
         <Sparkles className="h-5 w-5 text-amber-300" />
         <h2 className="font-mono text-lg font-black uppercase text-amber-200">LBB Original</h2>
       </div>
-      <Image src="/truco/golden-bear-mascot.webp" alt="Golden Bear" width={260} height={260} className="mx-auto h-40 w-40 object-contain drop-shadow-2xl" />
+      <Image src="/lbb/visuals/slot-game.webp" alt="Golden Bear" width={520} height={320} className="mx-auto h-40 w-full rounded-2xl object-cover shadow-2xl shadow-black/35" />
       <p className="mt-2 text-xl font-black text-white">Golden Bear</p>
       <p className="mt-1 text-sm leading-5 text-emerald-50/65">El slot propio queda como juego insignia de la plataforma.</p>
       <Link href="/juegos/golden-bear" className="mt-4 flex h-11 items-center justify-center rounded-xl bg-amber-300 text-sm font-black text-zinc-950 hover:bg-amber-200">Jugar</Link>

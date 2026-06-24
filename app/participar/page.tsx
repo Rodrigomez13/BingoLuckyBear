@@ -157,7 +157,7 @@ export default function ParticipatePage() {
       const { error } = await supabase.auth.signInWithOtp({
         email: loginEmail,
         options: {
-          emailRedirectTo: getAuthCallbackUrl('/participar'),
+          emailRedirectTo: getAuthCallbackUrl('/participar', window.location.origin),
           shouldCreateUser: true,
         },
       })

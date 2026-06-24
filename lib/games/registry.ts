@@ -16,6 +16,7 @@ export type PlatformGame = {
   cta: string
   statusLabel: string
   logo: string
+  visualAsset: string
   category: PlatformGameCategory
   releaseStage: PlatformGameReleaseStage
   walletMode: PlatformGameWalletMode
@@ -39,6 +40,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Comprar cartón',
     statusLabel: 'Disponible',
     logo: 'B',
+    visualAsset: '/lbb/visuals/bingo-game.webp',
     category: 'sorteos',
     releaseStage: 'live',
     walletMode: 'general_balance',
@@ -59,6 +61,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Ver mesas',
     statusLabel: 'Mesas activas',
     logo: 'T',
+    visualAsset: '/lbb/visuals/truco-game.webp',
     category: 'cartas',
     releaseStage: 'live',
     walletMode: 'general_balance',
@@ -79,6 +82,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Entrar al slot',
     statusLabel: 'LBB Original',
     logo: 'GB',
+    visualAsset: '/lbb/visuals/slot-game.webp',
     category: 'slots',
     releaseStage: 'preview',
     walletMode: 'general_balance',
@@ -99,6 +103,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Jugar',
     statusLabel: 'Nuevo',
     logo: 'S',
+    visualAsset: '/lbb/visuals/arcade-game.webp',
     category: 'arcade',
     releaseStage: 'preview',
     walletMode: 'progress_only',
@@ -119,6 +124,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Ver plataforma',
     statusLabel: 'En preparación',
     logo: 'LBB',
+    visualAsset: '/lbb/visuals/empty-state.webp',
     category: 'roadmap',
     releaseStage: 'roadmap',
     walletMode: 'none',

@@ -110,12 +110,19 @@ export function GameShowcaseVisual({ game, compact = false }: { game: PlatformGa
   const Icon = spec.icon
 
   return (
-    <div className={`relative overflow-hidden rounded-[1.4rem] border border-amber-300/25 bg-gradient-to-br ${spec.tone} shadow-2xl shadow-black/35 ${compact ? 'p-3' : 'p-4'}`}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,232,160,.22),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(74,222,128,.12),transparent_24%),linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.35))]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(255,215,128,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,215,128,.5)_1px,transparent_1px)] [background-size:32px_32px]" />
+    <div className={`relative ${compact ? 'min-h-[15rem]' : 'min-h-[19rem]'} overflow-hidden rounded-[1.4rem] border border-amber-300/25 bg-gradient-to-br ${spec.tone} p-0 shadow-2xl shadow-black/35`}>
+      <img
+        src={game.visualAsset}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full scale-[1.03] object-cover opacity-75 transition duration-700 group-hover:scale-[1.07]"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,232,160,.24),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(74,222,128,.14),transparent_24%),linear-gradient(90deg,rgba(0,0,0,.78),rgba(0,0,0,.34)_45%,rgba(0,0,0,.74)),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.68))]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,215,128,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,215,128,.5)_1px,transparent_1px)] [background-size:32px_32px]" />
+      <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-200/18 shadow-[inset_0_0_34px_rgba(251,191,36,.12)]" />
 
-      <div className="relative grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="min-w-0 rounded-[1.1rem] border border-amber-300/20 bg-black/35 p-3">
+      <div className={`relative z-10 grid gap-3 ${compact ? 'p-3' : 'p-4'} lg:grid-cols-[0.9fr_1.1fr]`}>
+        <div className="min-w-0 rounded-[1.1rem] border border-amber-300/25 bg-black/48 p-3 shadow-2xl shadow-black/20 backdrop-blur-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-200/80">LBB Originals</p>
@@ -134,7 +141,7 @@ export function GameShowcaseVisual({ game, compact = false }: { game: PlatformGa
 
           <div className="mt-4 grid grid-cols-4 gap-1.5">
             {spec.symbols.map((symbol) => (
-              <span key={symbol} className="grid aspect-square place-items-center rounded-xl border border-amber-300/25 bg-black/45 font-serif text-lg font-black text-amber-100 shadow-inner">
+              <span key={symbol} className="grid aspect-square place-items-center rounded-xl border border-amber-300/28 bg-black/55 font-serif text-lg font-black text-amber-100 shadow-inner">
                 {symbol}
               </span>
             ))}
@@ -144,14 +151,14 @@ export function GameShowcaseVisual({ game, compact = false }: { game: PlatformGa
         <div className="grid min-w-0 gap-3">
           <div className="grid gap-2 sm:grid-cols-3">
             {spec.promo.map((item) => (
-              <div key={item.title} className="rounded-xl border border-amber-300/20 bg-black/38 p-2.5 text-center shadow-inner">
+              <div key={item.title} className="rounded-xl border border-amber-300/22 bg-black/48 p-2.5 text-center shadow-inner backdrop-blur-[2px]">
                 <p className="font-serif text-sm font-black uppercase leading-tight text-amber-100">{item.title}</p>
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100/70">{item.detail}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-xl border border-amber-300/20 bg-[radial-gradient(circle_at_center,rgba(251,191,36,.12),transparent_55%),rgba(0,0,0,.34)] p-3">
+          <div className="rounded-xl border border-amber-300/22 bg-[radial-gradient(circle_at_center,rgba(251,191,36,.16),transparent_55%),rgba(0,0,0,.50)] p-3 shadow-2xl shadow-black/20 backdrop-blur-[2px]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/80">Miniatura lobby</p>
@@ -165,7 +172,7 @@ export function GameShowcaseVisual({ game, compact = false }: { game: PlatformGa
 
           <div className="grid grid-cols-3 gap-2">
             {spec.stats.map((item) => (
-              <div key={item.label} className="rounded-xl border border-white/10 bg-emerald-950/38 px-2 py-2 text-center">
+              <div key={item.label} className="rounded-xl border border-white/10 bg-emerald-950/58 px-2 py-2 text-center backdrop-blur-[2px]">
                 <p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-100/55">{item.label}</p>
                 <p className="mt-0.5 text-xs font-black text-amber-200">{item.value}</p>
               </div>
