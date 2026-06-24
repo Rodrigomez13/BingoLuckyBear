@@ -39,7 +39,7 @@ export function PlayerMatchPreview({
       ? prizePool - getHouseFee(prizePool)
       : 0
   return (
-    <div className="mb-2 grid gap-2 rounded-2xl border border-amber-300/20 bg-[#06140e]/85 p-2 shadow-xl shadow-black/30 sm:mb-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:p-3">
+    <div className="mb-3 hidden gap-2 rounded-2xl border border-amber-300/20 bg-[#06140e]/85 p-2 shadow-xl shadow-black/30 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:p-3 lg:mb-4">
       <PlayerPill
         label="Vos"
         name={selfIdentity?.name ?? 'Vos'}
