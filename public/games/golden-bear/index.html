@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#04150d">
   <title>Golden Bear Lucky Ways · Lucky Bingo Bear</title>
+  <script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embedded')</script>
   <link rel="icon" href="assets/golden-bear-mascot.webp">
   <link rel="preload" href="assets/golden-bear-symbols.webp" as="image">
   <link rel="preload" href="assets/golden-bear-western-bg.webp" as="image">
@@ -97,6 +98,7 @@
       <div class="action-group">
         <button id="turboBtn" class="utility-btn" title="Modo turbo">Turbo</button>
         <button id="autoBtn" class="utility-btn" title="Autogiro">Auto<br>×10</button>
+        <button id="buyBonusBtn" class="utility-btn bonus-buy-btn" title="Comprar bonus"><span>Comprar Bonus</span><small>$ 100 · 6 FS</small></button>
         <button id="spinBtn" class="spin-btn">GIRAR</button>
       </div>
     </footer>
@@ -108,6 +110,7 @@
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
   <script type="module" src="js/render-fixes.mjs"></script>
+  <script type="module" src="js/bonus-buy.mjs"></script>
   <script type="module" src="js/game.mjs"></script>
 </body>
 </html>
