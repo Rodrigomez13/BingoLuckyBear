@@ -1,8 +1,11 @@
 import Link from 'next/link'
+import type { ComponentType } from 'react'
 import { ArrowRight, BarChart3, Gamepad2, Settings, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { requireAdminPage } from '@/lib/auth/roles'
 
 export const dynamic = 'force-dynamic'
+
+type IconType = ComponentType<{ className?: string }>
 
 const games = [
   {
@@ -15,7 +18,7 @@ const games = [
   },
   {
     name: 'Truco',
-    href: '/admin/truco',
+    href: '/admin/games',
     status: 'Mesas y créditos',
     description: 'Partidas contra bot, mesas online, espectadores y apuestas laterales.',
     icon: Gamepad2,
@@ -103,7 +106,7 @@ export default async function AdminGamesPage() {
   )
 }
 
-function Metric({ icon: Icon, label, value }: { icon: typeof WalletCards; label: string; value: string }) {
+function Metric({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
       <Icon className="mb-3 h-5 w-5 text-amber-300" />
