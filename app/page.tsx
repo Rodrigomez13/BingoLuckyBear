@@ -1,4 +1,5 @@
 import { LobbyOperativoHome } from '@/components/home/lobby-operativo-home'
+import { LobbyImmersiveEffects } from '@/components/home/lobby-immersive-effects'
 import { getCustomerAvatar, getCustomerAvatarImageSrc } from '@/lib/customer/avatars'
 import { getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
@@ -117,12 +118,15 @@ export default async function HomePage() {
   const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)?.amount
 
   return (
-    <LobbyOperativoHome
-      activeRaffle={activeRaffle}
-      nextRaffle={nextRaffle}
-      jackpotPrize={jackpotPrize}
-      rooms={rooms}
-      player={player}
-    />
+    <div className="relative min-h-screen overflow-hidden bg-[#04130c]">
+      <LobbyOperativoHome
+        activeRaffle={activeRaffle}
+        nextRaffle={nextRaffle}
+        jackpotPrize={jackpotPrize}
+        rooms={rooms}
+        player={player}
+      />
+      <LobbyImmersiveEffects />
+    </div>
   )
 }
