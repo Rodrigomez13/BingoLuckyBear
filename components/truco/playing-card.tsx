@@ -5,7 +5,7 @@ import { type TrucoCard, CARD_SPRITE_COLUMNS, CARD_SPRITE_ROWS, CARD_SPRITE_SRC,
 const SIZE = {
   sm: 'w-12 text-sm sm:w-16 lg:w-[4.5rem]',
   md: 'w-14 text-base sm:w-20 lg:w-[5.25rem]',
-  lg: 'w-20 text-lg sm:w-24 lg:w-28',
+  lg: 'w-[4.65rem] text-lg sm:w-24 lg:w-28',
 }
 
 export function PlayingCard({
