@@ -12,27 +12,54 @@
 .game-logo span,.brand-copy strong{letter-spacing:-.045em}
 .screen{isolation:isolate}
 .bear-art{object-fit:contain;object-position:center bottom}
+.mega-ribbon{font-size:0!important;text-align:center}
+.mega-ribbon:after{content:"CAMINO DORADO";font-size:.68rem;letter-spacing:.14em}
+.ways-label{font-size:0!important;text-align:left}
+.ways-label strong{display:none!important}
+.ways-label:before{content:"Golden Bear";display:block;color:#ffd477;font-family:Georgia,serif;font-size:.72rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 2px #321000}
+.ways-label:after{content:"Lucky Ways";display:block;color:#fff2a4;font-family:Georgia,serif;font-size:1.16rem;font-weight:1000;letter-spacing:.02em;text-transform:uppercase;text-shadow:0 2px #321000}
+.feature-label strong{letter-spacing:.03em}
+.feature-strip{grid-template-columns:repeat(3,1fr)}
+.feature:nth-child(1) b:before{content:"∞"}.feature:nth-child(1) b{font-size:0}.feature:nth-child(1) b:before{font-size:.88rem}
+.feature:nth-child(2) b:before{content:"★"}.feature:nth-child(2) b{font-size:0}.feature:nth-child(2) b:before{font-size:.88rem}
+.feature:nth-child(3) b:before{content:"W"}.feature:nth-child(3) b{font-size:0}.feature:nth-child(3) b:before{font-size:.88rem}
+.feature:nth-child(1){font-size:0}.feature:nth-child(1):after{content:"Cascadas";font-size:.58rem}
+.feature:nth-child(2){font-size:0}.feature:nth-child(2):after{content:"Bonus";font-size:.58rem}
+.feature:nth-child(3){font-size:0}.feature:nth-child(3):after{content:"Wilds";font-size:.58rem}
 
 @media(max-width:760px){
   html,body{height:100%;overflow:hidden}
   body{background-color:#090503;background-image:radial-gradient(circle at 50% 0,rgba(255,224,137,.22),transparent 32%),linear-gradient(180deg,rgba(4,21,13,.2),rgba(30,9,3,.7)),url("assets/golden-bear-western-bg.webp")}
-  .shell{height:100svh;min-height:0;grid-template-rows:50px minmax(0,1fr) 82px;overflow:hidden}
-  .game-layout{height:100%;min-height:0;overflow:hidden}
+  .shell{height:100svh;min-height:0;grid-template-rows:48px minmax(0,1fr) 82px;overflow:hidden;padding:4px 6px 5px;gap:0}
+  .topbar{min-height:46px;height:46px;border-radius:0 0 9px 9px}
+  .brand-copy strong{font-size:.9rem;line-height:1.05}
+  .game-icon{width:34px;height:34px}.game-icon img{width:54px}
+  .brand-badge,#fullBtn,#infoBtn{display:none!important}
+  .top-actions{gap:4px}.top-actions .icon-btn{width:34px;height:34px}
+  .game-layout{height:100%;min-height:0;overflow:hidden;padding-top:5px}
   .machine{
     height:100%;
     min-height:0;
     overflow:hidden;
-    grid-template-rows:42px minmax(0,1fr) 38px;
+    border-width:6px;
+    padding:4px;
+    grid-template-rows:40px minmax(0,1fr) 34px;
     background:linear-gradient(#8d3b13,#4b1607) padding-box,repeating-linear-gradient(90deg,#2b0d03 0 8px,#b86a18 9px 20px,#4b1607 21px 32px) border-box;
   }
+  .machine-top{min-height:40px;padding:3px 8px;grid-template-columns:1fr auto}
+  .ways-label:before{font-size:.58rem;letter-spacing:.1em}
+  .ways-label:after{font-size:.9rem;line-height:1.05}
+  .multiplier{width:52px;height:31px;font-size:1rem}
+  .feature-label{display:none!important}
   .screen{
-    align-self:center;
+    align-self:start;
     justify-self:center;
-    width:min(100%,calc((100svh - 220px) * 6 / 7));
+    width:min(100%,calc((100svh - 186px) * 6 / 7));
     height:auto;
-    max-height:calc(100svh - 220px);
+    max-height:calc(100svh - 186px);
     aspect-ratio:6 / 7;
     min-height:0;
+    margin-top:3px;
     overflow:hidden;
     background:radial-gradient(circle at 50% 34%,rgba(255,224,137,.14),transparent 36%),#250504;
   }
@@ -44,23 +71,29 @@
     max-height:100%;
     aspect-ratio:6 / 7;
   }
-  .ticker{min-height:38px;line-height:1.2}
-  .control-deck{flex-shrink:0;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
+  .ticker{min-height:34px;line-height:1.15;font-size:.64rem;padding:4px 8px}
+  .control-deck{min-height:82px;flex-shrink:0;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
   .win-card{width:min(92vw,420px);padding:16px 14px}
   .win-card strong{font-size:clamp(2rem,12vw,4.2rem)}
 }
 
 @media(max-width:430px){
-  .shell{grid-template-rows:48px minmax(0,1fr) 78px}
-  .machine{grid-template-rows:38px minmax(0,1fr) 34px}
-  .screen{width:min(100%,calc((100svh - 202px) * 6 / 7));max-height:calc(100svh - 202px)}
-  .ticker{font-size:.62rem;padding-inline:6px}
+  .shell{grid-template-rows:46px minmax(0,1fr) 76px;padding-inline:5px}
+  .topbar{min-height:44px;height:44px;padding-inline:7px}
+  .machine{grid-template-rows:36px minmax(0,1fr) 31px}
+  .machine-top{min-height:36px}
+  .screen{width:min(100%,calc((100svh - 174px) * 6 / 7));max-height:calc(100svh - 174px);margin-top:2px}
+  .ticker{font-size:.58rem;padding-inline:6px}
+  .control-deck{min-height:76px}
+  .bet-controls{flex-basis:124px;width:124px}
+  .round-btn,.bet-view{height:39px}.spin-btn{height:50px}
 }
 
 @media(max-width:760px) and (orientation:landscape){
-  .shell{grid-template-rows:44px minmax(0,1fr) 68px}
-  .machine{grid-template-rows:34px minmax(0,1fr) 30px}
-  .screen{width:min(100%,calc((100svh - 168px) * 6 / 7));max-height:calc(100svh - 168px)}
-  .brand-copy strong{font-size:.86rem}
-  .control-deck{min-height:68px}
+  .shell{grid-template-rows:42px minmax(0,1fr) 66px}
+  .topbar{height:40px;min-height:40px}
+  .machine{grid-template-rows:32px minmax(0,1fr) 28px}
+  .screen{width:min(100%,calc((100svh - 154px) * 6 / 7));max-height:calc(100svh - 154px)}
+  .brand-copy strong{font-size:.82rem}
+  .control-deck{min-height:66px}
 }
