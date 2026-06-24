@@ -9,7 +9,7 @@ export function mulberry32(seed) {
   }
 }
 
-export function createGameMath(symbols, { reels = 6, minRows = 2, maxRows = 7 } = {}) {
+export function createGameMath(symbols, { reels = 6, minRows = 2, maxRows = 7, payoutScale = 0.012 } = {}) {
   const totalWeight = symbols.reduce((total, symbol) => total + symbol.weight, 0)
   const wild = symbols.find(symbol => symbol.wild)
 
@@ -53,7 +53,7 @@ export function createGameMath(symbols, { reels = 6, minRows = 2, maxRows = 7 } 
       }
       if (reelCount >= 3) {
         const unit = base.pay[Math.min(6, reelCount)] ?? 0
-        const value = stake * unit * ways * 0.06 * multiplier
+        const value = stake * unit * ways * payoutScale * multiplier
         raw += value
         involved.forEach(cell => cells.add(cell))
         details.push({ symbol: base.name, reels: reelCount, ways, value })

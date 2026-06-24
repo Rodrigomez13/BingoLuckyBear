@@ -16,12 +16,12 @@ export const REELS = 6
 export const MIN_ROWS = 2
 export const MAX_ROWS = 7
 export const BETS = [25, 50, 100, 200, 500, 1000]
-export const INITIAL_CREDITS = 10000
 export const MAX_CASCADES = 8
 export const RETRIGGER_SPINS = 5
 export const MAX_STICKY_WILDS = 2
 export const MAX_MULTIPLIER = 5
-export const PAYOUT_SCALE = 0.012
+export const PAYOUT_SCALE = 0.01
+export const MAX_WIN_MULTIPLIER = 10000
 export const STORAGE_KEY = 'lbb-golden-bear'
 
 export const SOUND_FILES = {

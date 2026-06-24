@@ -15,7 +15,9 @@ await cp(path.join(source, 'index1.html'), path.join(target, 'index.html'))
 await cp(path.join(source, 'styles.css'), path.join(target, 'styles.css'))
 
 for (const file of await readdir(path.join(source, 'js'))) {
-  if (file.endsWith('.mjs')) await cp(path.join(source, 'js', file), path.join(target, 'js', file))
+  if (file.endsWith('.mjs') && file !== 'round.mjs') {
+    await cp(path.join(source, 'js', file), path.join(target, 'js', file))
+  }
 }
 
 for (const file of await readdir(path.join(source, 'assets'))) {

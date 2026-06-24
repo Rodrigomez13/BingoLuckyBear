@@ -253,6 +253,8 @@ function formatTransactionType(type?: string | null) {
     truco_prize: 'Premio Truco',
     truco_side_bet: 'Apuesta en Truco',
     truco_side_bet_win: 'Acierto de apuesta',
+    golden_bear_bet: 'Apuesta Golden Bear',
+    golden_bear_win: 'Premio Golden Bear',
     bingo_purchase: 'Compra bingo',
     refund: 'Reintegro',
     withdrawal_pending: 'Retiro pendiente',

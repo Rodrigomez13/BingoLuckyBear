@@ -1,11 +1,17 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Golden Bear Megaways | Lucky Bingo Bear',
   description: 'Golden Bear Megaways, una experiencia exclusiva de Lucky Bingo Bear.',
 }
 
-export default function GoldenBearPage() {
+export default async function GoldenBearPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login?next=/juegos/golden-bear')
+
   return (
     <main className="fixed inset-0 z-[100] bg-black">
       <iframe

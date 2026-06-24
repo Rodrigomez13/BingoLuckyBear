@@ -5,6 +5,7 @@ import { SponsorShowcase } from '@/components/home/sponsor-showcase'
 import { TrustSection } from '@/components/home/trust-section'
 import { BrandMarquee } from '@/components/home/brand-marquee'
 import { TrucoPromoSection } from '@/components/home/truco-promo-section'
+import { GoldenBearPromoSection } from '@/components/home/golden-bear-promo-section'
 import { SiteHeader } from '@/components/site-header'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
@@ -72,6 +73,7 @@ export default async function HomePage() {
           nextDrawDate={nextDrawDate}
         />
         <TrucoPromoSection />
+        <GoldenBearPromoSection />
         <HowItWorks />
         <SponsorShowcase
           activeAmount={activeRaffle?.amount ?? null}

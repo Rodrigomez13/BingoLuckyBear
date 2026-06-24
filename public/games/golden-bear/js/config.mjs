@@ -9,16 +9,19 @@ export const SYMBOLS = [
   { key: 'Q', name: 'Q', type: 'letter', label: 'Q', weight: 17, color: '#39df61', pay: { 3: 0.6, 4: 1.2, 5: 3, 6: 7 } },
   { key: 'J', name: 'J', type: 'letter', label: 'J', weight: 18, color: '#ff991c', pay: { 3: 0.5, 4: 1, 5: 2.5, 6: 6 } },
   { key: 'WILD', name: 'WILD real', type: 'wild', lbb: [1, 1], weight: 4, color: '#ffe98b', wild: true },
-  { key: 'BONUS', name: 'BONUS Bingo', type: 'bonus', lbb: [4, 0], lbbSet: 1, weight: 3, color: '#45f2a7', bonus: true },
+  { key: 'BONUS', name: 'BONUS Bingo', type: 'bonus', lbb: [4, 0], lbbSet: 1, weight: 1, color: '#45f2a7', bonus: true },
 ]
 
 export const REELS = 6
 export const MIN_ROWS = 2
 export const MAX_ROWS = 7
 export const BETS = [25, 50, 100, 200, 500, 1000]
-export const INITIAL_CREDITS = 10000
 export const MAX_CASCADES = 8
 export const RETRIGGER_SPINS = 5
+export const MAX_STICKY_WILDS = 2
+export const MAX_MULTIPLIER = 5
+export const PAYOUT_SCALE = 0.01
+export const MAX_WIN_MULTIPLIER = 10000
 export const STORAGE_KEY = 'lbb-golden-bear'
 
 export const SOUND_FILES = {

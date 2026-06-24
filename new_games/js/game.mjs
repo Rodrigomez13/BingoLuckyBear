@@ -1,4 +1,4 @@
-import { BETS, INITIAL_CREDITS, MAX_CASCADES, MAX_MULTIPLIER, MAX_ROWS, MAX_STICKY_WILDS, MIN_ROWS, PAYOUT_SCALE, REELS, RETRIGGER_SPINS, SOUND_FILES, STORAGE_KEY, SYMBOLS } from './config.mjs'
+import { BETS, MAX_ROWS, MIN_ROWS, PAYOUT_SCALE, REELS, SOUND_FILES, STORAGE_KEY, SYMBOLS } from './config.mjs'
 import { createGameMath } from './math.mjs'
 import { AudioManager, createSfx } from './audio.mjs'
 import { collectElements, createUi } from './ui.mjs'
@@ -12,8 +12,8 @@ const E = collectElements()
 const math = createGameMath(SYMBOLS, { reels: REELS, minRows: MIN_ROWS, maxRows: MAX_ROWS, payoutScale: PAYOUT_SCALE })
 
 let cw = 1100, ch = 650, dpr = Math.min(2, devicePixelRatio || 1), grid = [], display = [], winning = new Set(), dropOffsets = new Map(), dropStart = 0, particles = []
-let balance = INITIAL_CREDITS, betIndex = 2, lastWin = 0, freeSpins = 0, freeMultiplier = 1, spinMultiplier = 1, spinning = false, autoSpins = 0, turbo = false, soundOn = true, countFrame = 0
-let stickyWilds = new Set(), bonusRows = null
+let balance = 0, betIndex = 2, lastWin = 0, freeSpins = 0, spinMultiplier = 1, spinning = false, autoSpins = 0, turbo = false, soundOn = true, countFrame = 0, walletReady = false
+let stickyWilds = new Set()
 let volumeSettings = { master: 0.85, effects: 0.85, music: 0.18 }
 
 const money = value => Math.max(0, Math.round(value)).toLocaleString('es-AR')
@@ -25,14 +25,13 @@ const soundAsset = (name, volume = 1, rate = 1) => audioManager.play(name, volum
 const playNamedSound = (key, volume = 1, rate = 1) => audioManager.play(SOUND_FILES[key], volume, rate)
 const ui = createUi({ elements: E, money, playSound: playNamedSound, getTurbo: () => turbo })
 const { renderPayDetail, pushHistory, clearHistory } = ui
+const symbolByKey = new Map(SYMBOLS.map(symbol => [symbol.key, symbol]))
 const weightedSymbol = (rng = Math.random) => math.weightedSymbol(rng)
 const makeGrid = rowCounts => math.makeGrid(Math.random, rowCounts)
 const activeWays = math.activeWays
-const evaluate = math.evaluate
-const scatterCount = math.scatterCount
-const collapseGrid = (currentGrid, cells, locks = new Set()) => math.collapseGrid(currentGrid, cells, Math.random, locks)
+const hydrateGrid = serialized => serialized.map(reel => reel.map(key => symbolByKey.get(key) || SYMBOLS[0]))
 
-function updateHud(){const b=money(balance),w=money(lastWin);E.balance.textContent=b;E.balanceSide.textContent=b;E.bet.textContent=money(bet());E.lastWin.textContent=w;E.lastWinSide.textContent=w;E.free.textContent=freeSpins;E.spin.textContent=freeSpins?"GIRO GRATIS":"GIRAR";E.sound.textContent=soundOn?"🔊":"🔇";E.mult.textContent=`×${spinMultiplier}`;E.featureState.textContent=freeSpins?`STICKY WILD · ${stickyWilds.size}`:"CASCADAS + FREE SPINS"}
+function updateHud(){const b=money(balance),w=money(lastWin);E.balance.textContent=b;E.balanceSide.textContent=b;E.bet.textContent=money(bet());E.lastWin.textContent=w;E.lastWinSide.textContent=w;E.free.textContent=freeSpins;E.spin.textContent="GIRAR";E.sound.textContent=soundOn?"🔊":"🔇";E.mult.textContent=`×${spinMultiplier}`;E.featureState.textContent=freeSpins?`STICKY WILD · ${stickyWilds.size}`:"CASCADAS + FREE SPINS"}
 function resize(){const r=canvas.getBoundingClientRect();cw=Math.max(320,Math.floor(r.width));ch=Math.max(330,Math.floor(r.height));canvas.width=Math.floor(cw*dpr);canvas.height=Math.floor(ch*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
 function roundRect(x,y,w,h,r){const a=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+a,y);ctx.arcTo(x+w,y,x+w,y+h,a);ctx.arcTo(x+w,y+h,x,y+h,a);ctx.arcTo(x,y+h,x,y,a);ctx.arcTo(x,y,x+w,y,a);ctx.closePath()}
 
@@ -198,33 +197,113 @@ async function showWin(total,stake,brief=false){
   await wait(brief?240:ratio>=15?1200:560);
   E.winLayer.classList.remove("show")
 }
-function bumpMultiplier(){spinMultiplier=Math.min(MAX_MULTIPLIER,spinMultiplier+1);E.mult.textContent=`×${spinMultiplier}`;E.mult.classList.remove("bump");void E.mult.offsetWidth;E.mult.classList.add("bump");sfx.multiplier()}
-
-function captureStickyWilds(currentGrid) {
-  if (!freeSpins && !E.machine.classList.contains('free-spin-mode')) return
-  const candidates = []
-  currentGrid.forEach((reel, reelIndex) => reel.forEach((symbol, rowIndex) => {
-    const cell = `${reelIndex}-${rowIndex}`
-    if (symbol.wild && !stickyWilds.has(cell)) candidates.push(cell)
-  }))
-  candidates.sort(() => Math.random() - 0.5)
-  const available = Math.max(0, MAX_STICKY_WILDS - stickyWilds.size)
-  candidates.slice(0, Math.min(2, available)).forEach(cell => stickyWilds.add(cell))
+async function requestRound(stake) {
+  const response = await fetch('/api/games/golden-bear/spin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stake, roundId: crypto.randomUUID() }),
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(payload.error || 'No se pudo resolver la ronda.')
+  return payload
 }
 
-function resetBonusState() {
-  stickyWilds.clear()
-  bonusRows = null
-  freeMultiplier = 1
-  E.machine.classList.remove('free-spin-mode')
+async function openBonus(spin) {
+  freeSpins = spin.awardedFreeSpins
+  E.ticker.textContent = `¡${spin.scatters} BONUS! Ganaste ${spin.awardedFreeSpins} giros gratis.`
+  pushHistory('bonus', `${spin.scatters} BONUS · ${spin.awardedFreeSpins} FS`, 0, `×${Math.max(2, spin.finalMultiplier)}`)
+  playNamedSound('free', 0.7)
+  sfx.bonus()
+  updateHud()
+  E.bonusModal.classList.add('show')
+  await new Promise(resolve => {
+    E.bonusClose.onclick = () => {
+      sfx.click()
+      E.bonusModal.classList.remove('show')
+      resolve()
+    }
+  })
+}
+
+async function animateResolvedSpin(spin, creditWin) {
+  E.machine.classList.toggle('free-spin-mode', spin.free)
+  freeSpins = spin.free ? spin.freeSpinsRemaining : spin.awardedFreeSpins
+  stickyWilds = new Set(spin.stickyWilds || [])
+  spinMultiplier = spin.cascades[0]?.multiplier ?? (spin.free ? 2 : 1)
+  updateHud()
+  renderPayDetail(0, [], 0, spinMultiplier)
+  E.ticker.textContent = spin.free ? `Giro gratis en curso · quedan ${freeSpins}` : 'Buena suerte · los carretes están girando'
+  sfx.spin()
+
+  grid = hydrateGrid(spin.initialGrid)
+  await animateReels(grid)
+  sfx.stop()
+  E.ways.textContent = money(activeWays(grid))
+
+  for (let index = 0; index < spin.cascades.length; index++) {
+    const cascade = spin.cascades[index]
+    winning = new Set(cascade.cells)
+    display = grid
+    draw()
+    const credited = creditWin(cascade.win)
+    lastWin += credited
+    balance += credited
+    spinMultiplier = cascade.multiplier
+    updateHud()
+
+    E.machine.classList.remove('hit')
+    void E.machine.offsetWidth
+    E.machine.classList.add('hit')
+    E.ticker.textContent = `Cascada ${index + 1}: ${cascade.details.map(detail => `${detail.symbol} ×${detail.reels}`).join(' · ')} · +$ ${money(credited)}`
+    renderPayDetail(index + 1, cascade.details, credited, spinMultiplier)
+    pushHistory('win', `Cascada ${index + 1}`, credited, `${cascade.details.length} pagos`)
+    sfx.explode()
+    burst(52, 'mixed')
+    sfx.cascade()
+    await wait(turbo ? 330 : 620)
+
+    grid = hydrateGrid(cascade.nextGrid)
+    dropOffsets = new Map(cascade.offsets)
+    dropStart = performance.now()
+    winning.clear()
+    display = grid.map(reel => reel.slice())
+    spinMultiplier = cascade.nextMultiplier
+    sfx.drop()
+    E.cascade.textContent = `Cascada ${index + 2} · multiplicador ×${spinMultiplier}`
+    E.cascade.classList.add('show')
+    E.mult.classList.remove('bump')
+    void E.mult.offsetWidth
+    E.mult.classList.add('bump')
+    sfx.multiplier()
+    updateHud()
+    await wait(turbo ? 210 : 420)
+    sfx.stop()
+    dropOffsets.clear()
+    E.cascade.classList.remove('show')
+  }
+
+  display = hydrateGrid(spin.finalGrid)
+  grid = display
+  winning.clear()
+  dropOffsets.clear()
+  stickyWilds = new Set(spin.stickyWilds || [])
+  spinMultiplier = spin.finalMultiplier
+
+  if (spin.free && spin.awardedFreeSpins > 0) {
+    E.ticker.textContent = `¡RETRIGGER! +${spin.awardedFreeSpins} giros gratis`
+    pushHistory('bonus', `Retrigger · +${spin.awardedFreeSpins} giros`, 0, `×${spinMultiplier}`)
+    sfx.bonus()
+  } else if (!spin.cascades.length && spin.scatters < 3) {
+    E.ticker.textContent = spin.scatters === 2 ? 'Dos BONUS... faltó uno para activar los free spins.' : 'Sin premio. El oso ya está preparando el próximo giro.'
+    sfx.lose()
+  }
 }
 
 async function startSpin() {
-  if (spinning) return
+  if (spinning || !walletReady) return
   const stake = bet()
-  const isFree = freeSpins > 0
-  if (!isFree && balance < stake) {
-    E.ticker.textContent = 'Créditos insuficientes. Bajá la apuesta o reiniciá los créditos desde Reglas.'
+  if (balance < stake) {
+    E.ticker.textContent = 'Saldo insuficiente. Cargá saldo desde Mi cuenta para seguir jugando.'
     sfx.lose()
     return
   }
@@ -239,154 +318,99 @@ async function startSpin() {
   winning.clear()
   dropOffsets.clear()
   lastWin = 0
-
-  if (isFree) {
-    freeSpins--
-    spinMultiplier = Math.max(2, freeMultiplier)
-    E.machine.classList.add('free-spin-mode')
-  } else {
-    balance -= stake
-    spinMultiplier = 1
-    resetBonusState()
-  }
-
-  renderPayDetail(0, [], 0, spinMultiplier)
+  freeSpins = 0
+  stickyWilds.clear()
+  spinMultiplier = 1
+  E.ticker.textContent = 'Validando ronda y saldo...'
   updateHud()
-  E.ticker.textContent = isFree ? `Giro gratis en curso · quedan ${freeSpins}` : 'Buena suerte · los carretes están girando'
-  sfx.spin()
 
-  grid = makeGrid(isFree ? bonusRows : null)
-  if (isFree) grid = math.applyStickyWilds(grid, stickyWilds)
-  const initialScatters = scatterCount(grid)
-  await animateReels(grid)
-  sfx.stop()
-  if (isFree) captureStickyWilds(grid)
-
-  E.ways.textContent = money(activeWays(grid))
-  let cascade = 0
-  let total = 0
-  let result = evaluate(grid, stake, spinMultiplier)
-
-  while (result.win > 0 && cascade < MAX_CASCADES) {
-    cascade++
-    winning = result.cells
-    display = grid
-    draw()
-    total += result.win
-    lastWin = total
-    balance += result.win
-    updateHud()
-
-    E.machine.classList.remove('hit')
-    void E.machine.offsetWidth
-    E.machine.classList.add('hit')
-    E.ticker.textContent = `Cascada ${cascade}: ${result.details.map(detail => `${detail.symbol} ×${detail.reels}`).join(' · ')} · +$ ${money(result.win)}`
-    renderPayDetail(cascade, result.details, result.win, spinMultiplier)
-    pushHistory('win', `Cascada ${cascade}`, result.win, `${result.details.length} pagos`)
-    sfx.explode()
-    burst(52, 'mixed')
-    sfx.cascade()
-    await wait(turbo ? 330 : 620)
-
-    const removable = new Set([...result.cells].filter(cell => !stickyWilds.has(cell)))
-    const collapsed = collapseGrid(grid, removable, isFree ? stickyWilds : new Set())
-    grid = math.applyStickyWilds(collapsed.grid, isFree ? stickyWilds : new Set())
-    dropOffsets = collapsed.offsets
-    dropStart = performance.now()
-    winning.clear()
-    display = grid.map(reel => reel.slice())
-    sfx.drop()
-    E.cascade.textContent = `Cascada ${cascade + 1} · multiplicador ×${spinMultiplier + 1}`
-    E.cascade.classList.add('show')
-    bumpMultiplier()
-    await wait(turbo ? 210 : 420)
-    sfx.stop()
-    dropOffsets.clear()
-    E.cascade.classList.remove('show')
-    if (isFree) captureStickyWilds(grid)
-    result = evaluate(grid, stake, spinMultiplier)
-  }
-
-  display = grid
-  winning.clear()
-  dropOffsets.clear()
-  const scatters = initialScatters
-
-  if (scatters >= 3) {
-    if (isFree) {
-      const awarded = RETRIGGER_SPINS + Math.max(0, scatters - 3) * 2
-      freeSpins += awarded
-      E.ticker.textContent = `¡RETRIGGER! +${awarded} giros gratis`
-      pushHistory('bonus', `Retrigger · +${awarded} giros`, 0, `×${spinMultiplier}`)
-      playNamedSound('free', 0.7)
-      sfx.bonus()
-    } else {
-      const awarded = scatters >= 5 ? 12 : scatters === 4 ? 10 : 8
-      freeSpins += awarded
-      freeMultiplier = Math.max(2, spinMultiplier)
-      bonusRows = grid.map(reel => reel.length)
-      stickyWilds.clear()
-      E.ticker.textContent = `¡${scatters} BONUS! Ganaste ${awarded} giros gratis.`
-      pushHistory('bonus', `${scatters} BONUS · ${awarded} FS`, 0, `×${freeMultiplier}`)
-      playNamedSound('free', 0.7)
-      sfx.bonus()
-      updateHud()
-      E.bonusModal.classList.add('show')
-      await new Promise(resolve => {
-        E.bonusClose.onclick = () => {
-          sfx.click()
-          E.bonusModal.classList.remove('show')
-          resolve()
-        }
-      })
+  try {
+    const settled = await requestRound(stake)
+    const outcome = settled.outcome
+    balance = Number(settled.balanceBefore) - stake
+    const payout = Number(settled.payout)
+    let creditedTotal = 0
+    const creditWin = amount => {
+      const credited = Math.max(0, Math.min(Number(amount), payout - creditedTotal))
+      creditedTotal += credited
+      return credited
     }
-  }
 
-  if (total > 0) {
-    lastWin = total
-    pushHistory('win', `Premio total · ${cascade} cascada${cascade === 1 ? '' : 's'}`, total, `apuesta $${money(stake)}`)
-    E.ticker.textContent = `Premio total $ ${money(total)} · ${cascade} cascada${cascade === 1 ? '' : 's'}`
-    await showWin(total, stake, turbo)
-  } else if (scatters < 3) {
-    pushHistory('loss', 'Sin premio', 0, scatters === 2 ? '2 bonus' : '')
-    E.ticker.textContent = scatters === 2 ? 'Dos BONUS... faltó uno para activar los free spins.' : 'Sin premio. El oso ya está preparando el próximo giro.'
+    for (let index = 0; index < outcome.spins.length; index++) {
+      if (index === 1 && outcome.spins[0].awardedFreeSpins > 0) await openBonus(outcome.spins[0])
+      await animateResolvedSpin(outcome.spins[index], creditWin)
+    }
+
+    balance = Number(settled.balanceAfter)
+    lastWin = payout
+    freeSpins = 0
+    stickyWilds.clear()
+    E.machine.classList.remove('free-spin-mode')
+    if (payout > 0) {
+      pushHistory('win', 'Premio total de ronda', payout, `apuesta $${money(stake)}`)
+      E.ticker.textContent = `Premio total $ ${money(payout)} · acreditado en tu saldo`
+      await showWin(payout, stake, turbo)
+    } else {
+      pushHistory('loss', 'Ronda sin premio', 0, `apuesta $${money(stake)}`)
+    }
+  } catch (error) {
+    E.ticker.textContent = error instanceof Error ? error.message : 'No se pudo completar la ronda.'
+    autoSpins = 0
+    E.auto.innerHTML = 'Auto<br>×10'
+    E.auto.classList.remove('active')
     sfx.lose()
+    await loadWallet()
+  } finally {
+    E.machine.classList.remove('spinning', 'free-spin-mode')
+    spinning = false
+    E.spin.disabled = !walletReady
+    E.down.disabled = false
+    E.up.disabled = false
+    freeSpins = 0
+    updateHud()
+    persist()
   }
 
-  if (isFree) freeMultiplier = spinMultiplier
-  if (!freeSpins) resetBonusState()
-  E.machine.classList.remove('spinning')
-  spinning = false
-  E.spin.disabled = false
-  E.down.disabled = false
-  E.up.disabled = false
-  updateHud()
-  persist()
-
-  if (autoSpins > 0 && !freeSpins) {
+  if (autoSpins > 0) {
     autoSpins--
     E.auto.innerHTML = autoSpins ? `Auto<br>×${autoSpins}` : 'Auto<br>×10'
   }
   if (autoSpins === 0) E.auto.classList.remove('active')
-  if ((autoSpins > 0 || freeSpins > 0) && !E.bonusModal.classList.contains('show')) setTimeout(startSpin, turbo ? 260 : 650)
+  if (autoSpins > 0) setTimeout(startSpin, turbo ? 260 : 650)
 }
 
 function persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ balance, betIndex, soundOn, turbo, volumeSettings }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ betIndex, soundOn, turbo, volumeSettings }))
   } catch {}
 }
 
 function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-    if (!saved || !Number.isFinite(saved.balance)) return
-    balance = Math.max(0, saved.balance)
+    if (!saved) return
     betIndex = Math.max(0, Math.min(BETS.length - 1, saved.betIndex || 0))
     soundOn = saved.soundOn !== false
     turbo = Boolean(saved.turbo)
     if (saved.volumeSettings) volumeSettings = { ...volumeSettings, ...saved.volumeSettings }
   } catch {}
+}
+
+async function loadWallet() {
+  E.spin.disabled = true
+  try {
+    const response = await fetch('/api/customer/wallet', { cache: 'no-store' })
+    const payload = await response.json()
+    if (!response.ok || !payload.user || !payload.wallet) throw new Error(payload.error || 'Iniciá sesión para jugar.')
+    balance = Number(payload.wallet.total_balance ?? payload.wallet.general_balance ?? 0)
+    walletReady = true
+    E.ticker.textContent = 'Saldo sincronizado. Presioná GIRAR para comenzar.'
+  } catch (error) {
+    walletReady = false
+    E.ticker.textContent = error instanceof Error ? error.message : 'No se pudo sincronizar el saldo.'
+  }
+  E.spin.disabled = !walletReady
+  updateHud()
 }
 
 function buildPaytable() {
@@ -399,27 +423,6 @@ function buildPaytable() {
     item.innerHTML = `<div class="pay-symbol">${icon}</div><span>${symbol.name}</span><strong>${value}</strong>`
     E.payGrid.appendChild(item)
   }
-  const reset = document.createElement('button')
-  reset.className = 'spin-btn'
-  reset.style.cssText = 'grid-column:1/-1;height:48px;margin-top:7px'
-  reset.textContent = 'REINICIAR CRÉDITOS'
-  reset.onclick = () => {
-    if (spinning) return
-    balance = INITIAL_CREDITS
-    betIndex = 2
-    lastWin = 0
-    freeSpins = 0
-    spinMultiplier = 1
-    autoSpins = 0
-    resetBonusState()
-    E.auto.innerHTML = 'Auto<br>×10'
-    E.auto.classList.remove('active')
-    E.infoModal.classList.remove('show')
-    updateHud()
-    persist()
-    E.ticker.textContent = 'Créditos reiniciados. ¡Buena suerte!'
-  }
-  E.payGrid.appendChild(reset)
 }
 
 const historyCard = E.history?.closest('.history-card')
@@ -450,6 +453,7 @@ E.down.onclick = () => { if (!spinning) { sfx.click(); betIndex = Math.max(0, be
 E.up.onclick = () => { if (!spinning) { sfx.click(); betIndex = Math.min(BETS.length - 1, betIndex + 1); updateHud(); persist() } }
 E.auto.onclick = () => {
   sfx.click()
+  if (!walletReady) return
   if (autoSpins) {
     autoSpins = 0
     E.auto.innerHTML = 'Auto<br>×10'
@@ -506,3 +510,4 @@ updateHud()
 resize()
 requestAnimationFrame(loop)
 setTimeout(() => E.loader.classList.add('hide'), 900)
+loadWallet()

@@ -26,20 +26,20 @@ interface ProfileRow { id: string; email: string | null; full_name: string | nul
 
 export default async function AdminGameConsumptionPage() {
   const { serviceClient } = await requireAdminPage()
-  const [{ data: purchases }, { data: trucoTransactions }] = await Promise.all([
+  const [{ data: purchases }, { data: gameTransactions }] = await Promise.all([
     serviceClient.from('game_purchases').select('id, user_id, game_type, purchase_type, wallet_kind, amount, quantity, status, related_type, related_id, description, created_at').order('created_at', { ascending: false }).limit(300),
-    serviceClient.from('lbb_wallet_transactions').select('id, user_id, wallet_kind, amount, related_type, related_id, description, created_at').eq('transaction_type', 'truco_entry_fee').order('created_at', { ascending: false }).limit(300),
+    serviceClient.from('lbb_wallet_transactions').select('id, user_id, wallet_kind, transaction_type, amount, related_type, related_id, description, created_at').in('transaction_type', ['truco_entry_fee', 'golden_bear_bet']).order('created_at', { ascending: false }).limit(600),
   ])
 
   const purchaseRows = (purchases ?? []) as PurchaseRow[]
   const recordedTrucoRefs = new Set(purchaseRows.filter((row) => row.game_type === 'truco').map((row) => row.related_id).filter(Boolean))
-  const fallbackTrucoRows: PurchaseRow[] = (trucoTransactions ?? [])
-    .filter((row) => !recordedTrucoRefs.has(row.related_id))
+  const fallbackGameRows: PurchaseRow[] = (gameTransactions ?? [])
+    .filter((row) => row.transaction_type === 'golden_bear_bet' || !recordedTrucoRefs.has(row.related_id))
     .map((row) => ({
       id: row.id,
       user_id: row.user_id,
-      game_type: 'truco',
-      purchase_type: 'truco_entry_fee',
+      game_type: row.transaction_type === 'golden_bear_bet' ? 'golden_bear' : 'truco',
+      purchase_type: row.transaction_type,
       wallet_kind: row.wallet_kind,
       amount: Math.abs(Number(row.amount)),
       quantity: 1,
@@ -49,7 +49,7 @@ export default async function AdminGameConsumptionPage() {
       description: row.description,
       created_at: row.created_at,
     }))
-  const rows = [...purchaseRows, ...fallbackTrucoRows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const rows = [...purchaseRows, ...fallbackGameRows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))] as string[]
   const { data: profiles } = userIds.length ? await serviceClient.from('customer_profiles').select('id, email, full_name, alias').in('id', userIds) : { data: [] }
   const profileById = new Map(((profiles ?? []) as ProfileRow[]).map((profile) => [profile.id, profile]))
@@ -65,9 +65,10 @@ export default async function AdminGameConsumptionPage() {
         </header>
         <AdminEconomyNav />
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <GameMetric label="Bingo" amount={totals.bingo ?? 0} />
           <GameMetric label="Truco" amount={totals.truco ?? 0} />
+          <GameMetric label="Golden Bear" amount={totals.golden_bear ?? 0} />
           <GameMetric label="Torneos" amount={totals.tournament ?? 0} />
         </div>
 
@@ -96,8 +97,8 @@ function GameMetric({ label, amount }: { label: string; amount: number }) { retu
 function formatNumber(value: number) { return new Intl.NumberFormat('es-AR').format(value) }
 function formatDate(value: string) { return new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }
 function walletLabel(kind: string) { return kind === 'general' ? 'Saldo general' : 'Histórico' }
-function gameLabel(game: string) { return game === 'bingo' ? 'Bingo' : game === 'truco' ? 'Truco' : 'Torneo' }
-function gameClass(game: string) { return game === 'bingo' ? 'bg-amber-300 text-zinc-950 hover:bg-amber-300' : game === 'truco' ? 'bg-emerald-500 text-white hover:bg-emerald-500' : 'bg-sky-400 text-zinc-950 hover:bg-sky-400' }
-function purchaseLabel(type: string) { const labels: Record<string, string> = { bingo_card: 'Cartones', truco_entry_fee: 'Entrada a partida', tournament_entry: 'Entrada a torneo', pack: 'Paquete', manual: 'Consumo manual' }; return labels[type] ?? type }
+function gameLabel(game: string) { return game === 'bingo' ? 'Bingo' : game === 'truco' ? 'Truco' : game === 'golden_bear' ? 'Golden Bear' : 'Torneo' }
+function gameClass(game: string) { return game === 'bingo' ? 'bg-amber-300 text-zinc-950 hover:bg-amber-300' : game === 'truco' ? 'bg-emerald-500 text-white hover:bg-emerald-500' : game === 'golden_bear' ? 'bg-orange-500 text-white hover:bg-orange-500' : 'bg-sky-400 text-zinc-950 hover:bg-sky-400' }
+function purchaseLabel(type: string) { const labels: Record<string, string> = { bingo_card: 'Cartones', truco_entry_fee: 'Entrada a partida', golden_bear_bet: 'Giro de slots', tournament_entry: 'Entrada a torneo', pack: 'Paquete', manual: 'Consumo manual' }; return labels[type] ?? type }
 function statusLabel(status: string) { const labels: Record<string, string> = { pending: 'Pendiente', paid: 'Pagado', cancelled: 'Cancelado', refunded: 'Reintegrado', failed: 'Fallido' }; return labels[status] ?? status }
 function statusClass(status: string) { return status === 'paid' ? 'bg-emerald-500 text-white hover:bg-emerald-500' : status === 'pending' ? 'bg-amber-300 text-zinc-950 hover:bg-amber-300' : status === 'refunded' ? 'bg-sky-400 text-zinc-950 hover:bg-sky-400' : 'bg-zinc-700 text-white hover:bg-zinc-700' }
