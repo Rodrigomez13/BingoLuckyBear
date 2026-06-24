@@ -1,0 +1,66 @@
+/* Golden Bear Lucky Ways responsive polish.
+   Keeps the cascade board proportional on mobile and aligns the game with the darker gold/wood LBB branding sheet. */
+:root{
+  --gb-wood-dark:#1e0903;
+  --gb-wood:#4b1607;
+  --gb-gold:#f3b735;
+  --gb-gold-light:#ffe089;
+  --gb-emerald:#04150d;
+  --gb-mint:#45f2a7;
+}
+
+.game-logo span,.brand-copy strong{letter-spacing:-.045em}
+.screen{isolation:isolate}
+.bear-art{object-fit:contain;object-position:center bottom}
+
+@media(max-width:760px){
+  html,body{height:100%;overflow:hidden}
+  body{background-color:#090503;background-image:radial-gradient(circle at 50% 0,rgba(255,224,137,.22),transparent 32%),linear-gradient(180deg,rgba(4,21,13,.2),rgba(30,9,3,.7)),url("assets/golden-bear-western-bg.webp")}
+  .shell{height:100svh;min-height:0;grid-template-rows:50px minmax(0,1fr) 82px;overflow:hidden}
+  .game-layout{height:100%;min-height:0;overflow:hidden}
+  .machine{
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+    grid-template-rows:42px minmax(0,1fr) 38px;
+    background:linear-gradient(#8d3b13,#4b1607) padding-box,repeating-linear-gradient(90deg,#2b0d03 0 8px,#b86a18 9px 20px,#4b1607 21px 32px) border-box;
+  }
+  .screen{
+    align-self:center;
+    justify-self:center;
+    width:min(100%,calc((100svh - 220px) * 6 / 7));
+    height:auto;
+    max-height:calc(100svh - 220px);
+    aspect-ratio:6 / 7;
+    min-height:0;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 34%,rgba(255,224,137,.14),transparent 36%),#250504;
+  }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    min-height:0!important;
+    max-height:100%;
+    aspect-ratio:6 / 7;
+  }
+  .ticker{min-height:38px;line-height:1.2}
+  .control-deck{flex-shrink:0;box-shadow:0 -8px 28px rgba(0,0,0,.38)}
+  .win-card{width:min(92vw,420px);padding:16px 14px}
+  .win-card strong{font-size:clamp(2rem,12vw,4.2rem)}
+}
+
+@media(max-width:430px){
+  .shell{grid-template-rows:48px minmax(0,1fr) 78px}
+  .machine{grid-template-rows:38px minmax(0,1fr) 34px}
+  .screen{width:min(100%,calc((100svh - 202px) * 6 / 7));max-height:calc(100svh - 202px)}
+  .ticker{font-size:.62rem;padding-inline:6px}
+}
+
+@media(max-width:760px) and (orientation:landscape){
+  .shell{grid-template-rows:44px minmax(0,1fr) 68px}
+  .machine{grid-template-rows:34px minmax(0,1fr) 30px}
+  .screen{width:min(100%,calc((100svh - 168px) * 6 / 7));max-height:calc(100svh - 168px)}
+  .brand-copy strong{font-size:.86rem}
+  .control-deck{min-height:68px}
+}
