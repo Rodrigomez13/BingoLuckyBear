@@ -1,4 +1,5 @@
 import { HeroSection } from '@/components/home/hero-section'
+import { GameLobbySection } from '@/components/home/game-lobby-section'
 import { HowItWorks } from '@/components/home/how-it-works'
 import { Footer } from '@/components/home/footer'
 import { SponsorShowcase } from '@/components/home/sponsor-showcase'
@@ -57,21 +58,19 @@ export default async function HomePage() {
   const nextDrawDate = activeRaffle?.draw_date ?? nextRaffle?.draw_date ?? null
   const prizeAmounts = getPrizeAmounts(activeRaffle?.prize, activeRaffle?.additional_prizes)
   const prizeSchedule = getPrizeSchedule(prizeAmounts)
-  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)?.amount
 
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-slate-50">
       <div className="lbb-ambient" />
-      <SiteHeader jackpotPrize={jackpotPrize} activePath="home" />
+      <SiteHeader activePath="home" kicker="Plataforma de juegos" />
 
-      {/* Main Content */}
       <div className="relative z-10 pt-[84px]">
         <HeroSection
           raffleName={activeRaffle?.name}
-          firstPrize={jackpotPrize}
           hasActiveRaffle={hasActiveRaffle}
           nextDrawDate={nextDrawDate}
         />
+        <GameLobbySection />
         <TrucoPromoSection />
         <GoldenBearPromoSection />
         <HowItWorks />
