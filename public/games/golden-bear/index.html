@@ -63,7 +63,7 @@
           <div id="winLayer" class="win-layer"><div class="win-card"><span id="winType">Premio</span><strong id="winAmount">$ 0</strong></div></div>
           <div id="payTransition" class="pay-transition"><small>línea pagada</small><strong id="payTransitionText">$ 0</strong></div>
         </div>
-        <div id="ticker" class="ticker" aria-live="polite">Presioná GIRAR o la barra espaciadora para comenzar.</div>
+        <div id="ticker" class="ticker" aria-live="polite"></div>
       </section>
 
       <aside class="info-rail">
@@ -88,7 +88,7 @@
     <footer class="control-deck">
       <div class="money-group">
         <div class="money-box"><span>Saldo</span><strong id="balance">0</strong></div>
-        <div class="money-box"><span>Premio total</span><strong id="lastWin">0</strong></div>
+        <div class="money-box"><span>Premio</span><strong id="lastWin">0</strong></div>
       </div>
       <div class="bet-controls">
         <button id="betDown" class="round-btn" aria-label="Bajar apuesta">−</button>
@@ -112,5 +112,6 @@
   <script type="module" src="js/render-fixes.mjs"></script>
   <script type="module" src="js/bonus-buy.mjs"></script>
   <script type="module" src="js/game.mjs"></script>
+  <script type="module" src="js/mobile-cleanup.mjs"></script>
 </body>
 </html>
