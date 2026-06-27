@@ -25,6 +25,8 @@ export function FloatingWhatsApp() {
   )
 }
 
+export const WhatsAppFloatingButton = FloatingWhatsApp
+
 function WhatsAppLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" className={className} fill="currentColor">

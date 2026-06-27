@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles, Swords } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
+import { CONTACT_LINKS } from '@/lib/contact'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
 import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
 
@@ -19,6 +20,8 @@ interface MenuLink {
 const PLATFORM_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/juegos', label: 'Todos los juegos', icon: Grid3X3 },
+  { href: '/participar', label: 'Promociones', icon: Ticket },
+  { href: CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones', label: 'Ayuda', icon: HelpCircle },
 ]
 
 const WALLET_LINK: MenuLink = { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards }

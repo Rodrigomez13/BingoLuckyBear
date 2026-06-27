@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { ComponentType } from 'react'
-import { Gamepad2, Grid3X3, Menu, Swords, Ticket, Trophy, WalletCards } from 'lucide-react'
+import { Gamepad2, Grid3X3, Menu, Swords, Ticket, Trophy } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
+import { CONTACT_LINKS } from '@/lib/contact'
 import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
 import {
   DropdownMenu,
@@ -89,8 +90,14 @@ export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, acti
             )}
             <HeaderLink href="/" active={activePath === 'home'} label="Inicio" className="hidden lg:inline-flex" />
             <GamesDropdown active={gamesActive} />
-            {authenticated && <HeaderLink href="/mi-cuenta/jugador" active={activePath === 'mi-cuenta'} icon={<WalletCards className="h-4 w-4" />} label="Wallet" className="hidden md:inline-flex" />}
-            <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />
+            {authenticated ? (
+              <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />
+            ) : (
+              <>
+                <HeaderLink href="/participar" active={activePath === 'participar'} label="Promociones" className="hidden lg:inline-flex" />
+                <HeaderLink href={CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones'} active={false} label="Ayuda" className="hidden lg:inline-flex" />
+              </>
+            )}
             <UserMenu active={activePath === 'mi-cuenta'} />
             <MobileMenu />
           </nav>

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { LBB_LOGO } from '@/lib/brand/assets'
 
 interface BearLogoProps {
   size?: number
@@ -9,7 +10,7 @@ interface BearLogoProps {
 
 export function BearLogo({ size = 100, sad = false, className = '', variant = 'solo' }: BearLogoProps) {
   if (!sad) {
-    const src = variant === 'context' ? '/logo-contexto.svg' : '/logo-solo.svg'
+    const src = variant === 'context' ? LBB_LOGO.context : LBB_LOGO.solo
 
     return (
       <Image

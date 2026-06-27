@@ -19,9 +19,10 @@ interface LoginModalProps {
   open: boolean
   onClose: () => void
   onAuthenticated?: () => void
+  initialMode?: 'login' | 'register'
 }
 
-export function LoginModal({ open, onClose, onAuthenticated }: LoginModalProps) {
+export function LoginModal({ open, onClose, onAuthenticated, initialMode = 'login' }: LoginModalProps) {
   const [mounted, setMounted] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -65,10 +66,11 @@ export function LoginModal({ open, onClose, onAuthenticated }: LoginModalProps) 
   // Reset transient state when reopening
   useEffect(() => {
     if (open) {
+      setAuthMode(initialMode)
       setError(null)
       setMessage(null)
     }
-  }, [open])
+  }, [initialMode, open])
 
   const handlePasswordAccess = async (event: React.FormEvent) => {
     event.preventDefault()

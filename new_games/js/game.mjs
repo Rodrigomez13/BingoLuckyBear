@@ -66,22 +66,27 @@ function drawSymbol(s,x,y,w,h,isWin){ctx.save();ctx.shadowColor=isWin?"#fff36f":
   }else if(s.type==="letter"){const bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,"#3c0710");bg.addColorStop(1,"#120106");ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);ctx.shadowColor=s.color;ctx.shadowBlur=isWin?22:7;ctx.fillStyle=s.color;ctx.strokeStyle="#ffc942";ctx.lineWidth=Math.max(2,w*.025);ctx.font=`1000 ${Math.max(30,Math.min(84,h*.72))}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.strokeText(s.label,x+w/2,y+h/2+2);ctx.fillText(s.label,x+w/2,y+h/2+2)}ctx.restore();ctx.save();roundRect(x,y,w,h,2);ctx.lineWidth=isWin?4:1.5;ctx.strokeStyle=isWin?"#fff37a":"rgba(204,91,34,.78)";ctx.stroke();ctx.restore()}
 function drawReels(){
   if(!display.length)return;
-  const pad=Math.max(3,cw*.006),gap=Math.max(3,cw*.004),rw=(cw-pad*2-gap*(REELS-1))/REELS,area=ch-pad*2,t=performance.now();
+  const pad=Math.max(3,Math.min(cw,ch)*.012),gap=Math.max(3,Math.min(cw,ch)*.008),t=performance.now();
+  const maxRows=MAX_ROWS;
+  const cell=Math.max(26,Math.min((cw-pad*2-gap*(REELS-1))/REELS,(ch-pad*2-gap*(maxRows-1))/maxRows));
+  const rw=cell,area=cell*maxRows+gap*(maxRows-1);
+  const gridW=rw*REELS+gap*(REELS-1);
+  const gridX=(cw-gridW)/2,gridY=(ch-gridH)/2;
   const cascadeDuration=turbo?260:460;
   const rawProgress=dropStart?Math.max(0,Math.min(1,(t-dropStart)/cascadeDuration)):1;
   const eased=1-Math.pow(1-rawProgress,3);
   for(let r=0;r<REELS;r++){
-    const reel=display[r]||[],rows=Math.max(MIN_ROWS,reel.length),cell=(area-gap*(rows-1))/rows,x=pad+r*(rw+gap);
+    const reel=display[r]||[],rows=Math.max(MIN_ROWS,reel.length),reelH=cell*rows+gap*(rows-1),x=gridX+r*(rw+gap),yOffset=gridY+(area-reelH)/2;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x,pad,rw,area);
+    ctx.rect(x,gridY,rw,area);
     ctx.clip();
-    const reelBg=ctx.createLinearGradient(x,pad,x+rw,pad+area);
+    const reelBg=ctx.createLinearGradient(x,gridY,x+rw,gridY+area);
     reelBg.addColorStop(0,"rgba(47,4,10,.72)");
     reelBg.addColorStop(.5,"rgba(20,0,4,.62)");
     reelBg.addColorStop(1,"rgba(66,9,8,.7)");
     ctx.fillStyle=reelBg;
-    ctx.fillRect(x,pad,rw,area);
+    ctx.fillRect(x,gridY,rw,area);
 
     reel.forEach((s,i)=>{
       const key=`${r}-${i}`;
@@ -89,7 +94,7 @@ function drawReels(){
       const pulse=isWinning?1+Math.sin(t/80)*.035:1;
       const fall=(dropOffsets.get(key)||0)*(1-eased);
       const bounce=dropOffsets.has(key)&&rawProgress<1?Math.sin(rawProgress*Math.PI)*Math.min(18,cell*.12):0;
-      const y=pad+i*(cell+gap)-(cell+gap)*fall+bounce;
+      const y=yOffset+i*(cell+gap)-(cell+gap)*fall+bounce;
       const baseW=rw-4,baseH=cell-4;
       const symbolW=baseW*pulse,symbolH=baseH*pulse;
       const sx=x+2+(baseW-symbolW)/2,sy=y+2+(baseH-symbolH)/2;
@@ -97,10 +102,10 @@ function drawReels(){
     });
     ctx.restore();
 
-    const rail=ctx.createLinearGradient(x,pad,x,pad+area);
+    const rail=ctx.createLinearGradient(x,gridY,x,gridY+area);
     rail.addColorStop(0,"#8a3c14");rail.addColorStop(.5,"#3a1005");rail.addColorStop(1,"#a64a16");
-    ctx.fillStyle=rail;ctx.fillRect(x-1,pad,2,area);ctx.fillRect(x+rw-1,pad,2,area);
-    ctx.strokeStyle="#b45a24";ctx.lineWidth=1.2;ctx.strokeRect(x,pad,rw,area);
+    ctx.fillStyle=rail;ctx.fillRect(x-1,gridY,2,area);ctx.fillRect(x+rw-1,gridY,2,area);
+    ctx.strokeStyle="#b45a24";ctx.lineWidth=1.2;ctx.strokeRect(x,gridY,rw,area);
   }
 }
 function drawParticles(){

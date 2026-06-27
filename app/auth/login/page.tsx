@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { BearLogo } from '@/components/bear-logo'
 import { SiteHeader } from '@/components/site-header'
+import { LBB_MASCOT } from '@/lib/brand/assets'
 import { normalizeInternalPath } from '@/lib/site-url'
 
 export default function LoginPage() {
@@ -63,13 +64,13 @@ export default function LoginPage() {
         </div>
       </div>
       
-      <Card className="lbb-premium-panel lbb-fade-up relative z-10 w-full max-w-md overflow-hidden rounded-[1.5rem] border-white/10 text-zinc-100">
+      <Card className="lbb-premium-panel lbb-fade-up relative z-10 w-[min(100%,28rem)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[1.5rem] border-white/10 text-zinc-100">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(251,191,36,.18),transparent)]" />
         <div className="relative mx-5 mt-5 overflow-hidden rounded-[1.25rem] border border-amber-300/20 bg-black/35">
           <img
-            src="/lbb/visuals/profile-avatar.webp"
+            src={LBB_MASCOT.profile}
             alt="Lucky Bingo Bear"
-            className="h-36 w-full object-cover object-[50%_18%] opacity-95"
+            className="block h-36 w-full max-w-full object-cover object-[50%_18%] opacity-95"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/10 to-transparent" />
           <div className="absolute bottom-3 left-3 rounded-full border border-amber-300/25 bg-black/45 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">

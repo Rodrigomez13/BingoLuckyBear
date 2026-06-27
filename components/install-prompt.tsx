@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Download, X, Share, Plus } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
+import { useDailySessionDismiss } from '@/hooks/use-daily-session-dismiss'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -17,6 +18,7 @@ export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [visible, setVisible] = useState(false)
   const [iosHint, setIosHint] = useState(false)
+  const { dismissed, dismiss: dismissForToday, ready: dismissReady } = useDailySessionDismiss(DISMISS_KEY)
 
   // Register the service worker once on mount.
   useEffect(() => {
@@ -44,6 +46,7 @@ export function InstallPrompt() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (pathname !== '/') return
+    if (!dismissReady || dismissed) return
 
     // Already installed (running as PWA)?
     const standalone =
@@ -51,15 +54,6 @@ export function InstallPrompt() {
       // @ts-expect-error iOS Safari
       window.navigator.standalone === true
     if (standalone) return
-
-    // Dismissed today?
-    try {
-      const dismissedDate = localStorage.getItem(DISMISS_KEY)
-      const today = new Date().toISOString().slice(0, 10)
-      if (dismissedDate === today) return
-    } catch {
-      /* ignore */
-    }
 
     // iOS: no beforeinstallprompt, show manual hint.
     const ua = window.navigator.userAgent.toLowerCase()
@@ -80,15 +74,11 @@ export function InstallPrompt() {
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [pathname])
+  }, [dismissReady, dismissed, pathname])
 
   const dismiss = () => {
     setVisible(false)
-    try {
-      localStorage.setItem(DISMISS_KEY, new Date().toISOString().slice(0, 10))
-    } catch {
-      /* ignore */
-    }
+    dismissForToday()
   }
 
   const install = async () => {
@@ -142,3 +132,5 @@ export function InstallPrompt() {
     </div>
   )
 }
+
+export const InstallAppPrompt = InstallPrompt

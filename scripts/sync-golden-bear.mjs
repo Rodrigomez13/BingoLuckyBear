@@ -13,6 +13,7 @@ await mkdir(path.join(target, 'js'), { recursive: true })
 
 await cp(path.join(source, 'index1.html'), path.join(target, 'index.html'))
 await cp(path.join(source, 'styles.css'), path.join(target, 'styles.css'))
+await cp(path.join(source, 'mobile-fixes.css'), path.join(target, 'mobile-fixes.css'))
 
 for (const file of await readdir(path.join(source, 'js'))) {
   if (file.endsWith('.mjs') && file !== 'round.mjs') {

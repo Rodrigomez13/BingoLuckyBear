@@ -26,6 +26,7 @@ import {
 import { BearLogo } from '@/components/bear-logo'
 import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
 import { UserMenu } from '@/components/user-menu'
+import { CONTACT_LINKS } from '@/lib/contact'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
@@ -76,6 +77,17 @@ const navItems: HomeNavItem[] = [
   { href: '/', label: 'Inicio', icon: Home, active: true },
   { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
   ...ACTIVE_PLATFORM_GAMES.map((game) => ({ href: game.href, label: game.shortName, icon: gameIcons[game.id] })),
+]
+
+const publicNavItems: HomeNavItem[] = [
+  { href: '/', label: 'Inicio', icon: Home, active: true },
+  { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
+  { href: '/participar', label: 'Promociones', icon: Ticket },
+  { href: CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones', label: 'Ayuda', icon: UserCircle2 },
+]
+
+const playerNavItems: HomeNavItem[] = [
+  ...navItems,
   { href: '/mi-cuenta/jugador', label: 'Perfil', icon: UserCircle2 },
   { href: '/ganadores', label: 'Historial', icon: Crown },
 ]
@@ -96,7 +108,7 @@ export function LobbyOperativoHome({
     <main className="min-h-screen overflow-x-hidden bg-[#04130c] pb-24 text-white md:pb-0">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(250,204,21,.16),transparent_28rem),linear-gradient(120deg,#020806_0%,#052515_45%,#071109_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.075] [background-image:linear-gradient(rgba(255,255,255,.65)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.65)_1px,transparent_1px)] [background-size:44px_44px]" />
-      <HomeSideMenu open={navOpen} onClose={() => setNavOpen(false)} />
+      <HomeSideMenu open={navOpen} onClose={() => setNavOpen(false)} items={player ? playerNavItems : publicNavItems} />
 
       <div className="mx-auto min-h-screen max-w-[1680px]">
         <section className="min-w-0 overflow-x-hidden px-3 pb-8 pt-3 sm:px-5 lg:px-7">
@@ -146,7 +158,7 @@ export function LobbyOperativoHome({
   )
 }
 
-function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function HomeSideMenu({ open, onClose, items }: { open: boolean; onClose: () => void; items: HomeNavItem[] }) {
   return (
     <>
       {open && (
@@ -185,7 +197,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
         </div>
 
         <nav className="space-y-0.5">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <Link
               key={`${item.href}-${item.label}`}
               href={item.href}
@@ -212,7 +224,7 @@ function HomeSideMenu({ open, onClose }: { open: boolean; onClose: () => void })
             className="h-28 w-full rounded-xl object-cover"
           />
           <p className="mt-2 font-mono text-lg font-black uppercase text-amber-200">LBB Originals</p>
-          <p className="mt-1 text-xs leading-4 text-emerald-50/75">Slots, cartas, arcade y próximos juegos propios.</p>
+          <p className="mt-1 text-xs leading-4 text-emerald-50/75">Slots, cartas y arcade listos para jugar.</p>
           <Link
             href="/juegos"
             data-sound="ui.click"
@@ -271,7 +283,7 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
           />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(250,204,21,.10),transparent_35%),linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.48)),linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.02),rgba(0,0,0,.35))]" />
           <span className="absolute left-5 top-5 rounded-full border border-amber-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">LBB Original</span>
-          <span className="absolute bottom-5 right-5 rounded-full border border-lime-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-lime-200">Saldo LBB</span>
+          <span className="absolute bottom-5 right-5 rounded-full border border-lime-300/25 bg-black/30 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-lime-200">Cuenta LBB</span>
         </div>
         <div className="relative flex min-w-0 flex-col justify-center py-1">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-300">LuckyBingoBear Games</p>
@@ -282,7 +294,7 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
             Golden Bear, Truco, Bingo y arcade con saldo general, lobby directo y una estética dorada pensada para entrar y jugar.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {['LBB Originals', 'Saldo único', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
+            {['LBB Originals', 'Una cuenta', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
               <span key={item} className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-emerald-50/80">
                 {item}
               </span>

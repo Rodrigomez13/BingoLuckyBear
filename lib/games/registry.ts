@@ -40,7 +40,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Comprar cartón',
     statusLabel: 'Disponible',
     logo: 'B',
-    visualAsset: '/lbb/visuals/bingo-game.webp',
+    visualAsset: LBB_GAME_THUMBNAILS.bingo,
     category: 'sorteos',
     releaseStage: 'live',
     walletMode: 'general_balance',
@@ -61,7 +61,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Ver mesas',
     statusLabel: 'Mesas activas',
     logo: 'T',
-    visualAsset: '/lbb/visuals/truco-game.webp',
+    visualAsset: LBB_GAME_THUMBNAILS.truco,
     category: 'cartas',
     releaseStage: 'live',
     walletMode: 'general_balance',
@@ -82,7 +82,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Entrar al slot',
     statusLabel: 'LBB Original',
     logo: 'GB',
-    visualAsset: '/lbb/visuals/slot-game.webp',
+    visualAsset: LBB_GAME_THUMBNAILS.goldenBear,
     category: 'slots',
     releaseStage: 'preview',
     walletMode: 'general_balance',
@@ -103,7 +103,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Jugar',
     statusLabel: 'Nuevo',
     logo: 'S',
-    visualAsset: '/lbb/visuals/arcade-game.webp',
+    visualAsset: LBB_GAME_THUMBNAILS.viborita,
     category: 'arcade',
     releaseStage: 'preview',
     walletMode: 'progress_only',
@@ -124,7 +124,7 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     cta: 'Ver plataforma',
     statusLabel: 'En preparación',
     logo: 'LBB',
-    visualAsset: '/lbb/visuals/empty-state.webp',
+    visualAsset: LBB_GAME_THUMBNAILS.empty,
     category: 'roadmap',
     releaseStage: 'roadmap',
     walletMode: 'none',
@@ -152,3 +152,4 @@ export function walletModeLabel(mode: PlatformGameWalletMode) {
   if (mode === 'progress_only') return 'Progreso LBB'
   return 'Sin economía'
 }
+import { LBB_GAME_THUMBNAILS } from '@/lib/brand/assets'
