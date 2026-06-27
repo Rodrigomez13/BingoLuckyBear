@@ -19,6 +19,8 @@ export type WalletTransactionType =
   | 'game_purchase'
   | 'refund'
   | 'game_refund'
+  | 'golden_bear_bet'
+  | 'golden_bear_win'
   | 'withdrawal_pending'
   | 'withdrawal_approved'
   | 'withdrawal_rejected'

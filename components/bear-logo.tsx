@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { LBB_LOGO, LBB_MASCOT } from '@/lib/brand/assets'
 
 interface BearLogoProps {
   size?: number
@@ -9,16 +10,22 @@ interface BearLogoProps {
 
 export function BearLogo({ size = 100, sad = false, className = '', variant = 'solo' }: BearLogoProps) {
   if (!sad) {
-    const src = variant === 'context' ? '/logo-contexto.svg' : '/logo-solo.svg'
+    const src = variant === 'context' ? LBB_LOGO.context : LBB_MASCOT.primary
 
     return (
-      <Image
-        src={src}
-        alt="Lucky Bingo Bear"
-        width={size}
-        height={size}
-        className={`object-contain ${className}`}
-      />
+      <span
+        className={`relative inline-flex shrink-0 overflow-visible ${className}`}
+        style={{ width: size, height: size }}
+        aria-label="Lucky Bingo Bear"
+      >
+        <Image
+          src={src}
+          alt="Lucky Bingo Bear"
+          fill
+          sizes={`${size}px`}
+          className="object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.42)]"
+        />
+      </span>
     )
   }
 

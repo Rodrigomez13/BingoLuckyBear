@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getCustomerAvatar, isCustomerAvatarKey } from '@/lib/customer/avatars'
+import { getAuthCallbackUrl, getSiteUrl } from '@/lib/site-url'
 
 function cleanEmail(value: unknown) {
   return String(value ?? '').trim().toLowerCase().slice(0, 160)
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'El alias debe tener al menos 3 caracteres' }, { status: 400 })
     }
 
-    const origin = request.headers.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.luckybingbear.com'
+    const origin = getSiteUrl(request.headers.get('origin'))
     const supabase = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       options: {
-        emailRedirectTo: `${origin}/mi-cuenta`,
+        emailRedirectTo: getAuthCallbackUrl('/mi-cuenta/jugador', origin),
         data: {
           alias: alias || null,
           avatar_key: avatarKey,

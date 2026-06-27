@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "game:sync": "node scripts/sync-golden-bear.mjs",
+    "game:test": "node --test new_games/tests/*.test.mjs",
+    "game:simulate": "node scripts/simulate-golden-bear.mjs",
     "test:ocr": "tsx scripts/test-receipt-parser.ts",
     "ocr:check": "tsx scripts/check-receipt-ocr.ts"
   },

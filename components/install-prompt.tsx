@@ -4,19 +4,21 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Download, X, Share, Plus } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
+import { useDailySessionDismiss } from '@/hooks/use-daily-session-dismiss'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const DISMISS_KEY = 'lbb-install-dismissed'
+const DISMISS_KEY = 'lbb-install-dismissed-date'
 
 export function InstallPrompt() {
   const pathname = usePathname()
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [visible, setVisible] = useState(false)
   const [iosHint, setIosHint] = useState(false)
+  const { dismissed, dismiss: dismissForToday, ready: dismissReady } = useDailySessionDismiss(DISMISS_KEY)
 
   // Register the service worker once on mount.
   useEffect(() => {
@@ -43,6 +45,8 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (pathname !== '/') return
+    if (!dismissReady || dismissed) return
 
     // Already installed (running as PWA)?
     const standalone =
@@ -50,14 +54,6 @@ export function InstallPrompt() {
       // @ts-expect-error iOS Safari
       window.navigator.standalone === true
     if (standalone) return
-
-    // Recently dismissed?
-    try {
-      const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0)
-      if (dismissedAt && Date.now() - dismissedAt < 1000 * 60 * 60 * 24 * 14) return
-    } catch {
-      /* ignore */
-    }
 
     // iOS: no beforeinstallprompt, show manual hint.
     const ua = window.navigator.userAgent.toLowerCase()
@@ -78,15 +74,11 @@ export function InstallPrompt() {
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [])
+  }, [dismissReady, dismissed, pathname])
 
   const dismiss = () => {
     setVisible(false)
-    try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()))
-    } catch {
-      /* ignore */
-    }
+    dismissForToday()
   }
 
   const install = async () => {
@@ -97,12 +89,7 @@ export function InstallPrompt() {
     setVisible(false)
   }
 
-  const quietPath = pathname?.startsWith('/truco')
-    || pathname?.startsWith('/mi-cuenta')
-    || pathname?.startsWith('/participar')
-    || pathname?.startsWith('/admin')
-
-  if (!visible || quietPath) return null
+  if (!visible || pathname !== '/') return null
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[46] overflow-hidden px-3 md:bottom-4 md:left-auto md:right-4 md:max-w-[20rem]">
@@ -145,3 +132,5 @@ export function InstallPrompt() {
     </div>
   )
 }
+
+export const InstallAppPrompt = InstallPrompt

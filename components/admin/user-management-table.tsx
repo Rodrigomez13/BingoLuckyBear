@@ -720,6 +720,8 @@ function transactionLabel(type: string) {
     truco_side_bet: 'Apuesta en Truco',
     truco_side_bet_win: 'Acierto de apuesta',
     game_purchase: 'Compra de juego',
+    golden_bear_bet: 'Apuesta Golden Bear',
+    golden_bear_win: 'Premio Golden Bear',
     game_refund: 'Reintegro',
     refund: 'Reintegro',
     adjustment: 'Ajuste',

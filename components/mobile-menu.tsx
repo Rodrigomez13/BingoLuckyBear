@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles } from 'lucide-react'
+import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles, Swords } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { BearLogo } from '@/components/bear-logo'
+import { CONTACT_LINKS } from '@/lib/contact'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
+import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
 
 interface MenuLink {
   href: string
@@ -17,15 +20,25 @@ interface MenuLink {
 const PLATFORM_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/juegos', label: 'Todos los juegos', icon: Grid3X3 },
-  { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards },
+  { href: '/participar', label: 'Promociones', icon: Ticket },
+  { href: CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones', label: 'Ayuda', icon: HelpCircle },
 ]
 
-const GAME_LINKS: MenuLink[] = [
-  { href: '/participar', label: 'Bingo', icon: Ticket },
-  { href: '/truco', label: 'Truco', icon: Gamepad2 },
-  { href: '/juegos/golden-bear', label: 'Golden Bear', icon: Trophy },
-  { href: '/juegos/viborita', label: 'Viborita LBB', icon: Sparkles },
-]
+const WALLET_LINK: MenuLink = { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards }
+
+const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Sparkles,
+}
+
+const GAME_LINKS: MenuLink[] = ACTIVE_PLATFORM_GAMES.map((game) => ({
+  href: game.href,
+  label: game.name,
+  icon: gameIcons[game.id],
+}))
 
 const SECONDARY_LINKS: MenuLink[] = [
   { href: '/ganadores', label: 'Historial y ganadores', icon: Trophy },
@@ -37,6 +50,7 @@ export function MobileMenu() {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname() || '/'
+  const { authenticated } = useAuthenticatedSession()
 
   useEffect(() => {
     setMounted(true)
@@ -104,7 +118,7 @@ export function MobileMenu() {
             <nav className="flex-1 overflow-y-auto px-3 py-4">
               <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Plataforma</p>
               <ul className="flex flex-col gap-1">
-                {PLATFORM_LINKS.map((link) => (
+                {(authenticated ? [...PLATFORM_LINKS, WALLET_LINK] : PLATFORM_LINKS).map((link) => (
                   <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
                 ))}
               </ul>

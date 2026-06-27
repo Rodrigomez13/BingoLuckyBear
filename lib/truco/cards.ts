@@ -17,7 +17,7 @@ export const SUIT_LABELS: Record<Suit, string> = {
 const RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
 const SUITS: Suit[] = ['espada', 'basto', 'oro', 'copa']
 
-export const CARD_SPRITE_SRC = '/truco/cards/lbb-cards-spritesheet.webp'
+export const CARD_SPRITE_SRC = LBB_TRUCO_DECK.sprite
 export const CARD_SPRITE_COLUMNS = 10
 export const CARD_SPRITE_ROWS = 5
 
@@ -114,7 +114,7 @@ export function cardImagePath(card: TrucoCard): string {
 }
 
 export function cardBackImagePath(): string {
-  return '/truco/cards/back.png'
+  return LBB_CARD_BACK
 }
 
 export function cardSpritePosition(card?: TrucoCard): string {
@@ -130,3 +130,4 @@ export function cardSpritePosition(card?: TrucoCard): string {
 
   return `${x}% ${y}%`
 }
+import { LBB_CARD_BACK, LBB_TRUCO_DECK } from '@/lib/brand/assets'
