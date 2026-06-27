@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#04150d">
-  <title>Golden Bear Megaways · Lucky Bingo Bear</title>
+  <title>Golden Bear Lucky Ways · Lucky Bingo Bear</title>
+  <script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embedded')</script>
   <link rel="icon" href="assets/golden-bear-mascot.webp">
   <link rel="preload" href="assets/golden-bear-symbols.webp" as="image">
   <link rel="preload" href="assets/golden-bear-western-bg.webp" as="image">
@@ -21,12 +22,12 @@
 
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><div class="game-icon"><img src="assets/golden-bear-mascot.webp" alt="Icono Golden Bear"></div><div class="brand-copy"><strong>Golden Bear Megaways</strong><span>Lucky Bingo Bear Originals</span></div></div>
-      <div class="top-actions"><span class="brand-badge">LBB Originals</span><button id="soundBtn" class="icon-btn" aria-label="Silenciar sonido" title="Sonido (M)">🔊</button><button id="settingsBtn" class="icon-btn" aria-label="Abrir configuración" title="Audio y configuración">⚙</button><button id="historyBtn" class="icon-btn" aria-label="Abrir historial" title="Historial y detalle de pagos">☷</button><button id="infoBtn" class="icon-btn" aria-label="Abrir reglas" title="Reglas y premios">ⓘ</button><button id="fullBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
+      <div class="brand"><div class="game-icon"><img src="assets/golden-bear-mascot.webp" alt="Icono Golden Bear"></div><div class="brand-copy"><strong>Golden Bear Lucky Ways</strong><span>Lucky Bingo Bear Originals</span></div></div>
+      <div class="top-actions"><span class="brand-badge">LBB Originals</span><button id="soundBtn" class="icon-btn" aria-label="Silenciar sonido" title="Sonido">🔊</button><button id="settingsBtn" class="icon-btn" aria-label="Abrir configuración" title="Audio y configuración">⚙</button><button id="historyBtn" class="icon-btn" aria-label="Abrir historial" title="Historial y detalle">☷</button><button id="infoBtn" class="icon-btn" aria-label="Abrir reglas" title="Reglas y premios">ⓘ</button><button id="fullBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
     </header>
 
     <section class="game-layout">
-      <aside class="art-panel" aria-label="Golden Bear Megaways">
+      <aside class="art-panel" aria-label="Golden Bear Lucky Ways">
         <p class="eyebrow">Lucky Bingo Bear presenta</p>
         <h1 class="game-logo">Golden Bear<span>Lucky Ways</span></h1>
         <div class="mega-ribbon">Hasta 117.649 formas</div>
@@ -68,17 +69,20 @@
     </section>
 
     <footer class="control-deck">
-      <div class="money-group"><div class="money-box"><span>Saldo</span><strong id="balance">0</strong></div><div class="money-box"><span>Premio total</span><strong id="lastWin">0</strong></div></div>
+      <div class="money-group"><div class="money-box"><span>Saldo</span><strong id="balance">0</strong></div><div class="money-box"><span>Premio</span><strong id="lastWin">0</strong></div></div>
       <div class="bet-controls"><button id="betDown" class="round-btn" aria-label="Bajar apuesta">−</button><div class="bet-view"><span>Apuesta</span><strong id="bet">100</strong></div><button id="betUp" class="round-btn" aria-label="Subir apuesta">+</button></div>
-      <div class="action-group"><button id="turboBtn" class="utility-btn" title="Modo turbo (T)">Turbo</button><button id="autoBtn" class="utility-btn" title="Autogiro (A)">Auto<br>×10</button><button id="spinBtn" class="spin-btn">GIRAR</button></div>
+      <div class="action-group"><button id="turboBtn" class="utility-btn" title="Modo turbo">Turbo</button><button id="autoBtn" class="utility-btn" title="Autogiro">Auto<br>×10</button><button id="buyBonusBtn" class="utility-btn bonus-buy-btn" title="Comprar bonus"><span>Comprar Bonus</span><small>$ 100 · 6 FS</small></button><button id="spinBtn" class="spin-btn">GIRAR</button></div>
     </footer>
   </main>
 
-  <div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div class="modal-card"><div class="modal-head"><h2 id="infoTitle">Reglas y premios</h2><button class="close-btn" data-close="infoModal" aria-label="Cerrar">✕</button></div><div id="payGrid" class="pay-grid"></div><p class="modal-copy"><strong>Golden Bear Megaways</strong> paga formas consecutivas de izquierda a derecha. WILD sustituye a todos los símbolos salvo BONUS. Tres o más BONUS activan los giros gratis, donde los WILD quedan fijos, el multiplicador se conserva y nuevos BONUS agregan giros.</p></div></div>
+  <div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div class="modal-card"><div class="modal-head"><h2 id="infoTitle">Reglas y premios</h2><button class="close-btn" data-close="infoModal" aria-label="Cerrar">✕</button></div><div id="payGrid" class="pay-grid"></div><p class="modal-copy"><strong>Golden Bear Lucky Ways</strong> paga formas consecutivas de izquierda a derecha. WILD sustituye a todos los símbolos salvo BONUS. Tres o más BONUS activan los giros gratis, donde los WILD quedan fijos, el multiplicador se conserva y nuevos BONUS agregan giros.</p></div></div>
   <div id="historyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="historyTitle"><div class="modal-card history-modal-card"><div class="modal-head"><h2 id="historyTitle">Historial y pagos</h2><button class="close-btn" data-close="historyModal" aria-label="Cerrar">✕</button></div><div id="historyModalBody" class="history-modal-grid"></div></div></div>
   <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-card settings-card"><div class="modal-head"><h2 id="settingsTitle">Audio y experiencia</h2><button class="close-btn" data-close="settingsModal" aria-label="Cerrar">✕</button></div><div class="volume-grid"><label for="masterVolume"><span>Volumen general</span><output id="masterValue">85%</output></label><input id="masterVolume" type="range" min="0" max="100" value="85"><label for="effectsVolume"><span>Efectos</span><output id="effectsValue">85%</output></label><input id="effectsVolume" type="range" min="0" max="100" value="85"><label for="musicVolume"><span>Ambiente</span><output id="musicValue">18%</output></label><input id="musicVolume" type="range" min="0" max="100" value="18"></div><p class="settings-hint">Los cambios se guardan automáticamente.</p></div></div>
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
+  <script type="module" src="js/render-fixes.mjs"></script>
+  <script type="module" src="js/bonus-buy.mjs"></script>
   <script type="module" src="js/game.mjs"></script>
+  <script type="module" src="js/mobile-cleanup.mjs"></script>
 </body>
 </html>

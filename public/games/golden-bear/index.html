@@ -18,28 +18,12 @@
   <link rel="stylesheet" href="mobile-fixes.css">
 </head>
 <body>
-  <div id="loader" class="loader">
-    <div class="loader-inner">
-      <img class="loader-icon" src="assets/golden-bear-mascot.webp" alt="">
-      <strong>Preparando Golden Bear</strong>
-      <div class="loadbar"></div>
-    </div>
-  </div>
+  <div id="loader" class="loader"><div class="loader-inner"><img class="loader-icon" src="assets/golden-bear-mascot.webp" alt=""><strong>Preparando Golden Bear</strong><div class="loadbar"></div></div></div>
 
   <main class="shell">
     <header class="topbar">
-      <div class="brand">
-        <div class="game-icon"><img src="assets/golden-bear-mascot.webp" alt="Icono Golden Bear"></div>
-        <div class="brand-copy"><strong>Golden Bear Lucky Ways</strong><span>Lucky Bingo Bear Originals</span></div>
-      </div>
-      <div class="top-actions">
-        <span class="brand-badge">LBB Originals</span>
-        <button id="soundBtn" class="icon-btn" aria-label="Silenciar sonido" title="Sonido">🔊</button>
-        <button id="settingsBtn" class="icon-btn" aria-label="Abrir configuración" title="Audio y configuración">⚙</button>
-        <button id="historyBtn" class="icon-btn" aria-label="Abrir historial" title="Historial y detalle">☷</button>
-        <button id="infoBtn" class="icon-btn" aria-label="Abrir reglas" title="Reglas y premios">ⓘ</button>
-        <button id="fullBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
-      </div>
+      <div class="brand"><div class="game-icon"><img src="assets/golden-bear-mascot.webp" alt="Icono Golden Bear"></div><div class="brand-copy"><strong>Golden Bear Lucky Ways</strong><span>Lucky Bingo Bear Originals</span></div></div>
+      <div class="top-actions"><span class="brand-badge">LBB Originals</span><button id="soundBtn" class="icon-btn" aria-label="Silenciar sonido" title="Sonido">🔊</button><button id="settingsBtn" class="icon-btn" aria-label="Abrir configuración" title="Audio y configuración">⚙</button><button id="historyBtn" class="icon-btn" aria-label="Abrir historial" title="Historial y detalle">☷</button><button id="infoBtn" class="icon-btn" aria-label="Abrir reglas" title="Reglas y premios">ⓘ</button><button id="fullBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
     </header>
 
     <section class="game-layout">
@@ -60,10 +44,9 @@
         <div class="screen">
           <canvas id="slotCanvas" width="1100" height="650" aria-label="Carretes del juego"></canvas>
           <div id="cascadeCallout" class="cascade-callout">Cascada 2 · multiplicador ×2</div>
-          <div id="winLayer" class="win-layer"><div class="win-card"><span id="winType">Premio</span><strong id="winAmount">$ 0</strong></div></div>
-          <div id="payTransition" class="pay-transition"><small>línea pagada</small><strong id="payTransitionText">$ 0</strong></div>
+          <div id="winLayer" class="win-layer"><div class="win-card"><span id="winType">Premio</span><strong id="winAmount">$ 0</strong></div></div><div id="payTransition" class="pay-transition"><small>línea pagada</small><strong id="payTransitionText">$ 0</strong></div>
         </div>
-        <div id="ticker" class="ticker" aria-live="polite"></div>
+        <div id="ticker" class="ticker" aria-live="polite">Presioná GIRAR o la barra espaciadora para comenzar.</div>
       </section>
 
       <aside class="info-rail">
@@ -86,21 +69,9 @@
     </section>
 
     <footer class="control-deck">
-      <div class="money-group">
-        <div class="money-box"><span>Saldo</span><strong id="balance">0</strong></div>
-        <div class="money-box"><span>Premio</span><strong id="lastWin">0</strong></div>
-      </div>
-      <div class="bet-controls">
-        <button id="betDown" class="round-btn" aria-label="Bajar apuesta">−</button>
-        <div class="bet-view"><span>Apuesta</span><strong id="bet">100</strong></div>
-        <button id="betUp" class="round-btn" aria-label="Subir apuesta">+</button>
-      </div>
-      <div class="action-group">
-        <button id="turboBtn" class="utility-btn" title="Modo turbo">Turbo</button>
-        <button id="autoBtn" class="utility-btn" title="Autogiro">Auto<br>×10</button>
-        <button id="buyBonusBtn" class="utility-btn bonus-buy-btn" title="Comprar bonus"><span>Comprar Bonus</span><small>$ 100 · 6 FS</small></button>
-        <button id="spinBtn" class="spin-btn">GIRAR</button>
-      </div>
+      <div class="money-group"><div class="money-box"><span>Saldo</span><strong id="balance">0</strong></div><div class="money-box"><span>Premio</span><strong id="lastWin">0</strong></div></div>
+      <div class="bet-controls"><button id="betDown" class="round-btn" aria-label="Bajar apuesta">−</button><div class="bet-view"><span>Apuesta</span><strong id="bet">100</strong></div><button id="betUp" class="round-btn" aria-label="Subir apuesta">+</button></div>
+      <div class="action-group"><button id="turboBtn" class="utility-btn" title="Modo turbo">Turbo</button><button id="autoBtn" class="utility-btn" title="Autogiro">Auto<br>×10</button><button id="buyBonusBtn" class="utility-btn bonus-buy-btn" title="Comprar bonus"><span>Comprar Bonus</span><small>$ 100 · 6 FS</small></button><button id="spinBtn" class="spin-btn">GIRAR</button></div>
     </footer>
   </main>
 
