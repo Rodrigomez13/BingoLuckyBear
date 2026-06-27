@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Grid3X3, WalletCards } from 'lucide-react'
-import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
+import { GameCatalogCard } from '@/components/games/game-catalog-card'
 import { SiteHeader } from '@/components/site-header'
-import { ACTIVE_PLATFORM_GAMES, walletModeLabel } from '@/lib/games/registry'
+import { ACTIVE_PLATFORM_GAMES } from '@/lib/games/registry'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Juegos | LuckyBingoBear',
-  description: 'Lobby de juegos de LuckyBingoBear con Bingo, Truco, Golden Bear, Viborita y próximos juegos.',
+  description: 'Lobby de juegos disponibles de LuckyBingoBear con Bingo, Truco, Golden Bear y Viborita.',
 }
 
 async function hasVerifiedUser() {
@@ -50,24 +50,10 @@ export default async function GamesPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          {ACTIVE_PLATFORM_GAMES.map((game) => {
-            return (
-              <Link key={game.id} href={game.href} className="group relative flex min-h-[28rem] flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-zinc-950/68 p-4 shadow-2xl shadow-black/30 transition hover:-translate-y-1 hover:border-amber-300/45 sm:p-5">
-                <GameShowcaseVisual game={game} compact />
-                <div className="mt-5 flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">{game.statusLabel}</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.16em] text-lime-200/80">{walletModeLabel(game.walletMode)}</span>
-                </div>
-                <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/80">{game.subtitle}</p>
-                <h2 className="relative mt-2 text-2xl font-black text-white">{game.name}</h2>
-                <p className="relative mt-3 flex-1 text-sm leading-6 text-slate-300">{game.description}</p>
-                <span className="relative mt-5 inline-flex h-11 items-center justify-center rounded-full bg-amber-300 px-4 text-sm font-black text-zinc-950 group-hover:bg-amber-200">
-                  {game.cta}
-                </span>
-              </Link>
-            )
-          })}
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {ACTIVE_PLATFORM_GAMES.map((game, index) => (
+            <GameCatalogCard key={game.id} game={game} priority={index < 2} />
+          ))}
         </section>
 
         <section className="mt-6 rounded-[1.5rem] border border-emerald-300/15 bg-emerald-300/5 p-5 text-sm leading-6 text-emerald-50/80">

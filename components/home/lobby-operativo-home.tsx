@@ -7,7 +7,6 @@ import type { ComponentType } from 'react'
 import {
   Activity,
   Bot,
-  ChevronRight,
   Crown,
   Gamepad2,
   Grid3X3,
@@ -24,9 +23,10 @@ import {
   Zap,
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
+import { GameCatalogCard } from '@/components/games/game-catalog-card'
 import { UserMenu } from '@/components/user-menu'
 import { CONTACT_LINKS } from '@/lib/contact'
-import { ACTIVE_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
 type HomeRaffle = {
@@ -328,44 +328,10 @@ function GamesPlatformGrid() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ACTIVE_PLATFORM_GAMES.map((game) => (
-          <GameCard key={game.id} game={game} />
+          <GameCatalogCard key={game.id} game={game} />
         ))}
       </div>
     </section>
-  )
-}
-
-function GameCard({ game }: { game: PlatformGame }) {
-  const Icon = gameIcons[game.id]
-  return (
-    <Link
-      href={game.href}
-      data-sound={game.sound}
-      className={`group relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-gradient-to-br ${game.accent} shadow-xl shadow-black/25 transition hover:-translate-y-1 hover:border-amber-300/45`}
-    >
-      <div className="relative aspect-[16/10] overflow-hidden bg-black/35">
-        <Image
-          src={game.visualAsset}
-          alt={game.name}
-          fill
-          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition duration-300 group-hover:scale-[1.04]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200 backdrop-blur">
-          <Icon className="h-3.5 w-3.5" />
-          {game.statusLabel}
-        </span>
-      </div>
-      <div className="p-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
-        <h3 className="mt-1 truncate text-xl font-black text-white">{game.name}</h3>
-      </div>
-      <span className="mx-3 mb-3 flex h-10 items-center justify-center rounded-xl bg-amber-300 text-xs font-black uppercase text-zinc-950 group-hover:bg-amber-200">
-        {game.cta}
-        <ChevronRight className="ml-1 h-4 w-4" />
-      </span>
-    </Link>
   )
 }
 
