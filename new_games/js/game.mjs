@@ -71,7 +71,7 @@ function drawReels(){
   const cell=Math.max(26,Math.min((cw-pad*2-gap*(REELS-1))/REELS,(ch-pad*2-gap*(maxRows-1))/maxRows));
   const rw=cell,area=cell*maxRows+gap*(maxRows-1);
   const gridW=rw*REELS+gap*(REELS-1);
-  const gridX=(cw-gridW)/2,gridY=(ch-gridH)/2;
+  const gridX=(cw-gridW)/2,gridY=(ch-area)/2;
   const cascadeDuration=turbo?260:460;
   const rawProgress=dropStart?Math.max(0,Math.min(1,(t-dropStart)/cascadeDuration)):1;
   const eased=1-Math.pow(1-rawProgress,3);
@@ -514,5 +514,11 @@ E.turbo.classList.toggle('active', turbo)
 updateHud()
 resize()
 requestAnimationFrame(loop)
-setTimeout(() => E.loader.classList.add('hide'), 900)
+function hideLoader() {
+  E.loader?.classList.add('hide')
+}
+
+addEventListener('error', hideLoader)
+addEventListener('unhandledrejection', hideLoader)
+setTimeout(hideLoader, 900)
 loadWallet()
