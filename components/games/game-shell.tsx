@@ -13,6 +13,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -173,13 +174,41 @@ export function GameViewport({
   mobileAspectRatio,
   maxHeight = 'calc(100svh - clamp(7.25rem, 14svh, 9.5rem))',
   frameClassName = '',
+  logicalWidth,
+  logicalHeight,
 }: {
   children: ReactNode
   aspectRatio?: string
   mobileAspectRatio?: string
   maxHeight?: string
   frameClassName?: string
+  logicalWidth?: number
+  logicalHeight?: number
 }) {
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const [scale, setScale] = useState(1)
+  const usesLogicalStage = Boolean(logicalWidth && logicalHeight)
+
+  useLayoutEffect(() => {
+    if (!usesLogicalStage || !logicalWidth || !logicalHeight || !frameRef.current) return
+
+    const updateScale = () => {
+      const rect = frameRef.current?.getBoundingClientRect()
+      if (!rect?.width || !rect.height) return
+      setScale(Math.min(rect.width / logicalWidth, rect.height / logicalHeight))
+    }
+
+    updateScale()
+    const observer = new ResizeObserver(updateScale)
+    observer.observe(frameRef.current)
+    window.addEventListener('orientationchange', updateScale)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('orientationchange', updateScale)
+    }
+  }, [logicalHeight, logicalWidth, usesLogicalStage])
+
   const style: GameCssVars = {
     '--lbb-game-aspect': aspectRatio,
     '--lbb-game-ratio': parseAspectRatio(aspectRatio),
@@ -191,10 +220,25 @@ export function GameViewport({
   return (
     <section className="lbb-game-viewport flex min-h-0 flex-1 items-center justify-center overflow-hidden" style={style}>
       <div
+        ref={frameRef}
         data-mobile-aspect={mobileAspectRatio ? 'true' : 'false'}
         className={`lbb-game-viewport-frame relative min-h-0 overflow-hidden rounded-xl border border-[color:rgba(221,175,55,.22)] bg-black/55 shadow-2xl shadow-black/45 backdrop-blur-xl ${frameClassName}`}
       >
-        <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden">{children}</div>
+        {usesLogicalStage && logicalWidth && logicalHeight ? (
+          <div
+            className="absolute left-1/2 top-1/2 overflow-hidden"
+            style={{
+              width: logicalWidth,
+              height: logicalHeight,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              transformOrigin: 'center center',
+            }}
+          >
+            {children}
+          </div>
+        ) : (
+          <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden">{children}</div>
+        )}
       </div>
     </section>
   )
