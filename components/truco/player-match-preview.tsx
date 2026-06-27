@@ -90,7 +90,7 @@ function PlayerPill({
   accent: 'emerald' | 'amber'
   alignRight?: boolean
 }) {
-  const avatarSrc = avatarKey ? getCustomerAvatarImageSrc(avatarKey) : '/logo-solo.svg'
+  const avatarSrc = avatarKey ? getCustomerAvatarImageSrc(avatarKey) : '/truco/golden-bear-mascot.webp'
   const scoreClass = accent === 'emerald' ? 'text-emerald-300' : 'text-amber-300'
   const barClass = accent === 'emerald' ? 'bg-emerald-400' : 'bg-amber-400'
 

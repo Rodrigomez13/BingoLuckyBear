@@ -55,7 +55,7 @@ export function HeroBannerSequence() {
             aria-label="Participar"
             className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-[linear-gradient(to_right,rgb(37,99,235),rgb(59,130,246),rgb(249,115,22))] px-4 text-xs font-bold uppercase tracking-wide text-white shadow-lg shadow-black/30 transition duration-200 hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
           >
-            <Image src="/logo-solo.svg" alt="" width={22} height={22} className="h-5 w-5" />
+            <Image src="/truco/golden-bear-mascot.webp" alt="" width={22} height={22} className="h-5 w-5 object-contain" />
             Participar
           </Link>
         </div>
