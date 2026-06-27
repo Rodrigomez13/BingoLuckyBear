@@ -30,10 +30,14 @@ export default async function GoldenBearPage() {
         exitHref="/juegos"
       />
       <OrientationHint />
-      <GameViewport aspectRatio="16 / 9" logicalWidth={1600} logicalHeight={900}>
+      <GameViewport
+        aspectRatio="16 / 9"
+        maxHeight="calc(100svh - clamp(6rem, 11svh, 8.25rem))"
+        frameClassName="bg-black/70"
+      >
         <iframe
           title="Golden Bear Lucky Ways"
-          src="/games/golden-bear/index.html?embed=1&viewport=scaled&v=20260627-scaled-viewport"
+          src="/games/golden-bear/index.html?embed=1&viewport=fluid&v=20260627-slot-fit"
           className="h-full min-h-0 w-full border-0"
           allow="autoplay; fullscreen"
         />
