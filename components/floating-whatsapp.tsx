@@ -7,7 +7,7 @@ import { CONTACT_LINKS } from '@/lib/contact'
 export function FloatingWhatsApp() {
   const pathname = usePathname()
 
-  if (!CONTACT_LINKS.whatsappUrl || pathname?.startsWith('/truco')) {
+  if (!CONTACT_LINKS.whatsappUrl || pathname !== '/') {
     return null
   }
 
@@ -18,7 +18,7 @@ export function FloatingWhatsApp() {
       rel="noreferrer"
       aria-label="Escribinos por WhatsApp"
       title="WhatsApp"
-      className="fixed bottom-[6.25rem] right-4 z-[55] flex h-12 w-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-lg shadow-black/30 ring-1 ring-black/10 transition hover:scale-105 hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#04f77c] md:bottom-5 md:right-5"
+      className="fixed bottom-[6.25rem] right-4 z-[55] flex h-12 w-12 items-center justify-center rounded-full bg-[var(--lbb-whatsapp)] text-white shadow-lg shadow-black/30 ring-1 ring-black/10 transition hover:scale-105 hover:bg-[var(--lbb-whatsapp-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lbb-green-glow)] md:bottom-5 md:right-5"
     >
       <WhatsAppLogo className="h-7 w-7" />
     </Link>

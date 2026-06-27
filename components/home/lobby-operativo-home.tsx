@@ -26,7 +26,7 @@ import {
 import { BearLogo } from '@/components/bear-logo'
 import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
 import { UserMenu } from '@/components/user-menu'
-import { LOBBY_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
 import type { PublicRoomSummary } from '@/lib/truco/server-authority'
 
 type HomeRaffle = {
@@ -75,9 +75,7 @@ const gameIcons: Record<PlatformGameId, IconType> = {
 const navItems: HomeNavItem[] = [
   { href: '/', label: 'Inicio', icon: Home, active: true },
   { href: '/juegos', label: 'Juegos', icon: Grid3X3 },
-  ...LOBBY_PLATFORM_GAMES
-    .filter((game) => game.releaseStage !== 'roadmap')
-    .map((game) => ({ href: game.href, label: game.shortName, icon: gameIcons[game.id] })),
+  ...ACTIVE_PLATFORM_GAMES.map((game) => ({ href: game.href, label: game.shortName, icon: gameIcons[game.id] })),
   { href: '/mi-cuenta/jugador', label: 'Perfil', icon: UserCircle2 },
   { href: '/ganadores', label: 'Historial', icon: Crown },
 ]
@@ -281,7 +279,7 @@ function HeroLobby({ jackpotPrize }: { jackpotPrize?: string | null }) {
             Tu plataforma de juegos, una sola cuenta
           </h1>
           <p className="mt-4 max-w-2xl break-words text-base font-semibold leading-7 text-amber-100/90 sm:text-lg">
-            Golden Bear, Truco, Bingo, arcade y próximos juegos nativos con saldo general, lobby directo y una estética dorada pensada para entrar y jugar.
+            Golden Bear, Truco, Bingo y arcade con saldo general, lobby directo y una estética dorada pensada para entrar y jugar.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {['LBB Originals', 'Saldo único', 'Torneos', 'Misiones', 'Ranking'].map((item) => (
@@ -318,7 +316,7 @@ function GamesPlatformGrid() {
         </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_0.9fr] 2xl:grid-cols-5">
-        {LOBBY_PLATFORM_GAMES.map((game) => (
+        {ACTIVE_PLATFORM_GAMES.map((game) => (
           <GameCard key={game.id} game={game} />
         ))}
       </div>

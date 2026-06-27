@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { ComponentType } from 'react'
@@ -6,6 +8,7 @@ import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 import { MobileMenu } from '@/components/mobile-menu'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
+import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +61,7 @@ const gameLinks: HeaderGameLink[] = [
 
 export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
   const gamesActive = gameLinks.some((link) => link.active === activePath)
+  const { authenticated } = useAuthenticatedSession()
 
   return (
     <header className={`${compact ? 'sticky top-3' : 'fixed left-0 right-0 top-4'} z-50 px-3 sm:top-5`}>
@@ -85,7 +89,7 @@ export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, acti
             )}
             <HeaderLink href="/" active={activePath === 'home'} label="Inicio" className="hidden lg:inline-flex" />
             <GamesDropdown active={gamesActive} />
-            <HeaderLink href="/mi-cuenta/jugador" active={activePath === 'mi-cuenta'} icon={<WalletCards className="h-4 w-4" />} label="Wallet" className="hidden md:inline-flex" />
+            {authenticated && <HeaderLink href="/mi-cuenta/jugador" active={activePath === 'mi-cuenta'} icon={<WalletCards className="h-4 w-4" />} label="Wallet" className="hidden md:inline-flex" />}
             <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />
             <UserMenu active={activePath === 'mi-cuenta'} />
             <MobileMenu />

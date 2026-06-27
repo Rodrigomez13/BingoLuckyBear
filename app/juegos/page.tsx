@@ -4,13 +4,25 @@ import { Grid3X3, WalletCards } from 'lucide-react'
 import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
 import { SiteHeader } from '@/components/site-header'
 import { ACTIVE_PLATFORM_GAMES, walletModeLabel } from '@/lib/games/registry'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Juegos | LuckyBingoBear',
   description: 'Lobby de juegos de LuckyBingoBear con Bingo, Truco, Golden Bear, Viborita y próximos juegos.',
 }
 
-export default function GamesPage() {
+async function hasVerifiedUser() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  return Boolean(user?.email_confirmed_at || user?.confirmed_at)
+}
+
+export default async function GamesPage() {
+  const showWallet = await hasVerifiedUser()
+
   return (
     <main className="lbb-page-shell relative min-h-screen overflow-x-hidden text-slate-50">
       <div className="lbb-ambient" />
@@ -24,13 +36,17 @@ export default function GamesPage() {
                 Elegí una experiencia y usá el mismo saldo LBB.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
-                Bingo, Truco, Slots, arcade y futuros juegos conectados a una wallet central. No hay saldos separados por juego.
+                {showWallet
+                  ? 'Bingo, Truco, Slots y arcade conectados al mismo saldo LBB. No hay saldos separados por juego.'
+                  : 'Bingo, Truco, Slots y arcade reunidos en un lobby simple, con acceso directo a las experiencias disponibles.'}
               </p>
             </div>
-            <Link href="/mi-cuenta/jugador" className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-5 py-3 text-sm font-black text-amber-100 hover:bg-amber-300/20">
-              <WalletCards className="h-4 w-4" />
-              Ver wallet
-            </Link>
+            {showWallet && (
+              <Link href="/mi-cuenta/jugador" className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-5 py-3 text-sm font-black text-amber-100 hover:bg-amber-300/20">
+                <WalletCards className="h-4 w-4" />
+                Ver wallet
+              </Link>
+            )}
           </div>
         </section>
 
@@ -56,7 +72,9 @@ export default function GamesPage() {
 
         <section className="mt-6 rounded-[1.5rem] border border-emerald-300/15 bg-emerald-300/5 p-5 text-sm leading-6 text-emerald-50/80">
           <Grid3X3 className="mb-3 h-5 w-5 text-amber-300" />
-          Todos los juegos de créditos consumen y acreditan desde la misma wallet LBB. El catálogo queda preparado para ranking, límites, misiones y configuración operativa por juego.
+          {showWallet
+            ? 'Todos los juegos de créditos consumen y acreditan desde el mismo saldo LBB. El catálogo queda preparado para ranking, límites y misiones.'
+            : 'El catálogo muestra las experiencias disponibles de LuckyBingoBear, con navegación rápida y diseño preparado para jugar en cualquier pantalla.'}
         </section>
       </div>
     </main>

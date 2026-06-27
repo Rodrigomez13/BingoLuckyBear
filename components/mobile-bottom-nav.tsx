@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Grid3X3, WalletCards, MoreHorizontal } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
 
 interface NavItem {
   href: string
@@ -23,14 +24,18 @@ const HIDDEN_PREFIXES = ['/admin', '/truco', '/juegos/golden-bear', '/juegos/vib
 
 export function MobileBottomNav() {
   const pathname = usePathname() || '/'
+  const { authenticated } = useAuthenticatedSession()
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
+
+  const items = authenticated ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== '/mi-cuenta/jugador')
+  const gridClass = authenticated ? 'grid-cols-4' : 'grid-cols-3'
 
   return (
     <nav aria-label="Navegación principal" className="lbb-bottom-nav fixed inset-x-0 bottom-0 z-50 md:hidden">
       <div className="mx-auto w-full max-w-[calc(100vw-1rem)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="grid min-w-0 grid-cols-4 gap-0.5 rounded-2xl border border-white/10 bg-black/80 px-1 py-1.5 shadow-2xl shadow-black/50 backdrop-blur-2xl">
-          {NAV_ITEMS.map((item) => {
+        <div className={`grid min-w-0 ${gridClass} gap-0.5 rounded-2xl border border-white/10 bg-black/80 px-1 py-1.5 shadow-2xl shadow-black/50 backdrop-blur-2xl`}>
+          {items.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
             return (

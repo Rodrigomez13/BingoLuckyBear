@@ -10,7 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const DISMISS_KEY = 'lbb-install-dismissed'
+const DISMISS_KEY = 'lbb-install-dismissed-date'
 
 export function InstallPrompt() {
   const pathname = usePathname()
@@ -43,6 +43,7 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (pathname !== '/') return
 
     // Already installed (running as PWA)?
     const standalone =
@@ -51,10 +52,11 @@ export function InstallPrompt() {
       window.navigator.standalone === true
     if (standalone) return
 
-    // Recently dismissed?
+    // Dismissed today?
     try {
-      const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0)
-      if (dismissedAt && Date.now() - dismissedAt < 1000 * 60 * 60 * 24 * 14) return
+      const dismissedDate = localStorage.getItem(DISMISS_KEY)
+      const today = new Date().toISOString().slice(0, 10)
+      if (dismissedDate === today) return
     } catch {
       /* ignore */
     }
@@ -78,12 +80,12 @@ export function InstallPrompt() {
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [])
+  }, [pathname])
 
   const dismiss = () => {
     setVisible(false)
     try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()))
+      localStorage.setItem(DISMISS_KEY, new Date().toISOString().slice(0, 10))
     } catch {
       /* ignore */
     }
@@ -97,12 +99,7 @@ export function InstallPrompt() {
     setVisible(false)
   }
 
-  const quietPath = pathname?.startsWith('/truco')
-    || pathname?.startsWith('/mi-cuenta')
-    || pathname?.startsWith('/participar')
-    || pathname?.startsWith('/admin')
-
-  if (!visible || quietPath) return null
+  if (!visible || pathname !== '/') return null
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[46] overflow-hidden px-3 md:bottom-4 md:left-auto md:right-4 md:max-w-[20rem]">
