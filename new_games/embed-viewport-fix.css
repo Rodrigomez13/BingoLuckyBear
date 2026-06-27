@@ -1,1 +1,404 @@
-html.embedded,html.embedded body{width:100%;height:100%;min-height:0;overflow:hidden}html.embedded body{background:#020704 url("assets/golden-bear-western-bg.webp") center/cover no-repeat}html.embedded body:before{display:none}html.embedded .shell{width:100%;max-width:100%;height:100dvh;min-height:0;padding:0;grid-template-rows:minmax(0,1fr) clamp(74px,10dvh,90px);gap:0;overflow:hidden}html.embedded .topbar{display:none!important}html.embedded .game-layout{min-height:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;overflow:hidden}html.embedded .art-panel,html.embedded .info-rail{display:none!important}html.embedded .machine{width:min(100%,calc((100dvh - clamp(74px,10dvh,90px))*1.34));height:100%;min-width:0;min-height:0;max-height:100%;margin:0 auto;border-width:clamp(5px,.9dvh,9px);border-radius:10px 10px 0 0;padding:clamp(4px,.7dvh,8px);grid-template-rows:clamp(38px,6.2dvh,52px) minmax(0,1fr) clamp(30px,4.6dvh,40px);overflow:hidden}html.embedded .machine-top{min-height:0;margin:-2px -2px 0;padding:3px clamp(8px,1.2dvw,14px)}html.embedded .multiplier{width:clamp(46px,5.5dvw,60px);height:clamp(30px,4.8dvh,38px);font-size:clamp(.95rem,2.1dvw,1.2rem)}html.embedded .screen,html.embedded canvas{width:100%;height:100%;min-width:0;min-height:0;max-width:100%;overflow:hidden}html.embedded canvas{contain:size layout paint}html.embedded .ticker{min-height:0;padding:4px 10px;font-size:clamp(.62rem,1.35dvw,.78rem);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}html.embedded .control-deck{width:min(100%,calc((100dvh - clamp(74px,10dvh,90px))*1.34));min-height:0;height:clamp(74px,10dvh,90px);margin:0 auto;padding:clamp(5px,.9dvh,8px) clamp(8px,1.3dvw,14px);grid-template-columns:minmax(190px,.85fr) minmax(260px,1.05fr) minmax(330px,1.25fr);gap:clamp(7px,1.1dvw,13px);overflow:hidden}html.embedded .money-box,html.embedded .bet-view{min-height:0;padding:5px 8px}html.embedded .bet-controls{grid-template-columns:clamp(36px,4dvw,44px) minmax(76px,1fr) clamp(36px,4dvw,44px)}html.embedded .round-btn,html.embedded .utility-btn,html.embedded .bet-view{height:clamp(40px,6.4dvh,50px)}html.embedded .action-group{width:100%!important;grid-template-columns:clamp(40px,4.2dvw,52px) clamp(40px,4.2dvw,52px) minmax(112px,1fr) clamp(96px,10dvw,134px)!important}html.embedded .bonus-buy-btn{height:clamp(40px,6.4dvh,50px)!important;border-radius:14px!important}html.embedded .spin-btn{width:100%;height:clamp(50px,8.4dvh,68px);min-width:0;font-size:clamp(.86rem,1.65dvw,1.08rem)}@media(max-width:900px),(orientation:portrait){html.embedded .shell{grid-template-rows:minmax(0,1fr) clamp(70px,13dvh,84px)}html.embedded .machine,html.embedded .control-deck{width:100%}html.embedded .machine{border-width:5px;grid-template-rows:38px minmax(0,1fr) 34px}html.embedded .feature-label,html.embedded .money-group,html.embedded .bonus-buy-btn,html.embedded .action-group .utility-btn:first-child{display:none!important}html.embedded .control-deck{grid-template-columns:minmax(118px,.88fr) minmax(150px,1.12fr)}html.embedded .action-group{grid-template-columns:40px minmax(88px,1fr)!important}}@media(max-height:560px) and (orientation:landscape){html.embedded .shell{grid-template-rows:minmax(0,1fr) 64px}html.embedded .machine{grid-template-rows:34px minmax(0,1fr) 28px}html.embedded .control-deck{height:64px}html.embedded .money-box span,html.embedded .bet-view span{display:none}html.embedded .round-btn,html.embedded .utility-btn,html.embedded .bet-view{height:38px}html.embedded .spin-btn{height:46px}}
+/* Golden Bear embedded casino viewport.
+   Matches the generated Golden Bear Lucky Ways visual board: dark western background,
+   carved wood cabinet, gold frame, emerald accents and compact premium controls. */
+html.embedded,
+html.embedded body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+html.embedded body {
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255, 184, 55, 0.28), transparent 28%),
+    linear-gradient(90deg, rgba(4, 7, 5, 0.94), rgba(4, 18, 12, 0.42) 22%, rgba(4, 18, 12, 0.42) 78%, rgba(4, 7, 5, 0.94)),
+    #020704 url("assets/golden-bear-western-bg.webp") center / cover no-repeat;
+  color: #fff2c4;
+}
+
+html.embedded body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255, 224, 132, 0.18), transparent 17%),
+    radial-gradient(circle at 88% 16%, rgba(69, 242, 167, 0.12), transparent 18%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(20, 7, 2, 0.6));
+}
+
+html.embedded .shell {
+  width: 100%;
+  max-width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: clamp(4px, 0.8dvh, 10px);
+  grid-template-rows: minmax(0, 1fr) clamp(82px, 11dvh, 104px);
+  gap: 0;
+  overflow: hidden;
+}
+
+/* El GameShell de Next ya muestra volver, saldo y fullscreen. */
+html.embedded .topbar {
+  display: none !important;
+}
+
+html.embedded .game-layout {
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  overflow: hidden;
+}
+
+html.embedded .art-panel,
+html.embedded .info-rail {
+  display: none !important;
+}
+
+html.embedded .machine,
+html.embedded .control-deck {
+  width: min(100%, calc((100dvh - clamp(82px, 11dvh, 104px) - clamp(8px, 1.6dvh, 20px)) * 1.46));
+  margin-inline: auto;
+}
+
+html.embedded .machine {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  border: clamp(6px, 1dvh, 12px) solid transparent;
+  border-radius: 18px 18px 6px 6px;
+  padding: clamp(5px, 0.9dvh, 10px);
+  grid-template-rows: clamp(46px, 7dvh, 66px) minmax(0, 1fr) clamp(34px, 4.8dvh, 46px);
+  gap: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(80, 28, 6, 0.98), rgba(30, 8, 2, 0.98)) padding-box,
+    linear-gradient(135deg, #fff0a6, #b86a18 18%, #481607 36%, #ffd96a 52%, #7c2a07 72%, #ffe9a2) border-box;
+  box-shadow:
+    0 0 0 1px rgba(255, 238, 170, 0.16),
+    0 18px 46px rgba(0, 0, 0, 0.58),
+    inset 0 0 0 2px rgba(255, 225, 128, 0.13),
+    inset 0 0 42px rgba(0, 0, 0, 0.76);
+}
+
+html.embedded .machine::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  pointer-events: none;
+  border-radius: 12px 12px 4px 4px;
+  border: 1px solid rgba(255, 232, 153, 0.16);
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent),
+    repeating-linear-gradient(90deg, rgba(255, 210, 92, 0.06) 0 1px, transparent 1px 36px);
+  mix-blend-mode: screen;
+}
+
+html.embedded .machine-top {
+  position: relative;
+  min-height: 0;
+  margin: -2px -2px 0;
+  padding: 4px clamp(9px, 1.4dvw, 18px);
+  border: 2px solid rgba(255, 211, 88, 0.26);
+  border-bottom-color: rgba(255, 211, 88, 0.44);
+  background:
+    radial-gradient(circle at 50% 0, rgba(255, 215, 90, 0.22), transparent 44%),
+    linear-gradient(180deg, #481407, #1a0502 74%, #090201);
+  box-shadow: inset 0 0 18px rgba(255, 190, 50, 0.08), 0 7px 0 rgba(63, 19, 3, 0.82);
+}
+
+html.embedded .ways-label {
+  align-self: center;
+  font-size: 0 !important;
+  text-align: left;
+}
+
+html.embedded .ways-label strong {
+  display: none !important;
+}
+
+html.embedded .ways-label::before {
+  content: "GOLDEN BEAR";
+  display: block;
+  font-family: Georgia, serif;
+  font-size: clamp(1rem, 2.2dvw, 1.55rem);
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+  color: #ffe079;
+  text-shadow: 0 2px 0 #7b2b05, 0 4px 0 #2a0901, 0 0 20px rgba(255, 200, 58, 0.38);
+}
+
+html.embedded .ways-label::after {
+  content: "LUCKY WAYS";
+  display: block;
+  width: fit-content;
+  margin-top: 1px;
+  padding: 0 8px 2px;
+  border-radius: 999px;
+  font-family: Georgia, serif;
+  font-size: clamp(0.72rem, 1.35dvw, 1rem);
+  font-weight: 1000;
+  letter-spacing: 0.02em;
+  color: #dfffc6;
+  background: linear-gradient(180deg, #0d6b35, #063016);
+  border: 1px solid rgba(255, 224, 112, 0.5);
+  text-shadow: 0 2px 0 #021107;
+}
+
+html.embedded .feature-label {
+  color: #ffd477;
+  font-family: Georgia, serif;
+  font-size: clamp(0.58rem, 1.05dvw, 0.72rem);
+  text-shadow: 0 2px 0 #321000;
+}
+
+html.embedded .feature-label strong {
+  color: #fff2a4;
+  font-size: clamp(0.68rem, 1.25dvw, 0.88rem);
+}
+
+html.embedded .multiplier {
+  width: clamp(48px, 5.5dvw, 66px);
+  height: clamp(32px, 4.8dvh, 42px);
+  border-radius: 12px;
+  border: 2px solid #fff0a6;
+  color: #4a1500;
+  background:
+    radial-gradient(circle at 35% 20%, #fff8bd 0 9%, transparent 10%),
+    linear-gradient(180deg, #ffe35f, #f6a51a 64%, #a83b04);
+  box-shadow: 0 4px 0 #5e1d00, 0 0 20px rgba(255, 190, 42, 0.28), inset 0 0 14px rgba(255,255,255,0.28);
+  font-family: Georgia, serif;
+  font-size: clamp(1rem, 2.1dvw, 1.28rem);
+}
+
+html.embedded .screen {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  justify-self: stretch;
+  border-radius: 8px;
+  border: 3px solid #2b0d03;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(130, 16, 24, 0.42), transparent 60%),
+    linear-gradient(180deg, #32050b, #160004);
+  box-shadow: inset 0 0 58px rgba(0, 0, 0, 0.82), inset 0 0 0 1px rgba(255, 199, 65, 0.16);
+}
+
+html.embedded canvas {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  contain: size layout paint;
+}
+
+html.embedded .ticker {
+  min-height: 0;
+  padding: 5px 12px;
+  border: 2px solid rgba(255, 211, 88, 0.25);
+  border-top: 0;
+  border-radius: 0 0 7px 7px;
+  background: linear-gradient(180deg, #4d1c07, #160603);
+  color: #fff0c4;
+  font-family: Georgia, serif;
+  font-size: clamp(0.62rem, 1.35dvw, 0.82rem);
+  text-shadow: 0 2px 0 #220800;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+html.embedded .control-deck {
+  height: clamp(82px, 11dvh, 104px);
+  min-height: 0;
+  margin-top: 0;
+  padding: clamp(7px, 1.1dvh, 11px) clamp(10px, 1.5dvw, 18px);
+  grid-template-columns: minmax(190px, 0.86fr) minmax(260px, 1.06fr) minmax(360px, 1.36fr);
+  gap: clamp(8px, 1.3dvw, 16px);
+  overflow: hidden;
+  border: 3px solid #7a310b;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  background:
+    linear-gradient(180deg, rgba(84, 37, 10, 0.98), rgba(28, 10, 3, 0.99) 70%, rgba(7, 3, 1, 0.99));
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 224, 132, 0.2),
+    inset 0 0 0 1px rgba(92, 28, 5, 0.9);
+}
+
+html.embedded .money-box,
+html.embedded .bet-view {
+  min-height: 0;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 196, 63, 0.42) !important;
+  background: linear-gradient(180deg, rgba(22, 8, 2, 0.96), rgba(5, 2, 0, 0.96)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 238, 170, 0.06), 0 6px 14px rgba(0, 0, 0, 0.2) !important;
+}
+
+html.embedded .money-box span,
+html.embedded .bet-view span {
+  color: #ffd46d;
+  font-size: clamp(0.52rem, 1dvw, 0.64rem);
+}
+
+html.embedded .money-box strong,
+html.embedded .bet-view strong {
+  color: #fff7dc;
+  font-family: Georgia, serif;
+  font-size: clamp(0.9rem, 1.7dvw, 1.16rem);
+}
+
+html.embedded .bet-controls {
+  width: min(100%, 410px);
+  justify-self: center;
+  grid-template-columns: clamp(40px, 4.3dvw, 52px) minmax(82px, 1fr) clamp(40px, 4.3dvw, 52px);
+  align-items: center;
+}
+
+html.embedded .round-btn,
+html.embedded .utility-btn,
+html.embedded .bet-view {
+  height: clamp(42px, 6.6dvh, 54px);
+}
+
+html.embedded .round-btn,
+html.embedded .utility-btn {
+  border: 2px solid rgba(255, 210, 92, 0.5) !important;
+  color: #ffe8a8 !important;
+  background:
+    radial-gradient(circle at 36% 20%, rgba(255, 248, 191, 0.42), transparent 19%),
+    linear-gradient(180deg, rgba(96, 36, 6, 0.98), rgba(28, 9, 2, 0.98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,240,166,.16), 0 4px 0 rgba(61,18,3,.9), 0 10px 20px rgba(0,0,0,.2) !important;
+}
+
+html.embedded .action-group {
+  width: 100% !important;
+  grid-template-columns: clamp(44px, 4.4dvw, 56px) clamp(44px, 4.4dvw, 56px) minmax(122px, 1fr) clamp(104px, 10dvw, 150px) !important;
+}
+
+html.embedded .utility-btn {
+  font-size: clamp(0.54rem, 1.15dvw, 0.66rem);
+}
+
+html.embedded .bonus-buy-btn {
+  height: clamp(42px, 6.6dvh, 54px) !important;
+  border-radius: 14px !important;
+  color: #2a0d02 !important;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.55), transparent 15%),
+    linear-gradient(180deg, #fff7b6, #f3b735 58%, #b86a18) !important;
+  border: 2px solid #fff0a6 !important;
+}
+
+html.embedded .spin-btn {
+  width: 100%;
+  height: clamp(56px, 8.8dvh, 78px);
+  min-width: 0;
+  border-radius: 999px !important;
+  border: 4px solid #fff0a6 !important;
+  color: #391400;
+  background:
+    radial-gradient(circle at 34% 18%, #fff9c6 0 7%, transparent 8%),
+    linear-gradient(180deg, #ffe15f, #ffae21 48%, #f06a0c 76%, #8e2900) !important;
+  box-shadow: 0 8px 0 #651f00, 0 18px 36px rgba(255,120,10,.34), inset 0 0 26px rgba(255,255,255,.34) !important;
+  font-family: Georgia, serif;
+  font-size: clamp(0.94rem, 1.8dvw, 1.24rem);
+  letter-spacing: 0.06em;
+}
+
+html.embedded .win-card,
+html.embedded .modal-card {
+  border-radius: 16px !important;
+  border: 3px solid #ffd95e !important;
+  background: linear-gradient(180deg, rgba(107, 30, 5, 0.97), rgba(36, 7, 2, 0.98)) !important;
+}
+
+@media (max-width: 900px), (orientation: portrait) {
+  html.embedded .shell {
+    grid-template-rows: minmax(0, 1fr) clamp(72px, 13dvh, 88px);
+    padding: 3px;
+  }
+
+  html.embedded .machine,
+  html.embedded .control-deck {
+    width: 100%;
+  }
+
+  html.embedded .machine {
+    border-width: 5px;
+    border-radius: 10px 10px 0 0;
+    grid-template-rows: 40px minmax(0, 1fr) 34px;
+  }
+
+  html.embedded .ways-label::before {
+    font-size: 0.92rem;
+  }
+
+  html.embedded .ways-label::after {
+    font-size: 0.62rem;
+  }
+
+  html.embedded .feature-label,
+  html.embedded .money-group,
+  html.embedded .bonus-buy-btn,
+  html.embedded .action-group .utility-btn:first-child {
+    display: none !important;
+  }
+
+  html.embedded .control-deck {
+    height: clamp(72px, 13dvh, 88px);
+    grid-template-columns: minmax(122px, 0.88fr) minmax(150px, 1.12fr);
+  }
+
+  html.embedded .action-group {
+    grid-template-columns: 42px minmax(88px, 1fr) !important;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  html.embedded .shell {
+    grid-template-rows: minmax(0, 1fr) 66px;
+    padding: 3px 6px;
+  }
+
+  html.embedded .machine {
+    grid-template-rows: 34px minmax(0, 1fr) 28px;
+  }
+
+  html.embedded .ways-label::before {
+    font-size: 0.96rem;
+  }
+
+  html.embedded .ways-label::after {
+    font-size: 0.58rem;
+  }
+
+  html.embedded .control-deck {
+    height: 66px;
+  }
+
+  html.embedded .money-box span,
+  html.embedded .bet-view span {
+    display: none;
+  }
+
+  html.embedded .round-btn,
+  html.embedded .utility-btn,
+  html.embedded .bet-view {
+    height: 38px;
+  }
+
+  html.embedded .spin-btn {
+    height: 48px;
+  }
+}
