@@ -14,8 +14,9 @@
   <link rel="preload" href="sounds/spin_start.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/reel_stop_1.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/symbol_pop.ogg" as="audio" type="audio/ogg">
-  <link rel="stylesheet" href="styles.css?v=20260627-scaled-viewport">
-  <link rel="stylesheet" href="mobile-fixes.css?v=20260627-scaled-viewport">
+  <link rel="stylesheet" href="styles.css?v=20260627-slot-fit">
+  <link rel="stylesheet" href="mobile-fixes.css?v=20260627-slot-fit">
+  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260627-slot-fit">
 </head>
 <body>
   <div id="loader" class="loader"><div class="loader-inner"><img class="loader-icon" src="assets/golden-bear-mascot.webp" alt=""><strong>Preparando Golden Bear</strong><div class="loadbar"></div></div></div>
@@ -80,9 +81,9 @@
   <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-card settings-card"><div class="modal-head"><h2 id="settingsTitle">Audio y experiencia</h2><button class="close-btn" data-close="settingsModal" aria-label="Cerrar">✕</button></div><div class="volume-grid"><label for="masterVolume"><span>Volumen general</span><output id="masterValue">85%</output></label><input id="masterVolume" type="range" min="0" max="100" value="85"><label for="effectsVolume"><span>Efectos</span><output id="effectsValue">85%</output></label><input id="effectsVolume" type="range" min="0" max="100" value="85"><label for="musicVolume"><span>Ambiente</span><output id="musicValue">18%</output></label><input id="musicVolume" type="range" min="0" max="100" value="18"></div><p class="settings-hint">Los cambios se guardan automáticamente.</p></div></div>
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
-  <script type="module" src="js/render-fixes.mjs?v=20260627-scaled-viewport"></script>
-  <script type="module" src="js/bonus-buy.mjs?v=20260627-scaled-viewport"></script>
-  <script type="module" src="js/game.mjs?v=20260627-scaled-viewport"></script>
-  <script type="module" src="js/mobile-cleanup.mjs?v=20260627-scaled-viewport"></script>
+  <script type="module" src="js/render-fixes.mjs?v=20260627-slot-fit"></script>
+  <script type="module" src="js/bonus-buy.mjs?v=20260627-slot-fit"></script>
+  <script type="module" src="js/game.mjs?v=20260627-slot-fit"></script>
+  <script type="module" src="js/mobile-cleanup.mjs?v=20260627-slot-fit"></script>
 </body>
 </html>
