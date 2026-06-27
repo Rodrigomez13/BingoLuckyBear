@@ -24,7 +24,6 @@ import {
   Zap,
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
-import { GameShowcaseVisual } from '@/components/games/lbb-game-visuals'
 import { UserMenu } from '@/components/user-menu'
 import { CONTACT_LINKS } from '@/lib/contact'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGame, type PlatformGameId } from '@/lib/games/registry'
@@ -327,7 +326,7 @@ function GamesPlatformGrid() {
           Catálogo completo
         </Link>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_0.9fr] 2xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ACTIVE_PLATFORM_GAMES.map((game) => (
           <GameCard key={game.id} game={game} />
         ))}
@@ -338,43 +337,35 @@ function GamesPlatformGrid() {
 
 function GameCard({ game }: { game: PlatformGame }) {
   const Icon = gameIcons[game.id]
-  const disabled = game.releaseStage === 'roadmap'
-  const hero = game.featured
   return (
     <Link
       href={game.href}
       data-sound={game.sound}
-      className={`group relative flex min-h-[18rem] flex-col overflow-hidden rounded-[1.45rem] border border-white/10 bg-gradient-to-br ${game.accent} p-4 shadow-xl shadow-black/25 transition hover:-translate-y-1 hover:border-amber-300/45 ${hero ? 'xl:min-h-[20rem]' : ''} ${disabled ? 'opacity-80' : ''}`}
+      className={`group relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-gradient-to-br ${game.accent} shadow-xl shadow-black/25 transition hover:-translate-y-1 hover:border-amber-300/45`}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-300/10 blur-2xl transition group-hover:bg-amber-300/20" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
-      <div className="relative mb-4">
-        <GameShowcaseVisual game={game} compact />
-      </div>
-      <div className="relative mb-4 flex items-start justify-between gap-3">
-        <GameIdentity logo={game.logo} icon={Icon} title={game.name} hero={hero} />
-        <span className="rounded-full border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200">
+      <div className="relative aspect-[16/10] overflow-hidden bg-black/35">
+        <Image
+          src={game.visualAsset}
+          alt={game.name}
+          fill
+          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition duration-300 group-hover:scale-[1.04]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-lime-200 backdrop-blur">
+          <Icon className="h-3.5 w-3.5" />
           {game.statusLabel}
         </span>
       </div>
-      <p className="relative text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
-      <h3 className="relative mt-1 text-2xl font-black text-white">{game.name}</h3>
-      <p className="relative mt-3 flex-1 text-sm leading-5 text-emerald-50/72">{game.description}</p>
-      <span className={`relative mt-4 flex h-11 items-center justify-center rounded-xl text-xs font-black uppercase ${disabled ? 'border border-amber-300/25 text-amber-100' : 'bg-amber-300 text-zinc-950 group-hover:bg-amber-200'}`}>
+      <div className="p-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
+        <h3 className="mt-1 truncate text-xl font-black text-white">{game.name}</h3>
+      </div>
+      <span className="mx-3 mb-3 flex h-10 items-center justify-center rounded-xl bg-amber-300 text-xs font-black uppercase text-zinc-950 group-hover:bg-amber-200">
         {game.cta}
-        {!disabled && <ChevronRight className="ml-1 h-4 w-4" />}
+        <ChevronRight className="ml-1 h-4 w-4" />
       </span>
     </Link>
-  )
-}
-
-function GameIdentity({ logo, icon: Icon, title, hero }: { logo: string; icon: IconType; title: string; hero?: boolean }) {
-  return (
-    <span className={`${hero ? 'h-20 w-20 rounded-[1.5rem]' : 'h-16 w-16 rounded-2xl'} relative grid shrink-0 place-items-center border border-amber-300/35 bg-black/45 shadow-inner`}>
-      <span className="absolute inset-1 rounded-[1.15rem] bg-[radial-gradient(circle_at_35%_28%,rgba(250,204,21,.38),transparent_45%),linear-gradient(145deg,rgba(6,78,59,.78),rgba(0,0,0,.2))]" />
-      <span className={`${hero ? 'text-2xl' : 'text-xl'} relative font-mono font-black text-amber-100 drop-shadow`}>{logo}</span>
-      <Icon className="absolute bottom-1.5 right-1.5 h-4 w-4 text-lime-300" aria-label={title} />
-    </span>
   )
 }
 
@@ -383,10 +374,10 @@ function OriginalsShowcase() {
     <section className="rounded-[2rem] border border-amber-300/15 bg-[linear-gradient(135deg,rgba(250,204,21,.10),rgba(16,185,129,.05),rgba(0,0,0,.22))] p-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center">
         <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-4">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Plan de producto</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Juego destacado</p>
           <h2 className="mt-2 font-mono text-2xl font-black uppercase text-white">Golden Bear como primer LBB Original</h2>
           <p className="mt-3 text-sm leading-6 text-emerald-50/70">
-            Primer juego insignia de slots con wallet central, rondas trazables, cascadas visuales y controles operativos para crecer con orden.
+            Slot insignia de LuckyBingoBear con cascadas, bonus dorados y una experiencia pensada para jugar rápido desde cualquier pantalla.
           </p>
           <Link href="/juegos/golden-bear" className="mt-4 inline-flex h-11 items-center rounded-xl bg-amber-300 px-5 text-sm font-black text-zinc-950 hover:bg-amber-200">
             Entrar al slot
@@ -511,11 +502,11 @@ function TournamentsPanel() {
 function StudioRoadmapPanel() {
   return (
     <section className="rounded-[1.5rem] border border-amber-300/15 bg-black/20 p-4">
-      <h2 className="font-mono text-lg font-black uppercase text-amber-200">Próximo salto</h2>
+      <h2 className="font-mono text-lg font-black uppercase text-amber-200">Más diversión LBB</h2>
       <div className="mt-3 space-y-2 text-sm text-emerald-50/70">
         <p>1. Entrada rápida sin fricción.</p>
-        <p>2. Motor validado por servidor para Golden Bear.</p>
-        <p>3. Historial, RTP real y auditoría.</p>
+        <p>2. Golden Bear con cascadas y bonus.</p>
+        <p>3. Historial claro de partidas.</p>
         <p>4. Misiones, ranking y logros.</p>
       </div>
     </section>
