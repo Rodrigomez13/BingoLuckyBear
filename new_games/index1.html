@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#04150d">
   <title>Golden Bear Lucky Ways · Lucky Bingo Bear</title>
-  <script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embedded')</script>
+  <script>const lbbParams=new URLSearchParams(location.search);if(lbbParams.has('embed'))document.documentElement.classList.add('embedded');const lbbViewport=lbbParams.get('viewport');if(lbbViewport)document.documentElement.classList.add(`viewport-${lbbViewport}`)</script>
   <link rel="icon" href="assets/golden-bear-mascot.webp">
   <link rel="preload" href="assets/golden-bear-symbols.webp" as="image">
   <link rel="preload" href="assets/golden-bear-western-bg.webp" as="image">
@@ -14,9 +14,9 @@
   <link rel="preload" href="sounds/spin_start.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/reel_stop_1.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/symbol_pop.ogg" as="audio" type="audio/ogg">
-  <link rel="stylesheet" href="styles.css?v=20260627-slot-fit">
-  <link rel="stylesheet" href="mobile-fixes.css?v=20260627-slot-fit">
-  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260627-slot-fit">
+  <link rel="stylesheet" href="styles.css?v=20260628-fixed-stage-v2">
+  <link rel="stylesheet" href="mobile-fixes.css?v=20260628-fixed-stage-v2">
+  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260628-fixed-stage-v2">
 </head>
 <body>
   <div id="loader" class="loader"><div class="loader-inner"><img class="loader-icon" src="assets/golden-bear-mascot.webp" alt=""><strong>Preparando Golden Bear</strong><div class="loadbar"></div></div></div>
@@ -81,9 +81,9 @@
   <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-card settings-card"><div class="modal-head"><h2 id="settingsTitle">Audio y experiencia</h2><button class="close-btn" data-close="settingsModal" aria-label="Cerrar">✕</button></div><div class="volume-grid"><label for="masterVolume"><span>Volumen general</span><output id="masterValue">85%</output></label><input id="masterVolume" type="range" min="0" max="100" value="85"><label for="effectsVolume"><span>Efectos</span><output id="effectsValue">85%</output></label><input id="effectsVolume" type="range" min="0" max="100" value="85"><label for="musicVolume"><span>Ambiente</span><output id="musicValue">18%</output></label><input id="musicVolume" type="range" min="0" max="100" value="18"></div><p class="settings-hint">Los cambios se guardan automáticamente.</p></div></div>
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
-  <script type="module" src="js/render-fixes.mjs?v=20260627-slot-fit"></script>
-  <script type="module" src="js/bonus-buy.mjs?v=20260627-slot-fit"></script>
-  <script type="module" src="js/game.mjs?v=20260627-slot-fit"></script>
-  <script type="module" src="js/mobile-cleanup.mjs?v=20260627-slot-fit"></script>
+  <script type="module" src="js/render-fixes.mjs?v=20260628-fixed-stage-v2"></script>
+  <script type="module" src="js/bonus-buy.mjs?v=20260628-fixed-stage-v2"></script>
+  <script type="module" src="js/game.mjs?v=20260628-fixed-stage-v2"></script>
+  <script type="module" src="js/mobile-cleanup.mjs?v=20260628-fixed-stage-v2"></script>
 </body>
 </html>
