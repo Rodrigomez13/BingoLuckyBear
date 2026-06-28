@@ -32,7 +32,7 @@ export default async function GoldenBearPage() {
       <OrientationHint />
       <GameViewport
         aspectRatio="16 / 9"
-        maxHeight="calc(100svh - clamp(6rem, 11svh, 8.25rem))"
+        maxHeight="calc(80svh - clamp(6rem, 11svh, 8.25rem))"
         frameClassName="bg-black/70"
       >
         <iframe
