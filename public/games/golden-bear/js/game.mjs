@@ -8,6 +8,7 @@ const ctx = canvas.getContext('2d')
 const spriteAtlas = new Image(); spriteAtlas.src = 'assets/golden-bear-symbols.webp'; spriteAtlas.onload = () => draw()
 const lbbAtlas = new Image(); lbbAtlas.src = 'assets/lbb-role-symbols.webp'; lbbAtlas.onload = () => draw()
 const lbbVariantAtlas = new Image(); lbbVariantAtlas.src = 'assets/lbb-role-variants.webp'; lbbVariantAtlas.onload = () => draw()
+const polishAtlas = new Image(); polishAtlas.src = 'assets/golden-bear-polish-symbols.webp'; polishAtlas.onload = () => draw()
 const E = collectElements()
 const math = createGameMath(SYMBOLS, { reels: REELS, minRows: MIN_ROWS, maxRows: MAX_ROWS, payoutScale: PAYOUT_SCALE })
 
@@ -25,6 +26,11 @@ const playNamedSound = (key, volume = 1, rate = 1) => audioManager.play(SOUND_FI
 const ui = createUi({ elements: E, money, playSound: playNamedSound, getTurbo: () => turbo })
 const { renderPayDetail, pushHistory, clearHistory } = ui
 const symbolByKey = new Map(SYMBOLS.map(symbol => [symbol.key, symbol]))
+const polishSymbolIndex = new Map([
+  ['BEAR', 0], ['FOX', 1], ['EAGLE', 2], ['HORSE', 3],
+  ['HONEY', 4], ['A', 5], ['K', 6], ['Q', 7],
+  ['J', 8], ['WILD', 9], ['BONUS', 10],
+])
 const weightedSymbol = (rng = Math.random) => math.weightedSymbol(rng)
 const makeGrid = rowCounts => math.makeGrid(Math.random, rowCounts)
 const activeWays = math.activeWays
@@ -144,7 +150,13 @@ function drawSymbol(s,x,y,w,h,isWin){
   ctx.clip()
   const roleAtlas=s.lbbSet===1?lbbVariantAtlas:lbbAtlas
   const artPad=Math.max(4,Math.min(w,h)*.06)
-  if(Array.isArray(s.lbb)&&roleAtlas.complete&&roleAtlas.naturalWidth){
+  const polishIndex=polishSymbolIndex.get(s.key)
+  if(Number.isInteger(polishIndex)&&polishAtlas.complete&&polishAtlas.naturalWidth){
+    const cols=4,rows=3,sw=polishAtlas.naturalWidth/cols,sh=polishAtlas.naturalHeight/rows
+    const sx=(polishIndex%cols)*sw,sy=Math.floor(polishIndex/cols)*sh
+    drawImageCover(polishAtlas,sx,sy,sw,sh,x+artPad*.34,y+artPad*.34,w-artPad*.68,h-artPad*.68)
+    ctx.shadowBlur=0
+  }else if(Array.isArray(s.lbb)&&roleAtlas.complete&&roleAtlas.naturalWidth){
     const sw=roleAtlas.naturalWidth/5,sh=roleAtlas.naturalHeight/3,sx=s.lbb[0]*sw,sy=s.lbb[1]*sh
     const artX=x+artPad,artY=y+artPad,artW=w-artPad*2,artH=h-artPad*2
     drawImageCover(roleAtlas,sx,sy,sw,sh,artX,artY,artW,artH)
