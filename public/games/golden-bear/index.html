@@ -14,10 +14,10 @@
   <link rel="preload" href="sounds/spin_start.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/reel_stop_1.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/symbol_pop.ogg" as="audio" type="audio/ogg">
-  <link rel="stylesheet" href="styles.css?v=20260702-uniform-symbols">
-  <link rel="stylesheet" href="mobile-fixes.css?v=20260702-uniform-symbols">
-  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260702-uniform-symbols">
-  <link rel="stylesheet" href="mobile-portrait-slot.css?v=20260702-uniform-symbols">
+  <link rel="stylesheet" href="styles.css?v=20260702-fixed-6x3-grid">
+  <link rel="stylesheet" href="mobile-fixes.css?v=20260702-fixed-6x3-grid">
+  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260702-fixed-6x3-grid">
+  <link rel="stylesheet" href="mobile-portrait-slot.css?v=20260702-fixed-6x3-grid">
 </head>
 <body>
   <div id="loader" class="loader"><div class="loader-inner"><img class="loader-icon" src="assets/golden-bear-mascot.webp" alt=""><strong>Preparando Golden Bear</strong><div class="loadbar"></div></div></div>
@@ -32,7 +32,7 @@
       <aside class="art-panel" aria-label="Golden Bear Lucky Ways">
         <p class="eyebrow">Lucky Bingo Bear presenta</p>
         <h1 class="game-logo">Golden Bear<span>Lucky Ways</span></h1>
-        <div class="mega-ribbon">Hasta 15.625 formas</div>
+        <div class="mega-ribbon">Hasta 729 formas</div>
         <img class="bear-art" src="assets/golden-bear-mascot.webp" alt="Oso dorado Lucky Bingo Bear">
         <div class="jackpot"><span>Premio máximo</span><strong>10.000 × APUESTA</strong></div>
       </aside>
@@ -56,7 +56,7 @@
         <div class="stat"><span>Saldo</span><strong id="balanceSide" class="gold">0</strong></div>
         <div class="stat"><span>Último premio</span><strong id="lastWinSide" class="mint">0</strong></div>
         <div class="stat"><span>Giros gratis</span><strong id="freeSpins">0</strong></div>
-        <div class="feature-strip"><div class="feature"><b>6</b>Reels</div><div class="feature"><b>5</b>Filas</div><div class="feature"><b>∞</b>Cascadas</div></div>
+        <div class="feature-strip"><div class="feature"><b>6</b>Reels</div><div class="feature"><b>3</b>Filas</div><div class="feature"><b>∞</b>Cascadas</div></div>
         <div id="lineDetailCard" class="line-detail-card">
           <div class="detail-head"><strong>Detalle de pago</strong><span id="lineTotal" class="line-total">$ 0</span></div>
           <div id="lineDetails" class="line-details"><div class="detail-row"><b>Sin líneas pagadas</b><span>$ 0</span></div></div>
@@ -82,9 +82,9 @@
   <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-card settings-card"><div class="modal-head"><h2 id="settingsTitle">Audio y experiencia</h2><button class="close-btn" data-close="settingsModal" aria-label="Cerrar">✕</button></div><div class="volume-grid"><label for="masterVolume"><span>Volumen general</span><output id="masterValue">85%</output></label><input id="masterVolume" type="range" min="0" max="100" value="85"><label for="effectsVolume"><span>Efectos</span><output id="effectsValue">85%</output></label><input id="effectsVolume" type="range" min="0" max="100" value="85"><label for="musicVolume"><span>Ambiente</span><output id="musicValue">18%</output></label><input id="musicVolume" type="range" min="0" max="100" value="18"></div><p class="settings-hint">Los cambios se guardan automáticamente.</p></div></div>
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
-  <script type="module" src="js/render-fixes.mjs?v=20260702-uniform-symbols"></script>
-  <script type="module" src="js/bonus-buy.mjs?v=20260702-uniform-symbols"></script>
-  <script type="module" src="js/game.mjs?v=20260702-uniform-symbols"></script>
-  <script type="module" src="js/mobile-cleanup.mjs?v=20260702-uniform-symbols"></script>
+  <script type="module" src="js/render-fixes.mjs?v=20260702-fixed-6x3-grid"></script>
+  <script type="module" src="js/bonus-buy.mjs?v=20260702-fixed-6x3-grid"></script>
+  <script type="module" src="js/game.mjs?v=20260702-fixed-6x3-grid"></script>
+  <script type="module" src="js/mobile-cleanup.mjs?v=20260702-fixed-6x3-grid"></script>
 </body>
 </html>
