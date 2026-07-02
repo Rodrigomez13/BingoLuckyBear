@@ -9,7 +9,7 @@ export function mulberry32(seed) {
   }
 }
 
-export function createGameMath(symbols, { reels = 6, minRows = 2, maxRows = 7, payoutScale = 0.012 } = {}) {
+export function createGameMath(symbols, { reels = 6, minRows = 3, maxRows = 3, payoutScale = 0.012 } = {}) {
   const totalWeight = symbols.reduce((total, symbol) => total + symbol.weight, 0)
   const wild = symbols.find(symbol => symbol.wild)
 
@@ -24,7 +24,8 @@ export function createGameMath(symbols, { reels = 6, minRows = 2, maxRows = 7, p
 
   function makeGrid(rng = Math.random, rowCounts = null) {
     return Array.from({ length: reels }, (_, reel) => {
-      const rows = rowCounts?.[reel] ?? minRows + Math.floor(rng() * (maxRows - minRows + 1))
+      const fixedRows = Math.max(1, Math.min(minRows, maxRows))
+      const rows = rowCounts?.[reel] ?? fixedRows
       return Array.from({ length: rows }, () => weightedSymbol(rng))
     })
   }
