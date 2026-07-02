@@ -37,7 +37,7 @@ export default async function GoldenBearPage() {
       >
         <iframe
           title="Golden Bear Lucky Ways"
-          src="/games/golden-bear/index.html?embed=1&viewport=fluid&v=20260701-mobile-portrait"
+          src="/games/golden-bear/index.html?embed=1&viewport=fluid&v=20260702-square-cascade"
           className="h-full min-h-0 w-full border-0"
           allow="autoplay; fullscreen"
         />
