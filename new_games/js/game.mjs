@@ -92,11 +92,10 @@ function drawWord(t,x,y,w,h,fill,stroke){
   ctx.fillText(t,x+w/2,y+h/2)
 }
 
-function drawImageCover(image,sx,sy,sw,sh,x,y,w,h){
-  const ratio=w/h,sourceRatio=sw/sh
-  let cropX=sx,cropY=sy,cropW=sw,cropH=sh
-  if(ratio>sourceRatio){cropH=sw/ratio;cropY=sy+(sh-cropH)/2}else{cropW=sh*ratio;cropX=sx+(sw-cropW)/2}
-  ctx.drawImage(image,cropX,cropY,cropW,cropH,x,y,w,h)
+function drawImageContain(image,sx,sy,sw,sh,x,y,w,h){
+  const scale=Math.min(w/sw,h/sh)
+  const dw=sw*scale,dh=sh*scale
+  ctx.drawImage(image,sx,sy,sw,sh,x+(w-dw)/2,y+(h-dh)/2,dw,dh)
 }
 
 function drawSymbolFrame(x,y,w,h,isWin,color="#ffd45d"){
@@ -154,19 +153,19 @@ function drawSymbol(s,x,y,w,h,isWin){
   if(Number.isInteger(polishIndex)&&polishAtlas.complete&&polishAtlas.naturalWidth){
     const cols=4,rows=3,sw=polishAtlas.naturalWidth/cols,sh=polishAtlas.naturalHeight/rows
     const sx=(polishIndex%cols)*sw,sy=Math.floor(polishIndex/cols)*sh
-    drawImageCover(polishAtlas,sx,sy,sw,sh,x+artPad*.34,y+artPad*.34,w-artPad*.68,h-artPad*.68)
+    drawImageContain(polishAtlas,sx,sy,sw,sh,x+artPad*.65,y+artPad*.65,w-artPad*1.3,h-artPad*1.3)
     ctx.shadowBlur=0
   }else if(Array.isArray(s.lbb)&&roleAtlas.complete&&roleAtlas.naturalWidth){
     const sw=roleAtlas.naturalWidth/5,sh=roleAtlas.naturalHeight/3,sx=s.lbb[0]*sw,sy=s.lbb[1]*sh
     const artX=x+artPad,artY=y+artPad,artW=w-artPad*2,artH=h-artPad*2
-    drawImageCover(roleAtlas,sx,sy,sw,sh,artX,artY,artW,artH)
+    drawImageContain(roleAtlas,sx,sy,sw,sh,artX,artY,artW,artH)
     ctx.shadowBlur=0
     if(s.wild)drawWord("WILD",x,y+h*.61,w,h*.35,"#fff2a0","#512000")
     if(s.bonus)drawWord("BONUS",x,y+h*.61,w,h*.35,"#fff45c","#6c1500")
   }else if(Number.isInteger(s.atlas)&&spriteAtlas.complete&&spriteAtlas.naturalWidth){
     const sw=spriteAtlas.naturalWidth/3,sh=spriteAtlas.naturalHeight/2
     const sx=(s.atlas%3)*sw,sy=Math.floor(s.atlas/3)*sh
-    drawImageCover(spriteAtlas,sx,sy,sw,sh,x+artPad*.55,y+artPad*.55,w-artPad*1.1,h-artPad*1.1)
+    drawImageContain(spriteAtlas,sx,sy,sw,sh,x+artPad*.55,y+artPad*.55,w-artPad*1.1,h-artPad*1.1)
     ctx.shadowBlur=0
     if(s.wild)drawWord("WILD",x,y+h*.62,w,h*.34,"#fff0a0","#512000")
     if(s.bonus)drawWord("BONUS",x,y+h*.62,w,h*.34,"#fff45c","#6c1500")

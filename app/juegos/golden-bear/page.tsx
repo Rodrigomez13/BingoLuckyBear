@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { GameHeaderCompact, GameShell, GameViewport, OrientationHint } from '@/components/games/game-shell'
+import { GameHeaderCompact, GameShell, GameViewport } from '@/components/games/game-shell'
 import { formatAccountBalance } from '@/lib/economy/format'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
@@ -29,17 +29,19 @@ export default async function GoldenBearPage() {
         balanceLabel={balanceLabel}
         exitHref="/juegos"
       />
-      <OrientationHint />
       <GameViewport
         aspectRatio="16 / 9"
+        mobileAspectRatio="9 / 16"
         maxHeight="calc(100svh - clamp(6.5rem, 12svh, 8.75rem))"
         frameClassName="bg-black/70"
         logicalWidth={1600}
         logicalHeight={900}
+        mobileLogicalWidth={430}
+        mobileLogicalHeight={764}
       >
         <iframe
           title="Golden Bear Lucky Ways"
-          src="/games/golden-bear/index.html?embed=1&viewport=scaled&v=20260701-polish-assets"
+          src="/games/golden-bear/index.html?embed=1&viewport=adaptive&v=20260702-mobile-cabinet"
           className="h-full min-h-0 w-full border-0"
           allow="autoplay; fullscreen"
         />
