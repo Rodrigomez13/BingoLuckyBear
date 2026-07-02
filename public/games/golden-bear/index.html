@@ -24,9 +24,9 @@
   <link rel="preload" href="sounds/spin_start.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/reel_stop_1.ogg" as="audio" type="audio/ogg">
   <link rel="preload" href="sounds/symbol_pop.ogg" as="audio" type="audio/ogg">
-  <link rel="stylesheet" href="styles.css?v=20260702-versatile-slot">
-  <link rel="stylesheet" href="mobile-fixes.css?v=20260702-versatile-slot">
-  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260702-versatile-slot">
+  <link rel="stylesheet" href="styles.css?v=20260703-mobile-premium">
+  <link rel="stylesheet" href="mobile-fixes.css?v=20260703-mobile-premium">
+  <link rel="stylesheet" href="embed-viewport-fix.css?v=20260703-mobile-premium">
 </head>
 <body>
   <div id="loader" class="loader"><div class="loader-inner"><img class="loader-icon" src="assets/golden-bear-mascot.webp" alt=""><strong>Preparando Golden Bear</strong><div class="loadbar"></div></div></div>
@@ -36,6 +36,12 @@
       <div class="brand"><div class="game-icon"><img src="assets/golden-bear-mascot.webp" alt="Icono Golden Bear"></div><div class="brand-copy"><strong>Golden Bear Lucky Ways</strong><span>Lucky Bingo Bear Originals</span></div></div>
       <div class="top-actions"><span class="brand-badge">LBB Originals</span><button id="soundBtn" class="icon-btn" aria-label="Silenciar sonido" title="Sonido">🔊</button><button id="settingsBtn" class="icon-btn" aria-label="Abrir configuración" title="Audio y configuración">⚙</button><button id="historyBtn" class="icon-btn" aria-label="Abrir historial" title="Historial y detalle">☷</button><button id="infoBtn" class="icon-btn" aria-label="Abrir reglas" title="Reglas y premios">ⓘ</button><button id="fullBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
     </header>
+
+    <div class="mobile-info-strip" role="group" aria-label="Datos del juego">
+      <div class="mi-chip mi-ways"><span>Lucky Ways</span><strong>117.649 formas</strong></div>
+      <div class="mi-chip mi-bonus"><span>Bonus</span><strong>Free Spins</strong></div>
+      <div class="mi-chip mi-jackpot"><span>Premio máx</span><strong>10.000×</strong></div>
+    </div>
 
     <section class="game-layout">
       <aside class="art-panel" aria-label="Golden Bear Lucky Ways">
@@ -91,9 +97,9 @@
   <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-card settings-card"><div class="modal-head"><h2 id="settingsTitle">Audio y experiencia</h2><button class="close-btn" data-close="settingsModal" aria-label="Cerrar">✕</button></div><div class="volume-grid"><label for="masterVolume"><span>Volumen general</span><output id="masterValue">85%</output></label><input id="masterVolume" type="range" min="0" max="100" value="85"><label for="effectsVolume"><span>Efectos</span><output id="effectsValue">85%</output></label><input id="effectsVolume" type="range" min="0" max="100" value="85"><label for="musicVolume"><span>Ambiente</span><output id="musicValue">18%</output></label><input id="musicVolume" type="range" min="0" max="100" value="18"></div><p class="settings-hint">Los cambios se guardan automáticamente.</p></div></div>
   <div id="bonusModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card bonus-card"><div class="bonus-role" aria-label="Oso rey Lucky Bingo Bear"></div><h2>¡Free Spins del Oso!</h2><p>Los WILD quedan fijos, el multiplicador aumenta con cada cascada y tres BONUS vuelven a sumar giros.</p><button id="bonusClose" class="spin-btn">COMENZAR BONUS</button></div></div>
 
-  <script type="module" src="js/render-fixes.mjs?v=20260702-versatile-slot"></script>
-  <script type="module" src="js/bonus-buy.mjs?v=20260702-versatile-slot"></script>
-  <script type="module" src="js/game.mjs?v=20260702-versatile-slot"></script>
-  <script type="module" src="js/mobile-cleanup.mjs?v=20260702-versatile-slot"></script>
+  <script type="module" src="js/render-fixes.mjs?v=20260703-mobile-premium"></script>
+  <script type="module" src="js/bonus-buy.mjs?v=20260703-mobile-premium"></script>
+  <script type="module" src="js/game.mjs?v=20260703-mobile-premium"></script>
+  <script type="module" src="js/mobile-cleanup.mjs?v=20260703-mobile-premium"></script>
 </body>
 </html>

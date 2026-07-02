@@ -11,6 +11,15 @@
 
 .game-logo span,.brand-copy strong{letter-spacing:-.045em}
 .screen{isolation:isolate}
+
+/* Compact premium info chips: shown only on portrait mobile to reuse dead space and surface Lucky Ways / Bonus / jackpot data. */
+.mobile-info-strip{display:none}
+.mi-chip{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:clamp(3px,1vw,6px) clamp(6px,2vw,10px);border-radius:12px;overflow:hidden;border:1px solid rgba(255,210,92,.34);background:linear-gradient(180deg,rgba(74,32,8,.94),rgba(14,6,2,.96));box-shadow:inset 0 1px 0 rgba(255,224,132,.14),0 6px 14px rgba(0,0,0,.32)}
+.mi-chip span{display:block;color:#ffcf63;font-size:clamp(.46rem,1.6vw,.54rem);font-weight:1000;letter-spacing:.11em;text-transform:uppercase;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-chip strong{display:block;margin-top:2px;font-family:Georgia,serif;font-size:clamp(.72rem,2.6vw,.9rem);line-height:1;color:#fff3bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+.mi-chip.mi-bonus{border-color:rgba(69,242,167,.42);background:linear-gradient(180deg,rgba(9,77,47,.92),rgba(4,23,14,.96))}
+.mi-chip.mi-bonus span{color:#7ff3c0}.mi-chip.mi-bonus strong{color:#c9ffe8}
+.mi-chip.mi-jackpot strong{color:#ffe15e;text-shadow:0 2px 0 #612100,0 0 14px rgba(255,215,83,.3)}
 .bear-art{object-fit:contain;object-position:center bottom}
 .mega-ribbon{font-size:0!important;text-align:center}
 .mega-ribbon:after{content:"CAMINO DORADO";font-size:.68rem;letter-spacing:.14em}
