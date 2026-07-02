@@ -1,13 +1,17 @@
 // Runtime rendering guard for Golden Bear Lucky Ways.
-// Keeps every reel symbol contained inside each tile. No atlas art is cropped.
+// Normalizes every reel symbol inside a common visual box.
+// The tile/card keeps one size; only the artwork inside is contained and centered.
 const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage
 const originalFillText = CanvasRenderingContext2D.prototype.fillText
 const originalStrokeText = CanvasRenderingContext2D.prototype.strokeText
 
+const UNIFORM_SYMBOL_BOX = 0.74
+const TEXT_SYMBOL_SCALE = 0.64
+
 const ATLAS_CONFIGS = [
-  { match: /golden-bear-symbols\.webp(?:$|\?)/, cols: 3, rows: 2, padRatio: 0.14 },
-  { match: /lbb-role-symbols\.webp(?:$|\?)/, cols: 5, rows: 3, padRatio: 0.1 },
-  { match: /lbb-role-variants\.webp(?:$|\?)/, cols: 5, rows: 3, padRatio: 0.1 },
+  { match: /golden-bear-symbols\.webp(?:$|\?)/, cols: 3, rows: 2, boxScale: UNIFORM_SYMBOL_BOX },
+  { match: /lbb-role-symbols\.webp(?:$|\?)/, cols: 5, rows: 3, boxScale: UNIFORM_SYMBOL_BOX },
+  { match: /lbb-role-variants\.webp(?:$|\?)/, cols: 5, rows: 3, boxScale: UNIFORM_SYMBOL_BOX },
 ]
 
 function getAtlasConfig(source) {
@@ -25,11 +29,10 @@ function fitAtlasCell(ctx, image, args, config) {
   const fullSx = col * cellW
   const fullSy = row * cellH
 
-  // Padding intentionally scales the resource inside the tile instead of cropping it.
-  const pad = Math.max(2, Math.min(dw, dh) * config.padRatio)
-  const availW = Math.max(1, dw - pad * 2)
-  const availH = Math.max(1, dh - pad * 2)
-  const scale = Math.min(availW / cellW, availH / cellH)
+  // Use the same centered content box for animals, WILD, BONUS and atlas symbols.
+  // This prevents one symbol family from looking larger than another.
+  const box = Math.max(1, Math.min(dw, dh) * config.boxScale)
+  const scale = Math.min(box / cellW, box / cellH)
   const outW = cellW * scale
   const outH = cellH * scale
   const outX = dx + (dw - outW) / 2
@@ -51,12 +54,12 @@ CanvasRenderingContext2D.prototype.drawImage = function patchedDrawImage(image, 
   return originalDrawImage.call(this, image, ...args)
 }
 
-function withReducedReelLetterSize(ctx, text, draw) {
+function withNormalizedReelTextSize(ctx, text, draw) {
   const label = String(text)
   if (!/^(A|K|Q|J|10)$/.test(label) || !/Georgia/i.test(ctx.font)) return draw()
 
   const previousFont = ctx.font
-  ctx.font = previousFont.replace(/(\d+(?:\.\d+)?)px/, (_, size) => `${Math.max(18, Number(size) * 0.78)}px`)
+  ctx.font = previousFont.replace(/(\d+(?:\.\d+)?)px/, (_, size) => `${Math.max(18, Number(size) * TEXT_SYMBOL_SCALE)}px`)
   try {
     return draw()
   } finally {
@@ -65,9 +68,9 @@ function withReducedReelLetterSize(ctx, text, draw) {
 }
 
 CanvasRenderingContext2D.prototype.fillText = function patchedFillText(text, ...args) {
-  return withReducedReelLetterSize(this, text, () => originalFillText.call(this, text, ...args))
+  return withNormalizedReelTextSize(this, text, () => originalFillText.call(this, text, ...args))
 }
 
 CanvasRenderingContext2D.prototype.strokeText = function patchedStrokeText(text, ...args) {
-  return withReducedReelLetterSize(this, text, () => originalStrokeText.call(this, text, ...args))
+  return withNormalizedReelTextSize(this, text, () => originalStrokeText.call(this, text, ...args))
 }
