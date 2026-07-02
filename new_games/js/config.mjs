@@ -13,8 +13,8 @@ export const SYMBOLS = [
 ]
 
 export const REELS = 6
-export const MIN_ROWS = 2
-export const MAX_ROWS = 7
+export const MIN_ROWS = 3
+export const MAX_ROWS = 5
 export const BETS = [25, 50, 100, 200, 500, 1000]
 export const MAX_CASCADES = 8
 export const RETRIGGER_SPINS = 5
