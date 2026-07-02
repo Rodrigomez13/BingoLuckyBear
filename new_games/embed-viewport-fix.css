@@ -698,11 +698,12 @@ html.embedded.viewport-adaptive:not(.viewport-scaled) .action-group {
   width: 100% !important;
   min-width: 0 !important;
   display: grid !important;
-  grid-template-columns: 42px 50px minmax(76px, .86fr) minmax(126px, 1.22fr) !important;
+  grid-template-columns: 70px 70px minmax(78px, .86fr) minmax(118px, 1.1fr) !important;
   gap: 6px !important;
 }
 
 html.embedded.viewport-adaptive:not(.viewport-scaled) .action-group #autoBtn,
+html.embedded.viewport-adaptive:not(.viewport-scaled) .action-group #turboBtn,
 html.embedded.viewport-adaptive:not(.viewport-scaled) .bonus-buy-btn {
   display: grid !important;
 }
@@ -714,21 +715,39 @@ html.embedded.viewport-adaptive:not(.viewport-scaled) .bonus-buy-btn {
   font-size: .5rem !important;
 }
 
+html.embedded.viewport-adaptive:not(.viewport-scaled) #turboBtn,
+html.embedded.viewport-adaptive:not(.viewport-scaled) #autoBtn {
+  color: transparent !important;
+  text-shadow: none !important;
+  background-color: transparent !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.embedded.viewport-adaptive:not(.viewport-scaled) #turboBtn {
+  background-image: url("assets/golden-bear-turbo-button-polish.webp") !important;
+}
+
+html.embedded.viewport-adaptive:not(.viewport-scaled) #autoBtn {
+  background-image: url("assets/golden-bear-auto-button-polish.webp") !important;
+}
+
 html.embedded.viewport-adaptive:not(.viewport-scaled) .spin-btn {
-  width: 100% !important;
-  height: 52px !important;
-  min-width: 0 !important;
-  border-radius: 999px !important;
-  background:
-    radial-gradient(circle at 32% 18%, #fff8c6 0 9%, transparent 10%),
-    linear-gradient(180deg, #fff0a0, #f3b735 45%, #f08a16 74%, #8e2700) !important;
-  border: 3px solid #fff0a6 !important;
-  color: #2a0d02 !important;
-  font-size: .9rem !important;
-  font-weight: 1000 !important;
-  letter-spacing: .07em !important;
-  text-shadow: 0 1px rgba(255, 255, 255, .48) !important;
-  box-shadow: 0 4px 0 #6a1c04, 0 9px 18px rgba(0, 0, 0, .3), 0 0 20px rgba(255, 190, 47, .24), inset 0 0 0 2px rgba(255, 255, 255, .12) !important;
+  width: 76px !important;
+  height: 76px !important;
+  min-width: 76px !important;
+  justify-self: center !important;
+  align-self: end !important;
+  transform: translateY(-11px) !important;
+  border-radius: 50% !important;
+  background: url("assets/golden-bear-spin-orb-polish.webp") center / contain no-repeat !important;
+  border-color: transparent !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, .36), 0 0 26px rgba(255, 190, 47, .34) !important;
 }
 
 @media (max-width: 380px) {
@@ -745,6 +764,17 @@ html.embedded.viewport-adaptive:not(.viewport-scaled) .spin-btn {
   html.embedded.viewport-adaptive:not(.viewport-scaled) .top-actions .icon-btn {
     width: 28px !important;
     height: 28px !important;
+  }
+
+  html.embedded.viewport-adaptive:not(.viewport-scaled) .action-group {
+    grid-template-columns: 60px 62px minmax(66px, .8fr) minmax(104px, 1.1fr) !important;
+    gap: 5px !important;
+  }
+
+  html.embedded.viewport-adaptive:not(.viewport-scaled) .spin-btn {
+    width: 68px !important;
+    height: 68px !important;
+    min-width: 68px !important;
   }
 
   html.embedded.viewport-adaptive:not(.viewport-scaled) .brand-copy strong {

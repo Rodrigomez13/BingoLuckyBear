@@ -218,6 +218,8 @@ function drawReels(){
 
   for(let r=0;r<REELS;r++){
     const reel=display[r]||[],rows=Math.max(MIN_ROWS,reel.length),x=gridX+r*(rw+columnGap),cellH=(area-gap*(rows-1))/rows,step=cellH+gap;
+    const tallReel=rows<=3;
+    const compactReel=rows>=6;
     ctx.save();
     roundRect(x,gridY,rw,area,8);
     ctx.clip();
@@ -242,9 +244,12 @@ function drawReels(){
       const bounce=dropOffsets.has(key)&&rawProgress<1?Math.sin(rawProgress*Math.PI)*Math.min(22,cellH*.16):0;
       const y=gridY+i*step-step*fall+bounce;
       const inset=Math.max(3,Math.min(rw,cellH)*.04),baseW=rw-inset*2,baseH=cellH-inset*2;
-      const symbolW=baseW*pulse,symbolH=baseH*pulse;
-      const sx=x+inset+(baseW-symbolW)/2,sy=y+inset+(baseH-symbolH)/2;
-      drawSymbol(s,sx,sy,symbolW,symbolH,isWinning);
+      const maxVisualH=compactReel?baseH:Math.min(baseH,baseW*(tallReel?1.18:1.34));
+      const visualPadY=Math.max(0,(baseH-maxVisualH)/2);
+      const symbolW=baseW*pulse;
+      const boundedSymbolH=maxVisualH*pulse;
+      const sx=x+inset+(baseW-symbolW)/2,sy=y+inset+visualPadY+(maxVisualH-boundedSymbolH)/2;
+      drawSymbol(s,sx,sy,symbolW,boundedSymbolH,isWinning);
     });
     ctx.restore();
 

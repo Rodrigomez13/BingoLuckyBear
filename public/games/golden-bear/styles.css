@@ -323,7 +323,7 @@ canvas{min-height:0}
 }
 .game-logo span{display:none!important}
 .spin-btn{
-  background:url("assets/golden-bear-spin-polish.webp") center/contain no-repeat!important;
+  background:url("assets/golden-bear-spin-orb-polish.webp") center/contain no-repeat!important;
   color:transparent!important;
   text-shadow:none!important;
   border-color:transparent!important;
@@ -331,18 +331,19 @@ canvas{min-height:0}
 }
 .spin-btn:after{display:none!important}
 #turboBtn,#autoBtn{
-  color:#fff0b8!important;
-  background:radial-gradient(circle at 35% 18%,rgba(255,255,214,.55),transparent 18%),linear-gradient(180deg,#7b3a11,#2a0d03 54%,#120501)!important;
-  border:2px solid #d48a2b!important;
-  border-radius:999px!important;
-  box-shadow:inset 0 0 0 2px rgba(255,236,150,.14),0 5px 0 #5a1c05,0 10px 18px rgba(0,0,0,.38),0 0 15px rgba(255,162,42,.22)!important;
-  font-size:.76rem!important;
-  font-weight:1000!important;
-  letter-spacing:.02em!important;
-  line-height:1!important;
-  text-transform:uppercase!important;
+  color:transparent!important;
+  text-shadow:none!important;
+  background-color:transparent!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
 }
+#turboBtn{background-image:url("assets/golden-bear-turbo-button-polish.webp")!important}
+#autoBtn{background-image:url("assets/golden-bear-auto-button-polish.webp")!important}
 #turboBtn:hover:not(:disabled),#autoBtn:hover:not(:disabled){filter:brightness(1.12) saturate(1.1)}
+.bet-view{background-image:linear-gradient(rgba(7,3,1,.62),rgba(7,3,1,.68)),url("assets/golden-bear-bet-panel-polish.webp")!important;background-position:center!important;background-repeat:no-repeat!important;background-size:100% 100%!important}
 .pay-symbol-bear,.pay-symbol-fox,.pay-symbol-eagle,.pay-symbol-horse,.pay-symbol-honey,.pay-symbol-a,.pay-symbol-k,.pay-symbol-q,.pay-symbol-j,.pay-symbol-wild,.pay-symbol-bonus{
   font-size:0!important;
   background-image:url("assets/golden-bear-polish-symbols.webp")!important;
