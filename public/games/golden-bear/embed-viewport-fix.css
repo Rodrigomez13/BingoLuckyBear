@@ -479,9 +479,16 @@ html.embedded.viewport-adaptive:not(.viewport-scaled) .shell {
   height: 100svh !important;
   min-height: 0 !important;
   padding: 4px 5px 5px !important;
-  grid-template-rows: 48px minmax(0, 1fr) 132px !important;
+  grid-template-rows: 46px auto minmax(0, 1fr) 132px !important;
   gap: 4px !important;
   overflow: hidden !important;
+}
+
+html.embedded.viewport-adaptive:not(.viewport-scaled) .mobile-info-strip {
+  display: flex !important;
+  gap: 6px;
+  width: 100%;
+  padding: 0 1px;
 }
 
 html.embedded.viewport-adaptive:not(.viewport-scaled) .topbar {
@@ -619,7 +626,7 @@ html.embedded.viewport-adaptive:not(.viewport-scaled) .multiplier {
 html.embedded.viewport-adaptive:not(.viewport-scaled) .screen {
   width: 100% !important;
   height: auto !important;
-  max-height: calc(100svh - 232px) !important;
+  max-height: calc(100svh - 276px) !important;
   min-height: 0 !important;
   aspect-ratio: 6 / 7 !important;
   margin: 0 auto !important;
