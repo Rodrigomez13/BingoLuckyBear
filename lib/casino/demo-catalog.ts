@@ -7,25 +7,21 @@ export type CasinoDemoGame = {
 
 // Visible immediately; a running Maldivas demo server expands this list using /api/games.
 export const CASINO_DEMO_FALLBACK: CasinoDemoGame[] = [
-  ['vs20sugarrush', 'Sugar Rush', 'vs-cluster-tumble', 'slot'],
-  ['vs25wolfgold', 'Wolf Gold', 'vs-lines', 'slot'],
-  ['vs20olympgate', 'Gates of Olympus', 'vs-cluster-tumble', 'slot'],
-  ['vs20fruitsw', 'Sweet Bonanza', 'vs-cluster-tumble', 'slot'],
-  ['vs243lions', '5 Lions', 'vs-lines', 'slot'],
-  ['vs10bbbonanza', 'Big Bass Bonanza', 'vs-lines', 'slot'],
-  ['vswaysbufking', 'Buffalo King Megaways', 'vs-ways', 'slot'],
-  ['vswaysrhino', 'Great Rhino Megaways', 'vs-ways', 'slot'],
-  ['vs25scarabqueen', 'John Hunter Scarab Queen', 'vs-lines', 'slot'],
-  ['vswaysmadame', 'Madame Destiny Megaways', 'vs-ways', 'slot'],
-  ['vs20starlight', 'Starlight Princess', 'vs-cluster-tumble', 'slot'],
-  ['vs20sbxmas', 'Sweet Bonanza Xmas', 'vs-cluster-tumble', 'slot'],
-  ['vs20doghouse', 'The Dog House', 'vs-lines', 'slot'],
-  ['vs25chilli', 'Chilli Heat', 'vs-lines', 'slot'],
-  ['vs20rhino', 'Great Rhino', 'vs-lines', 'slot'],
-  ['vs5joker', "Joker's Jewels", 'vs-lines', 'slot'],
+  ['skywind_8_tigers_gold_megaways', '8 Tigers Gold Megaways', 'skywind', 'slot'],
+  ['skywind_alive_megaways', 'Alive Megaways', 'skywind', 'slot'],
+  ['skywind_big_buffalo_megaways', 'Big Buffalo Megaways', 'skywind', 'slot'],
+  ['skywind_book_of_gems_megaways', 'Book Of Gems Megaways', 'skywind', 'slot'],
+  ['skywind_si_ling_megaways', 'Si Ling Megaways', 'skywind', 'slot'],
+  ['skywind_sticky_sevens_megaways', 'Sticky Sevens Megaways', 'skywind', 'slot'],
+  ['rubyplay_bull_fever', 'Bull Fever', 'xgames-rubyplay', 'slot'],
+  ['rubyplay_dawn_of_the_incas', 'Dawn Of The Incas', 'xgames-rubyplay', 'slot'],
+  ['vegas_burning_diamonds', 'Burning Diamonds', 'xgames-vegas', 'slot'],
+  ['vegas_burning_hot_7', 'Burning Hot 7', 'xgames-vegas', 'slot'],
+  ['aristocrat_autumn_moon', 'Autumn Moon', 'xgames-aristocrat', 'slot'],
+  ['aristocrat_dragons_riches', 'Dragons Riches', 'xgames-aristocrat', 'slot'],
   ['amaticrouletteroyal', 'Roulette Royal', 'amatic-slg', 'table'],
   ['amaticjokercardpoker', 'Joker Card Poker', 'amatic-slg', 'table'],
-  ['vsspribeaviator', 'Aviator', 'spribe-rng', 'crash'],
+  ['skywind_roulette', 'Roulette', 'skywind', 'table'],
 ].map(([symbol, name, engine, kind]) => ({ symbol, name, engine, kind: kind as CasinoDemoGame['kind'] }))
 
 export function getCasinoDemoOrigin() {
