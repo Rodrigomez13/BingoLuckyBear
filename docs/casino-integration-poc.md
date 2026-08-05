@@ -17,6 +17,14 @@ The initial adapter is `lbb-roulette-poc`: a server-authoritative red/black Euro
 3. Add the approved game ID and payout bound to `lbb_settle_casino_round` in a migration.
 4. Add its dedicated UI/iframe wrapper and test retry/idempotency with a fixed round ID.
 
+## Visual demo catalog
+
+`CASINO_DEMO_ORIGIN` points to an isolated Maldivas Docker deployment. LBB reads
+`/api/games` to show its discovered catalog and opens `/games/<symbol>/` inside
+`/casino/demo/<symbol>`. Demos deliberately do not share LBB money or sessions.
+For a deployed LBB preview, localhost is not reachable: run the container on a
+public HTTPS host and configure that host as `CASINO_DEMO_ORIGIN` in Vercel.
+
 ## TODO before any external game is enabled
 
 - Obtain provider licences, game distribution rights and regulated-market approval.
