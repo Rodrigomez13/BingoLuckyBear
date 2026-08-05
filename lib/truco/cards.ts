@@ -18,10 +18,11 @@ const RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
 const SUITS: Suit[] = ['espada', 'basto', 'oro', 'copa']
 
 export const CARD_SPRITE_SRC = LBB_TRUCO_DECK.sprite
-export const CARD_SPRITE_COLUMNS = 10
+export const CARD_BACK_SRC = LBB_TRUCO_DECK.back
+export const CARD_SPRITE_COLUMNS = 12
 export const CARD_SPRITE_ROWS = 5
 
-const SPRITE_RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]
+const SPRITE_RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const
 const SPRITE_SUITS: Suit[] = ['oro', 'copa', 'espada', 'basto']
 
 /**

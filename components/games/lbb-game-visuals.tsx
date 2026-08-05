@@ -67,6 +67,24 @@ const visualSpecs: Record<PlatformGameId, VisualSpec> = {
     icon: Swords,
     tone: 'from-emerald-400/22 via-lime-300/12 to-black/38',
   },
+  truco_anotador: {
+    title: 'Anotador',
+    ribbon: 'Truco local',
+    miniature: 'Mesa de paño',
+    promo: [
+      { title: 'CPU', detail: 'Rival bot' },
+      { title: 'Mazo', detail: '40 cartas' },
+      { title: 'Full', detail: 'Pantalla' },
+    ],
+    stats: [
+      { label: 'Modo', value: 'Local' },
+      { label: 'Reglas', value: 'AR' },
+      { label: 'Saldo', value: 'No' },
+    ],
+    symbols: ['1♠', '7♦', 'T', '30'],
+    icon: Swords,
+    tone: 'from-emerald-400/24 via-amber-300/14 to-black/40',
+  },
   viborita: {
     title: 'Viborita',
     ribbon: 'Arcade LBB',

@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111214" />
+  <title>Anotador de Truco</title>
+  <style>
+    :root{
+      --bg:#0d0f12;
+      --panel:#171a1f;
+      --panel-2:#20242a;
+      --line:#343a43;
+      --text:#f4f5f7;
+      --muted:#aeb4be;
+      --blue:#67aee8;
+      --blue-soft:rgba(103,174,232,.16);
+      --gold:#f4b923;
+      --gold-soft:rgba(244,185,35,.16);
+      --danger:#ef6a6a;
+      --success:#45c884;
+      --shadow:0 22px 55px rgba(0,0,0,.35);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html{background:#050607}
+    body{
+      margin:0;
+      min-height:100dvh;
+      color:var(--text);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(103,174,232,.12), transparent 26rem),
+        radial-gradient(circle at 85% 8%, rgba(244,185,35,.10), transparent 24rem),
+        linear-gradient(180deg,#0d0f12 0%,#0b0c0f 100%);
+    }
+
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{width:min(1100px,100%);margin:auto;padding:18px 14px 38px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:16px;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:46px;height:46px;border-radius:14px;
+      display:grid;place-items:center;
+      background:linear-gradient(145deg,#2c3139,#14171b);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      font-size:24px;
+    }
+    .brand h1{font-size:1.05rem;margin:0;letter-spacing:.08em;text-transform:uppercase}
+    .brand small{display:block;color:var(--muted);margin-top:3px}
+    .icon-btn{
+      border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);
+      width:44px;height:44px;border-radius:14px;
+    }
+
+    .setup{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+      background:rgba(23,26,31,.92);border:1px solid rgba(255,255,255,.07);
+      padding:14px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;
+      backdrop-filter:blur(10px);
+    }
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field label{font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+    .field input,.field select{
+      width:100%;min-height:46px;border-radius:13px;border:1px solid var(--line);
+      background:#101216;color:var(--text);padding:0 13px;outline:none;
+    }
+    .field input:focus,.field select:focus{border-color:#65717f;box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+    .toggle-wrap{
+      min-height:46px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 13px;border:1px solid var(--line);border-radius:13px;background:#101216;
+    }
+    .toggle{
+      position:relative;width:48px;height:28px;background:#333942;border-radius:999px;transition:.2s;
+    }
+    .toggle::after{
+      content:"";position:absolute;width:22px;height:22px;border-radius:50%;
+      top:3px;left:3px;background:#fff;transition:.2s;
+    }
+    input[type="checkbox"]{display:none}
+    input[type="checkbox"]:checked + .toggle{background:var(--success)}
+    input[type="checkbox"]:checked + .toggle::after{transform:translateX(20px)}
+    .setup-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end}
+    .btn{
+      min-height:44px;border:0;border-radius:13px;padding:0 16px;font-weight:800;
+      color:#0c0d0f;background:#f2f4f7;
+    }
+    .btn.secondary{background:#2a2f36;color:var(--text);border:1px solid var(--line)}
+    .btn.danger{background:rgba(239,106,106,.12);color:#ff9b9b;border:1px solid rgba(239,106,106,.3)}
+
+    .scoreboard{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .player-card{
+      position:relative;overflow:hidden;
+      border-radius:var(--radius);padding:18px 15px 15px;
+      border:1px solid rgba(255,255,255,.09);
+      box-shadow:var(--shadow);
+      min-height:570px;
+    }
+    .player-card.blue{background:linear-gradient(180deg,rgba(103,174,232,.12),rgba(23,26,31,.96))}
+    .player-card.gold{background:linear-gradient(180deg,rgba(244,185,35,.12),rgba(23,26,31,.96))}
+    .player-card::before{
+      content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(115deg,rgba(255,255,255,.055),transparent 24%,transparent 72%,rgba(255,255,255,.025));
+    }
+    .player-head{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+    .player-name{
+      margin:0;font-size:1rem;letter-spacing:.14em;text-transform:uppercase;
+      max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .score{
+      font-size:2.5rem;line-height:1;font-weight:900;letter-spacing:-.04em;
+    }
+    .blue .score{color:var(--blue)}
+    .gold .score{color:var(--gold)}
+    .meta{
+      position:relative;color:var(--muted);font-size:.77rem;margin:8px 0 15px;
+      display:flex;justify-content:space-between;gap:8px;
+    }
+    .progress{
+      height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:18px;
+    }
+    .progress > span{display:block;height:100%;width:0;transition:width .25s ease}
+    .blue .progress > span{background:var(--blue)}
+    .gold .progress > span{background:var(--gold)}
+
+    .tallies{
+      position:relative;
+      display:grid;
+      grid-template-columns:repeat(3,minmax(68px,1fr));
+      gap:12px;
+      align-content:start;
+      min-height:315px;
+    }
+    .tally-group{
+      aspect-ratio:1/1;
+      min-height:80px;
+      display:grid;place-items:center;
+      border-radius:17px;
+      background:rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.075);
+      transition:.2s;
+    }
+    .tally-group.active{transform:translateY(-2px)}
+    .matchbox{position:relative;width:62px;height:62px}
+    .stick{
+      position:absolute;border-radius:999px;opacity:.18;
+      background:#d7dbe0;
+      box-shadow:0 0 0 1px rgba(255,255,255,.07);
+      transition:opacity .18s,filter .18s,transform .18s;
+    }
+    .stick.on{opacity:1;filter:drop-shadow(0 0 5px currentColor)}
+    .blue .stick.on{background:var(--blue);color:var(--blue)}
+    .gold .stick.on{background:var(--gold);color:var(--gold)}
+    .stick.top,.stick.bottom{height:5px;left:8px;right:8px}
+    .stick.top{top:6px}.stick.bottom{bottom:6px}
+    .stick.left,.stick.right{width:5px;top:8px;bottom:8px}
+    .stick.left{left:6px}.stick.right{right:6px}
+    .stick.diag{
+      width:5px;height:66px;left:28px;top:-2px;
+      transform:rotate(45deg);
+      transform-origin:center;
+    }
+    .tally-label{position:absolute;right:5px;bottom:4px;font-size:.68rem;color:var(--muted)}
+    .empty-text{grid-column:1/-1;color:var(--muted);text-align:center;padding:70px 10px}
+
+    .controls{
+      position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px;
+    }
+    .score-btn{
+      min-height:54px;border-radius:15px;border:1px solid rgba(255,255,255,.09);
+      color:var(--text);background:#2a2f36;font-weight:900;font-size:1.05rem;
+    }
+    .blue .score-btn.primary{background:var(--blue);color:#071018}
+    .gold .score-btn.primary{background:var(--gold);color:#151006}
+    .score-btn.minus{background:rgba(255,255,255,.035)}
+    .score-btn.flor{font-size:.82rem;background:rgba(69,200,132,.14);color:#8de5b5;border-color:rgba(69,200,132,.3)}
+    .score-btn:disabled{opacity:.35;cursor:not-allowed}
+
+    .winner{
+      display:none;position:absolute;inset:0;z-index:5;
+      background:rgba(8,10,12,.92);backdrop-filter:blur(9px);
+      align-items:center;justify-content:center;text-align:center;padding:25px;
+    }
+    .winner.show{display:flex}
+    .winner h2{font-size:2rem;margin:0 0 8px}
+    .winner p{color:var(--muted);margin:0 0 18px}
+
+    .history{
+      margin-top:14px;background:rgba(23,26,31,.92);border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+    }
+    .history-head{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 16px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    .history-head h2{margin:0;font-size:.95rem;letter-spacing:.1em;text-transform:uppercase}
+    .history-actions{display:flex;gap:8px}
+    .small-btn{
+      border:1px solid var(--line);background:#20242a;color:var(--text);
+      border-radius:10px;padding:8px 10px;font-size:.75rem;
+    }
+    .history-list{max-height:330px;overflow:auto}
+    .history-item{
+      display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;
+      padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.055);
+    }
+    .history-item:last-child{border-bottom:0}
+    .history-number{
+      width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+      background:#252a31;color:var(--muted);font-size:.75rem;
+    }
+    .history-main strong{display:block;font-size:.88rem}
+    .history-main span{font-size:.75rem;color:var(--muted)}
+    .history-score{font-weight:900;font-size:.9rem}
+    .empty-history{padding:30px 16px;text-align:center;color:var(--muted)}
+
+    .toast{
+      position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);
+      opacity:0;pointer-events:none;background:#f3f5f7;color:#111318;
+      padding:11px 14px;border-radius:12px;font-weight:800;font-size:.82rem;
+      transition:.2s;z-index:20;
+    }
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+
+    @media (max-width:760px){
+      .app{padding:12px 9px 28px}
+      .setup{grid-template-columns:1fr 1fr;padding:11px}
+      .setup-actions{justify-content:stretch}
+      .setup-actions .btn{flex:1}
+      .scoreboard{gap:7px}
+      .player-card{padding:14px 9px 11px;min-height:520px}
+      .player-name{font-size:.82rem;letter-spacing:.08em}
+      .score{font-size:2.1rem}
+      .meta{font-size:.67rem}
+      .tallies{grid-template-columns:repeat(2,minmax(62px,1fr));gap:8px;min-height:300px}
+      .tally-group{min-height:74px}
+      .matchbox{transform:scale(.9)}
+      .controls{grid-template-columns:repeat(3,1fr)}
+      .score-btn{min-height:49px}
+      .controls .minus{grid-column:auto}
+      .history-item{grid-template-columns:36px 1fr auto;padding:11px 12px}
+    }
+    @media (max-width:420px){
+      .setup{grid-template-columns:1fr}
+      .topbar{margin-bottom:10px}
+      .brand small{display:none}
+      .player-card{min-height:500px}
+      .tallies{min-height:280px}
+      .matchbox{transform:scale(.82)}
+    }
+
+    /* Mesa de juego */
+    :root{
+      --felt:#123f2d;
+      --felt-light:#1b5a3f;
+      --cream:#f5e9cf;
+      --ink:#17231d;
+      --red:#c94736;
+      --amber:#e7aa39;
+      --wood:#5b301e;
+    }
+    html{background:#17100b}
+    body{
+      font-family:"Trebuchet MS",Inter,system-ui,sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%,rgba(255,224,164,.18),transparent 34rem),
+        linear-gradient(90deg,rgba(39,19,10,.95),rgba(91,48,30,.9) 50%,rgba(39,19,10,.95));
+      background-attachment:fixed;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;
+      background-image:repeating-linear-gradient(90deg,transparent 0 38px,rgba(0,0,0,.18) 39px,transparent 41px);
+    }
+    .app{width:min(1180px,100%);padding:18px 16px 42px}
+    .topbar{margin-bottom:14px;color:var(--cream)}
+    .logo{
+      width:52px;height:52px;border-radius:50%;font-size:0;
+      background-color:#eee;
+      background-image:url("assets/baraja-espanola.png");
+      background-size:1200% 500%;background-position:0 0;
+      border:3px solid var(--amber);box-shadow:0 8px 20px rgba(0,0,0,.35);
+    }
+    .brand h1{font-family:Georgia,serif;font-size:1.25rem;letter-spacing:.06em}
+    .brand small{color:rgba(245,233,207,.66)}
+    .top-actions{display:flex;align-items:center;gap:8px}
+    .icon-btn{border-color:rgba(245,233,207,.28);background:rgba(17,10,6,.38);color:var(--cream);font-size:1.3rem}
+    .icon-btn.is-on{background:var(--cream);color:#28160e;border-color:var(--cream)}
+    .setup{
+      background:rgba(34,20,13,.88);border:1px solid rgba(245,233,207,.16);
+      border-radius:18px;box-shadow:0 16px 38px rgba(0,0,0,.3);margin-bottom:14px;
+    }
+    .field,.scoreboard,.player-card{min-width:0}
+    .field label{color:rgba(245,233,207,.65)}
+    .field input,.field select,.toggle-wrap{background:#241710;border-color:#5e493b;color:var(--cream)}
+    .toggle{display:block}
+    .btn{background:var(--cream);color:#2c2119}
+    .btn.secondary{background:#4b3527;color:var(--cream);border-color:#6e5140}
+    .btn.danger{background:rgba(201,71,54,.16);color:#ffb7aa;border-color:rgba(201,71,54,.45)}
+
+    .game-table{
+      position:relative;min-height:280px;border-radius:110px 110px 28px 28px;
+      padding:28px 30px 24px;overflow:hidden;margin-bottom:14px;
+      background:
+        radial-gradient(ellipse at 50% 15%,rgba(255,255,255,.08),transparent 45%),
+        repeating-linear-gradient(35deg,rgba(255,255,255,.015) 0 1px,transparent 1px 5px),
+        var(--felt);
+      border:10px solid #70442c;box-shadow:inset 0 0 0 3px #28160e,inset 0 0 50px rgba(0,0,0,.34),0 20px 45px rgba(0,0,0,.38);
+    }
+    .game-table::after{content:"";position:absolute;inset:10px;border:1px solid rgba(245,233,207,.15);border-radius:92px 92px 18px 18px;pointer-events:none}
+    .table-copy{position:relative;z-index:2;text-align:center}
+    .eyebrow{margin:0 0 4px;color:#d5b87f;font-size:.7rem;font-weight:900;letter-spacing:.22em;text-transform:uppercase}
+    .table-copy h2{font-family:Georgia,serif;font-size:clamp(1.4rem,4vw,2.25rem);margin:0;color:var(--cream);font-weight:500}
+    .table-copy p{margin:5px 0 0;color:rgba(245,233,207,.6);font-size:.78rem}
+    .hand{height:145px;display:flex;justify-content:center;align-items:flex-end;margin-top:13px;perspective:800px}
+    .playing-card{
+      --col:0;--row:0;width:94px;aspect-ratio:162.5/249;border-radius:8px;
+      background-image:url("assets/baraja-espanola.png");background-size:1200% 500%;
+      background-position:calc(var(--col) * 100% / 11) calc(var(--row) * 100% / 4);
+      box-shadow:0 10px 18px rgba(0,0,0,.42);border:1px solid rgba(0,0,0,.45);
+      transform-origin:50% 100%;transition:transform .25s ease,filter .25s ease;
+    }
+    .playing-card + .playing-card{margin-left:-32px}
+    .playing-card:nth-child(1){transform:rotate(-10deg) translateY(7px)}
+    .playing-card:nth-child(2){transform:translateY(-4px);z-index:2}
+    .playing-card:nth-child(3){transform:rotate(10deg) translateY(7px)}
+    .hand:hover .playing-card:nth-child(1){transform:rotate(-14deg) translate(-8px,0)}
+    .hand:hover .playing-card:nth-child(2){transform:translateY(-12px)}
+    .hand:hover .playing-card:nth-child(3){transform:rotate(14deg) translate(8px,0)}
+    .deck-card{position:absolute;right:7%;bottom:30px;transform:rotate(7deg);filter:brightness(.84);--col:1;--row:4}
+    .table-chip{position:absolute;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;font-weight:900;font-size:.65rem;box-shadow:0 7px 12px rgba(0,0,0,.35),inset 0 0 0 4px rgba(255,255,255,.22);border:3px dashed rgba(255,255,255,.55)}
+    .chip-one{left:8%;bottom:34px;background:#d9a13d;color:#38200d;transform:rotate(-12deg)}
+    .chip-two{left:12%;bottom:75px;background:#ae4336;color:#fff;transform:rotate(9deg)}
+    .game-table.playable{min-height:620px;border-radius:70px;padding:20px 24px 25px}
+    .game-table.playable::after{border-radius:52px}
+    .game-status{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--cream)}
+    .seat{display:flex;align-items:center;gap:9px;font-size:.77rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .seat-dot{width:9px;height:9px;border-radius:50%;background:#70c394;box-shadow:0 0 10px #70c394}
+    .turn-badge{padding:7px 12px;border:1px solid rgba(245,233,207,.24);border-radius:999px;background:rgba(8,31,22,.6);font-size:.7rem;color:#e7cf9f}
+    .game-tools{position:relative;z-index:4;display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 0;flex-wrap:wrap}
+    .game-tools label{font-size:.62rem;color:rgba(245,233,207,.62);letter-spacing:.1em;text-transform:uppercase}
+    .game-tools select,.tool-btn{min-height:32px;border:1px solid rgba(245,233,207,.22);border-radius:9px;background:rgba(26,16,10,.68);color:var(--cream);padding:0 9px;font-size:.68rem}
+    .hand-dashboard{position:relative;z-index:4;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:min(560px,94%);margin:9px auto 0}
+    .hand-stat{padding:7px 9px;border-radius:10px;background:rgba(7,29,20,.55);border:1px solid rgba(245,233,207,.13);text-align:center}
+    .hand-stat span{display:block;font-size:.54rem;color:rgba(245,233,207,.48);letter-spacing:.1em;text-transform:uppercase}.hand-stat strong{font-family:Georgia,serif;font-size:.82rem;color:#f2dba9}
+    .cpu-hand,.player-hand{position:relative;z-index:3;display:flex;justify-content:center;align-items:flex-end;min-height:128px}
+    .cpu-hand{margin-top:2px;align-items:flex-start}
+    .table-card{width:82px;aspect-ratio:162.5/249;border-radius:8px;background-image:url("assets/baraja-espanola.png");background-size:1200% 500%;background-position:calc(var(--col) * 100% / 11) calc(var(--row) * 100% / 4);border:1px solid rgba(0,0,0,.55);box-shadow:0 9px 16px rgba(0,0,0,.42);transition:transform .18s,filter .18s;position:relative}
+    button.table-card{padding:0;cursor:pointer}.table-card+.table-card{margin-left:-17px}
+    .table-card.back{--col:1;--row:4}.cpu-hand .table-card:nth-child(1){transform:rotate(-7deg)}.cpu-hand .table-card:nth-child(3){transform:rotate(7deg)}
+    .player-hand button:hover:not(:disabled){transform:translateY(-13px);z-index:5;filter:brightness(1.05)}
+    .player-hand button:disabled{cursor:not-allowed;filter:brightness(.7)}
+    .trick-area{position:relative;z-index:3;min-height:200px;margin:0 auto;width:min(480px,92%);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:center}
+    .trick-slot{height:174px;border:1px dashed rgba(245,233,207,.18);border-radius:18px;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(6,26,18,.22)}
+    .trick-slot .table-card{width:63px;margin:0}.trick-slot .cpu-play{transform:translateY(-15px) rotate(-3deg)}.trick-slot .human-play{transform:translateY(15px) rotate(3deg)}
+    .round-mark{position:absolute;top:5px;font-size:.6rem;color:rgba(245,233,207,.48);letter-spacing:.12em}
+    .game-message{position:relative;z-index:4;text-align:center;color:var(--cream);font-family:Georgia,serif;font-size:1.05rem;min-height:24px;margin:2px 0 8px}
+    .game-message.pulse{animation:messagePulse .32s ease}@keyframes messagePulse{50%{transform:scale(1.025);color:#ffd779}}
+    .call-bar{position:relative;z-index:4;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:8px auto;max-width:800px}
+    .call-btn{border:1px solid rgba(245,233,207,.25);border-radius:999px;padding:8px 13px;background:rgba(35,19,11,.82);color:var(--cream);font-size:.72rem;font-weight:900;box-shadow:0 4px 10px rgba(0,0,0,.22)}
+    .call-btn:hover:not(:disabled){background:#684127}.call-btn:disabled{opacity:.32;cursor:not-allowed}.call-btn.main{background:#a14332;border-color:#d47764}.call-btn.accept{background:#3f926c}.call-btn.decline{background:#853d35}
+    .pending-call{position:absolute;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,88%);padding:22px;border-radius:18px;text-align:center;background:#281911;border:1px solid #967051;box-shadow:0 24px 70px rgba(0,0,0,.65);color:var(--cream)}
+    .pending-call[hidden]{display:none}.pending-call h3{font-family:Georgia,serif;font-size:1.5rem;margin:0 0 5px}.pending-call p{color:#cebda7;font-size:.82rem}.pending-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+    .new-hand-btn{position:relative;z-index:5;display:block;margin:8px auto 0;border:0;border-radius:999px;padding:10px 20px;background:var(--cream);color:#2b1b11;font-weight:900}.new-hand-btn[hidden]{display:none}
+    .rules-panel{margin:14px 0 0;background:rgba(34,20,13,.9);border:1px solid rgba(245,233,207,.16);border-radius:18px;color:var(--cream)}
+    .rules-panel summary{cursor:pointer;padding:15px 17px;font-family:Georgia,serif;font-weight:700}.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 17px 17px}.rules-grid h3{font-size:.8rem;color:#e5b45a;text-transform:uppercase;letter-spacing:.1em}.rules-grid p,.rules-grid li{font-size:.76rem;line-height:1.55;color:#cdbca7}.rules-grid ol,.rules-grid ul{padding-left:18px}
+
+    .scoreboard{gap:14px}
+    .player-card{min-height:465px;border-radius:20px;padding:18px 16px 15px;border:1px solid rgba(245,233,207,.16);box-shadow:0 14px 30px rgba(0,0,0,.3)}
+    .player-card.blue,.player-card.gold{background:linear-gradient(150deg,rgba(255,255,255,.05),transparent 35%),rgba(30,20,14,.95)}
+    .player-card.blue{border-top:4px solid #4b9b78}.player-card.gold{border-top:4px solid var(--amber)}
+    .player-name{font-family:Georgia,serif;font-size:1.12rem;color:var(--cream);letter-spacing:.08em}
+    .score{font-family:Georgia,serif;font-size:3rem}
+    .blue .score{color:#79c69f}.gold .score{color:#efbd5e}
+    .meta{color:rgba(245,233,207,.58)}
+    .progress{background:rgba(245,233,207,.1);height:6px}
+    .blue .progress>span{background:#57a67e}.gold .progress>span{background:var(--amber)}
+    .tallies{grid-template-columns:repeat(6,1fr);min-height:128px;gap:8px;margin:7px 0 14px}
+    .tally-group{min-height:104px;aspect-ratio:auto;border-radius:12px;background:rgba(8,31,22,.5);border-color:rgba(245,233,207,.12)}
+    .matchbox{transform:scale(.82)}
+    .stick{background:#6d6658}.stick.on{filter:drop-shadow(0 3px 2px rgba(0,0,0,.5))}
+    .blue .stick.on{background:#7ec7a4;color:#7ec7a4}.gold .stick.on{background:#e9b44f;color:#e9b44f}
+    .tally-label{color:rgba(245,233,207,.44)}
+    .controls{grid-template-columns:.7fr repeat(3,1fr) 1.25fr;gap:8px;margin-top:0}
+    .score-btn{min-height:52px;border-radius:12px;background:#4a3528;border-color:#684d3c;color:var(--cream);box-shadow:0 5px 0 #1b100a;transition:transform .12s,box-shadow .12s}
+    .score-btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #1b100a}
+    .blue .score-btn.primary{background:#4f9b77;color:#081c12}.gold .score-btn.primary{background:#dda440;color:#2b1906}
+    .score-btn.minus{background:#35271f}.score-btn.flor{background:#713e50;color:#ffd8e5;border-color:#95556b}
+    .winner{border-radius:16px;background:rgba(13,37,27,.94)}
+    .winner h2{font-family:Georgia,serif;color:var(--cream)}
+    .history{background:rgba(34,20,13,.9);border-color:rgba(245,233,207,.16);border-radius:18px}
+    .history-head{border-color:rgba(245,233,207,.1)}
+    .history-head h2{font-family:Georgia,serif;color:var(--cream)}
+    .small-btn{background:#4b3527;border-color:#6e5140;color:var(--cream)}
+    .history-item{border-color:rgba(245,233,207,.08)}
+    .history-number{background:#4b3527;color:#d7bfa8}.history-main span,.empty-history{color:rgba(245,233,207,.55)}
+    .toast{background:var(--cream);color:#261a12}
+    body.focus-mode{overflow-x:hidden}
+    body.focus-mode .app{width:min(1280px,100%);padding-top:10px}
+    body.focus-mode .setup,body.focus-mode .rules-panel,body.focus-mode .history{display:none}
+    body.focus-mode .topbar{position:sticky;top:0;z-index:20;padding:8px 10px;margin:-10px -6px 10px;background:rgba(23,16,11,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,233,207,.12)}
+    body.focus-mode .game-table.playable{min-height:calc(100vh - 112px);display:flex;flex-direction:column;justify-content:space-between}
+    body.focus-mode .scoreboard{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    body.focus-mode .player-card{min-height:auto;padding:12px;border-radius:14px}
+    body.focus-mode .tallies,body.focus-mode .controls,body.focus-mode .meta{display:none}
+    body.focus-mode .player-head{align-items:center}
+    body.focus-mode .score{font-size:2.35rem}
+    body.focus-mode .progress{margin-bottom:0}
+
+    @media(max-width:850px){
+      .tallies{grid-template-columns:repeat(3,1fr);min-height:230px}
+      .player-card{min-height:565px}
+      .controls{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:620px){
+      .game-table{min-height:245px;border-width:7px;padding:22px 12px 18px;border-radius:72px 72px 22px 22px}
+      .hand{height:125px}.playing-card{width:78px}.playing-card + .playing-card{margin-left:-27px}
+      .deck-card{right:4%;bottom:24px;width:62px}.table-chip{width:36px;height:36px}.chip-two{left:9%}
+      .scoreboard{grid-template-columns:1fr;gap:10px}
+      .player-card{min-height:auto}.tallies{grid-template-columns:repeat(6,1fr);min-height:100px}.tally-group{min-height:90px}.matchbox{transform:scale(.7)}
+      .game-table.playable{min-height:570px;padding:15px 8px 18px;border-radius:38px}.game-table.playable::after{border-radius:25px}.table-card{width:70px}.trick-area{min-height:175px;gap:6px}.trick-slot{height:150px}.trick-slot .table-card{width:50px}.rules-grid{grid-template-columns:1fr}.seat{font-size:.65rem}
+      .hand-dashboard{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:460px){
+      .app{padding-inline:8px}.setup{grid-template-columns:1fr}.setup-actions{grid-column:1/-1}.setup-actions .btn{font-size:.78rem;padding-inline:10px}
+      .brand h1{font-size:1rem}.logo{width:44px;height:44px}
+      .deck-card{display:none}.chip-one{left:5%}.chip-two{left:8%;bottom:74px}
+      .tallies{grid-template-columns:repeat(3,1fr);min-height:200px}.tally-group{min-height:92px}
+      .controls{grid-template-columns:repeat(3,1fr)}
+      body.focus-mode .scoreboard{grid-template-columns:1fr 1fr}
+      body.focus-mode .score{font-size:1.9rem}
+      body.focus-mode .player-card{padding:10px 8px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Anotador de Truco</h1>
+          <small>Mesa, tantos y baraja española de 40</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="focusBtn" title="Modo mesa" aria-label="Modo mesa" type="button">◱</button>
+        <button class="icon-btn" id="fullscreenBtn" title="Pantalla completa" aria-label="Pantalla completa" type="button">⛶</button>
+        <button class="icon-btn" id="undoBtn" title="Deshacer última anotación" aria-label="Deshacer">↶</button>
+      </div>
+    </header>
+
+    <section class="setup" aria-label="Configuración de la partida">
+      <div class="field">
+        <label for="name1">Jugador / Equipo 1</label>
+        <input id="name1" maxlength="24" value="Nosotros" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="name2">Jugador / Equipo 2</label>
+        <input id="name2" maxlength="24" value="Ellos" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="target">Partida</label>
+        <select id="target">
+          <option value="15">A 15 puntos</option>
+          <option value="30" selected>A 30 puntos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Regla de flor</label>
+        <label class="toggle-wrap" for="flor">
+          <span id="florText">Con flor</span>
+          <span>
+            <input type="checkbox" id="flor" checked>
+            <span class="toggle"></span>
+          </span>
+        </label>
+      </div>
+      <div class="setup-actions">
+        <button class="btn secondary" id="applyBtn">Aplicar nombres</button>
+        <button class="btn danger" id="newBtn">Nueva partida</button>
+      </div>
+    </section>
+
+    <section class="game-table playable" aria-label="Mesa de truco interactiva">
+      <div class="game-status">
+        <div class="seat"><span class="seat-dot"></span><span id="cpuSeat">Ellos · CPU</span></div>
+        <div class="turn-badge" id="turnBadge">Nueva partida</div>
+      </div>
+      <div class="game-tools">
+        <label for="difficulty">Dificultad</label>
+        <select id="difficulty"><option value="easy">Tranqui</option><option value="normal" selected>Normal</option><option value="hard">Picante</option></select>
+        <button class="tool-btn" id="restartHand" type="button">Reiniciar mano</button>
+      </div>
+      <div class="hand-dashboard" aria-label="Estado de la mano">
+        <div class="hand-stat"><span>Mano</span><strong id="handNumber">—</strong></div>
+        <div class="hand-stat"><span>Vale</span><strong id="handValue">1 tanto</strong></div>
+        <div class="hand-stat"><span>Bazas</span><strong id="trickScore">0 · 0</strong></div>
+        <div class="hand-stat"><span>Cantos</span><strong id="callsState">Libres</strong></div>
+      </div>
+      <div class="cpu-hand" id="cpuHand" aria-label="Cartas de la computadora"></div>
+      <div class="game-message" id="gameMessage" role="status" aria-live="polite">Repartí las cartas para comenzar</div>
+      <div class="trick-area" id="trickArea" aria-label="Bazas jugadas"></div>
+      <div class="call-bar" id="callBar">
+        <button class="call-btn" data-call="envido">Envido</button>
+        <button class="call-btn" data-call="real">Real envido</button>
+        <button class="call-btn" data-call="falta">Falta envido</button>
+        <button class="call-btn" data-call="flor">Flor</button>
+        <button class="call-btn main" data-call="truco">¡Truco!</button>
+        <button class="call-btn decline" data-call="fold">Ir al mazo</button>
+      </div>
+      <div class="player-hand" id="playerHand" aria-label="Tus cartas"></div>
+      <button class="new-hand-btn" id="dealBtn">Repartir cartas</button>
+      <div class="pending-call" id="pendingCall" hidden>
+        <h3 id="pendingTitle"></h3><p id="pendingText"></p><div class="pending-actions" id="pendingActions"></div>
+      </div>
+    </section>
+
+    <details class="rules-panel">
+      <summary>Reglas, jerarquía y atajos de teclado</summary>
+      <div class="rules-grid">
+        <div><h3>Orden de las cartas</h3><p>Se juega con mazo español de 40 cartas: no entran los 8 ni los 9.</p><ol><li>1 de espada</li><li>1 de basto</li><li>7 de espada</li><li>7 de oro</li><li>Todos los 3, 2 y anchos falsos</li><li>12, 11, 10</li><li>7 falsos, 6, 5 y 4</li></ol></div>
+        <div><h3>Envido y flor</h3><p>Dos cartas del mismo palo suman 20 más sus valores; 10, 11 y 12 valen cero. Sin pareja vale la carta más alta. Envido vale 2, real envido 3 y falta envido lo que le falta al líder para ganar la partida. Tres cartas del mismo palo forman flor; su tanto se calcula con las dos cartas más altas.</p></div>
+        <div><h3>Truco y bazas</h3><p>La mano se decide al mejor de tres bazas. Truco, retruco y vale cuatro elevan la mano a 2, 3 y 4 tantos. Si hay parda, favorece a quien ganó antes; si todas empatan, gana quien era mano.</p><p><strong>Atajos:</strong> 1, 2 y 3 juegan cartas; E canta envido; T eleva el truco; M va al mazo.</p></div>
+      </div>
+    </details>
+
+    <section class="scoreboard">
+      <article class="player-card blue" data-player="0">
+        <div class="winner" id="winner0">
+          <div>
+            <h2>Ganó <span></span></h2>
+            <p>Partida finalizada</p>
+            <button class="btn" data-new-match>Nueva partida</button>
+          </div>
+        </div>
+        <div class="player-head">
+          <h2 class="player-name" id="displayName0">Nosotros</h2>
+          <div class="score" id="score0">0</div>
+        </div>
+        <div class="meta">
+          <span id="phase0">0 de 30 puntos</span>
+          <span id="remaining0">Faltan 30</span>
+        </div>
+        <div class="progress"><span id="progress0"></span></div>
+        <div class="tallies" id="tallies0"></div>
+        <div class="controls">
+          <button class="score-btn minus" data-player="0" data-points="-1">−1</button>
+          <button class="score-btn primary" data-player="0" data-points="1">+1</button>
+          <button class="score-btn primary" data-player="0" data-points="2">+2</button>
+          <button class="score-btn primary" data-player="0" data-points="3">+3</button>
+          <button class="score-btn flor" data-player="0" data-points="3" data-flor>🌸 Flor +3</button>
+        </div>
+      </article>
+
+      <article class="player-card gold" data-player="1">
+        <div class="winner" id="winner1">
+          <div>
+            <h2>Ganó <span></span></h2>
+            <p>Partida finalizada</p>
+            <button class="btn" data-new-match>Nueva partida</button>
+          </div>
+        </div>
+        <div class="player-head">
+          <h2 class="player-name" id="displayName1">Ellos</h2>
+          <div class="score" id="score1">0</div>
+        </div>
+        <div class="meta">
+          <span id="phase1">0 de 30 puntos</span>
+          <span id="remaining1">Faltan 30</span>
+        </div>
+        <div class="progress"><span id="progress1"></span></div>
+        <div class="tallies" id="tallies1"></div>
+        <div class="controls">
+          <button class="score-btn minus" data-player="1" data-points="-1">−1</button>
+          <button class="score-btn primary" data-player="1" data-points="1">+1</button>
+          <button class="score-btn primary" data-player="1" data-points="2">+2</button>
+          <button class="score-btn primary" data-player="1" data-points="3">+3</button>
+          <button class="score-btn flor" data-player="1" data-points="3" data-flor>🌸 Flor +3</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="history">
+      <div class="history-head">
+        <h2>Historial de anotaciones</h2>
+        <div class="history-actions">
+          <button class="small-btn" id="copyHistory">Copiar</button>
+          <button class="small-btn" id="clearHistory">Limpiar</button>
+        </div>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "truco-scorekeeper-v1";
+      const UI_KEY = "truco-ui-v1";
+
+      const defaultState = {
+        names: ["Nosotros", "Ellos"],
+        target: 30,
+        flor: true,
+        scores: [0, 0],
+        history: [],
+        startedAt: new Date().toISOString()
+      };
+
+      let state = loadState();
+
+      const $ = (id) => document.getElementById(id);
+      const els = {
+        name1: $("name1"),
+        name2: $("name2"),
+        target: $("target"),
+        flor: $("flor"),
+        florText: $("florText"),
+        history: $("historyList"),
+        undo: $("undoBtn"),
+        focus: $("focusBtn"),
+        fullscreen: $("fullscreenBtn")
+      };
+
+      const uiState = loadUiState();
+      applyFocusMode(uiState.focusMode);
+
+      function loadUiState() {
+        try {
+          return { focusMode: false, ...JSON.parse(localStorage.getItem(UI_KEY) || "{}") };
+        } catch {
+          return { focusMode: false };
+        }
+      }
+
+      function saveUiState() {
+        localStorage.setItem(UI_KEY, JSON.stringify(uiState));
+      }
+
+      function applyFocusMode(enabled) {
+        document.body.classList.toggle("focus-mode", enabled);
+        els.focus.classList.toggle("is-on", enabled);
+        els.focus.setAttribute("aria-pressed", String(enabled));
+        els.focus.title = enabled ? "Salir de modo mesa" : "Modo mesa";
+        window.dispatchEvent(new CustomEvent("truco-layout-change", { detail: { focusMode: enabled } }));
+      }
+
+      function setFocusMode(enabled) {
+        uiState.focusMode = enabled;
+        saveUiState();
+        applyFocusMode(enabled);
+      }
+
+      function updateFullscreenButton() {
+        const active = Boolean(document.fullscreenElement);
+        els.fullscreen.classList.toggle("is-on", active);
+        els.fullscreen.setAttribute("aria-pressed", String(active));
+        els.fullscreen.title = active ? "Salir de pantalla completa" : "Pantalla completa";
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await document.documentElement.requestFullscreen();
+          if (!uiState.focusMode) setFocusMode(true);
+        } catch {
+          setFocusMode(!uiState.focusMode);
+          toast("Tu navegador bloqueó pantalla completa; activé modo mesa");
+        }
+      }
+
+      function broadcastScoreEvent(type, payload = {}) {
+        window.parent?.postMessage({
+          source: "anotador-truco-html",
+          type,
+          payload: { ...payload, state: structuredClone(state) }
+        }, "*");
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return structuredClone(defaultState);
+          const parsed = JSON.parse(raw);
+          return {
+            ...structuredClone(defaultState),
+            ...parsed,
+            target: [15, 30].includes(Number(parsed.target)) ? Number(parsed.target) : 30,
+            names: Array.isArray(parsed.names) ? parsed.names.slice(0,2) : [...defaultState.names],
+            scores: Array.isArray(parsed.scores) ? parsed.scores.slice(0,2) : [0,0],
+            history: Array.isArray(parsed.history) ? parsed.history : []
+          };
+        } catch {
+          return structuredClone(defaultState);
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function safeName(value, fallback) {
+        const cleaned = String(value || "").trim().replace(/\s+/g, " ");
+        return cleaned || fallback;
+      }
+
+      function applySettings() {
+        state.names = [
+          safeName(els.name1.value, "Nosotros"),
+          safeName(els.name2.value, "Ellos")
+        ];
+        const oldTarget = state.target;
+        state.target = Number(els.target.value);
+        state.flor = els.flor.checked;
+
+        if (oldTarget !== state.target) {
+          state.scores = state.scores.map(s => Math.min(s, state.target));
+          state.history.push({
+            type: "config",
+            text: `Partida configurada a ${state.target} puntos`,
+            at: new Date().toISOString(),
+            scores: [...state.scores]
+          });
+        }
+        saveState();
+        render();
+        broadcastScoreEvent("settings", { target: state.target, flor: state.flor });
+        toast("Configuración aplicada");
+      }
+
+      function newMatch(confirmFirst = true) {
+        if (confirmFirst && (state.scores[0] > 0 || state.scores[1] > 0 || state.history.length > 0)) {
+          if (!confirm("¿Iniciar una nueva partida? Se reiniciarán los tantos y el historial actual.")) return;
+        }
+        state.scores = [0,0];
+        state.history = [];
+        state.startedAt = new Date().toISOString();
+        saveState();
+        render();
+        window.dispatchEvent(new CustomEvent("truco-new-match"));
+        broadcastScoreEvent("new-match");
+        toast("Nueva partida iniciada");
+      }
+
+      function addPoints(player, amount, isFlor = false) {
+        if (state.scores.some(s => s >= state.target)) return;
+        const previous = state.scores[player];
+        const next = Math.max(0, Math.min(state.target, previous + amount));
+        const applied = next - previous;
+        if (applied === 0) return;
+
+        state.scores[player] = next;
+        state.history.push({
+          type: "score",
+          player,
+          points: applied,
+          isFlor,
+          at: new Date().toISOString(),
+          scores: [...state.scores]
+        });
+        saveState();
+        render();
+        broadcastScoreEvent("score", { player, points: applied, isFlor });
+
+        if (next >= state.target) {
+          broadcastScoreEvent("match-won", { winner: player });
+          toast(`${state.names[player]} ganó la partida`);
+          if (navigator.vibrate) navigator.vibrate([80, 50, 120]);
+        }
+      }
+
+      function undo() {
+        const idx = [...state.history].map(h => h.type).lastIndexOf("score");
+        if (idx < 0) return toast("No hay anotaciones para deshacer");
+        const item = state.history[idx];
+        state.scores[item.player] = Math.max(0, state.scores[item.player] - item.points);
+        state.history.splice(idx, 1);
+        saveState();
+        render();
+        broadcastScoreEvent("undo", { player: item.player, points: item.points });
+        toast("Última anotación deshecha");
+      }
+
+      function createTallyGroup(filled, groupNumber) {
+        const group = document.createElement("div");
+        group.className = "tally-group" + (filled > 0 ? " active" : "");
+        group.setAttribute("aria-label", `${filled} de 5 puntos en el grupo ${groupNumber}`);
+
+        const box = document.createElement("div");
+        box.className = "matchbox";
+
+        const classes = ["top","right","bottom","left","diag"];
+        classes.forEach((cls, index) => {
+          const stick = document.createElement("span");
+          stick.className = `stick ${cls}` + (index < filled ? " on" : "");
+          box.appendChild(stick);
+        });
+
+        const label = document.createElement("span");
+        label.className = "tally-label";
+        label.textContent = `${filled}/5`;
+
+        group.append(box, label);
+        return group;
+      }
+
+      function renderTallies(player) {
+        const container = $(`tallies${player}`);
+        container.innerHTML = "";
+        const groups = Math.ceil(state.target / 5);
+        const score = state.scores[player];
+
+        for (let i = 0; i < groups; i++) {
+          const remainingInGroup = Math.max(0, score - (i * 5));
+          const filled = Math.min(5, remainingInGroup);
+          container.appendChild(createTallyGroup(filled, i + 1));
+        }
+      }
+
+      function phaseLabel(score) {
+        if (state.target === 30) {
+          if (score <= 15) return `Malas · ${score} de 15`;
+          return `Buenas · ${score - 15} de 15`;
+        }
+        return `${score} de ${state.target} puntos`;
+      }
+
+      function renderHistory() {
+        els.history.innerHTML = "";
+        const items = state.history.slice().reverse();
+
+        if (!items.length) {
+          els.history.innerHTML = `<div class="empty-history">Todavía no hay anotaciones.</div>`;
+          return;
+        }
+
+        items.forEach((item, reverseIndex) => {
+          const row = document.createElement("div");
+          row.className = "history-item";
+
+          const number = document.createElement("div");
+          number.className = "history-number";
+          number.textContent = state.history.length - reverseIndex;
+
+          const main = document.createElement("div");
+          main.className = "history-main";
+
+          const strong = document.createElement("strong");
+          const span = document.createElement("span");
+          const time = new Date(item.at).toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit"});
+
+          if (item.type === "score") {
+            const sign = item.points > 0 ? "+" : "";
+            strong.textContent = `${state.names[item.player]} ${sign}${item.points}${item.isFlor ? " · Flor" : ""}`;
+            span.textContent = `${time} · Parcial ${item.scores[0]} a ${item.scores[1]}`;
+          } else {
+            strong.textContent = item.text || "Cambio de configuración";
+            span.textContent = time;
+          }
+
+          const score = document.createElement("div");
+          score.className = "history-score";
+          score.textContent = item.scores ? `${item.scores[0]}–${item.scores[1]}` : "";
+
+          main.append(strong, span);
+          row.append(number, main, score);
+          els.history.appendChild(row);
+        });
+      }
+
+      function render() {
+        els.name1.value = state.names[0];
+        els.name2.value = state.names[1];
+        els.target.value = String(state.target);
+        els.flor.checked = state.flor;
+        els.florText.textContent = state.flor ? "Con flor" : "Sin flor";
+
+        for (let p = 0; p < 2; p++) {
+          $(`displayName${p}`).textContent = state.names[p];
+          $(`score${p}`).textContent = state.scores[p];
+          $(`phase${p}`).textContent = phaseLabel(state.scores[p]);
+          $(`remaining${p}`).textContent = state.scores[p] >= state.target
+            ? "Partida ganada"
+            : `Faltan ${state.target - state.scores[p]}`;
+          $(`progress${p}`).style.width = `${Math.min(100, (state.scores[p] / state.target) * 100)}%`;
+          renderTallies(p);
+
+          const winner = $(`winner${p}`);
+          winner.querySelector("span").textContent = state.names[p];
+          winner.classList.toggle("show", state.scores[p] >= state.target);
+        }
+
+        document.querySelectorAll("[data-flor]").forEach(btn => {
+          btn.disabled = !state.flor || state.scores.some(s => s >= state.target);
+          btn.style.display = state.flor ? "" : "none";
+        });
+        document.querySelectorAll(".score-btn:not([data-flor])").forEach(btn => {
+          btn.disabled = state.scores.some(s => s >= state.target);
+        });
+
+        els.undo.disabled = !state.history.some(h => h.type === "score");
+        els.undo.style.opacity = els.undo.disabled ? ".45" : "1";
+
+        renderHistory();
+      }
+
+      function toast(message) {
+        const el = $("toast");
+        el.textContent = message;
+        el.classList.add("show");
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => el.classList.remove("show"), 1800);
+      }
+
+      async function copyHistory() {
+        if (!state.history.length) return toast("No hay historial para copiar");
+        const lines = [
+          `TRUCO · ${state.names[0]} vs ${state.names[1]}`,
+          `Partida a ${state.target} · ${state.flor ? "Con flor" : "Sin flor"}`,
+          ""
+        ];
+        state.history.forEach((item, i) => {
+          if (item.type !== "score") return;
+          const sign = item.points > 0 ? "+" : "";
+          lines.push(`${i + 1}. ${state.names[item.player]} ${sign}${item.points}${item.isFlor ? " (Flor)" : ""} → ${item.scores[0]}-${item.scores[1]}`);
+        });
+        lines.push("", `Resultado actual: ${state.scores[0]}-${state.scores[1]}`);
+
+        try {
+          await navigator.clipboard.writeText(lines.join("\n"));
+          toast("Historial copiado");
+        } catch {
+          toast("No se pudo copiar");
+        }
+      }
+
+      document.querySelectorAll("[data-points]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          addPoints(Number(btn.dataset.player), Number(btn.dataset.points), btn.hasAttribute("data-flor"));
+        });
+      });
+
+      document.querySelectorAll("[data-new-match]").forEach(btn => {
+        btn.addEventListener("click", () => newMatch(false));
+      });
+
+      $("applyBtn").addEventListener("click", applySettings);
+      $("newBtn").addEventListener("click", () => newMatch(true));
+      els.undo.addEventListener("click", undo);
+      els.focus.addEventListener("click", () => setFocusMode(!uiState.focusMode));
+      els.fullscreen.addEventListener("click", toggleFullscreen);
+      document.addEventListener("fullscreenchange", () => {
+        updateFullscreenButton();
+        if (document.fullscreenElement && !uiState.focusMode) setFocusMode(true);
+        window.dispatchEvent(new CustomEvent("truco-layout-change", { detail: { fullscreen: Boolean(document.fullscreenElement) } }));
+      });
+      document.addEventListener("keydown", event => {
+        if (event.repeat || event.target.matches("input,select,textarea")) return;
+        if (event.key.toLowerCase() === "f") toggleFullscreen();
+        if (event.key === "Escape" && uiState.focusMode && !document.fullscreenElement) setFocusMode(false);
+      });
+      updateFullscreenButton();
+      $("copyHistory").addEventListener("click", copyHistory);
+      $("clearHistory").addEventListener("click", () => {
+        if (!state.history.length) return;
+        if (!confirm("¿Limpiar solamente el historial? Los tantos actuales se conservarán.")) return;
+        state.history = [];
+        saveState();
+        render();
+        toast("Historial limpiado");
+      });
+
+      els.flor.addEventListener("change", () => {
+        state.flor = els.flor.checked;
+        saveState();
+        render();
+      });
+
+      els.target.addEventListener("change", () => {
+        const next = Number(els.target.value);
+        if (next !== state.target && state.scores.some(Boolean)) {
+          toast("Tocá “Aplicar nombres” para confirmar el cambio");
+        }
+      });
+
+      [els.name1, els.name2].forEach(input => {
+        input.addEventListener("keydown", e => {
+          if (e.key === "Enter") applySettings();
+        });
+      });
+
+      window.trucoScore = {
+        addPoints: (player, points, label = "Juego") => addPoints(player, points, label === "Flor"),
+        getState: () => structuredClone(state),
+        newMatch: () => newMatch(false),
+        refresh: render
+      };
+      window.dispatchEvent(new CustomEvent("truco-score-ready"));
+      render();
+    })();
+  </script>
+  <script src="game.js"></script>
+</body>
+</html>

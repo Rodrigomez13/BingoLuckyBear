@@ -13,7 +13,7 @@ export const LBB_MASCOT = {
 export const LBB_CARD_BACK = '/truco/cards/back.png'
 
 export const LBB_TRUCO_DECK = {
-  sprite: '/truco/cards/lbb-cards-spritesheet.webp',
+  sprite: '/truco/cards/truco-card-fronts.png',
   spriteMap: '/truco/cards/lbb-cards-spritesheet-map.json',
   back: LBB_CARD_BACK,
 } as const

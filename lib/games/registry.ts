@@ -1,4 +1,4 @@
-export type PlatformGameId = 'bingo' | 'truco' | 'golden_bear' | 'viborita' | 'future_games'
+export type PlatformGameId = 'bingo' | 'truco' | 'truco_anotador' | 'golden_bear' | 'viborita' | 'future_games'
 
 export type PlatformGameCategory = 'sorteos' | 'cartas' | 'slots' | 'arcade' | 'roadmap'
 export type PlatformGameReleaseStage = 'live' | 'preview' | 'roadmap' | 'disabled'
@@ -68,6 +68,27 @@ export const PLATFORM_GAMES: PlatformGame[] = [
     featured: true,
     sortOrder: 20,
     accent: 'from-sky-400/18 via-emerald-300/12 to-black/30',
+    sound: 'truco.play',
+  },
+  {
+    id: 'truco_anotador',
+    slug: 'truco-anotador',
+    name: 'Anotador de Truco',
+    shortName: 'Anotador',
+    subtitle: 'Mesa local',
+    description: 'Anotador visual con mesa de paño verde, mazo español de 40 cartas y partida contra CPU.',
+    href: '/juegos/truco-anotador',
+    adminHref: '/admin/games',
+    cta: 'Abrir anotador',
+    statusLabel: 'Nuevo',
+    logo: 'AT',
+    visualAsset: LBB_GAME_THUMBNAILS.truco,
+    category: 'cartas',
+    releaseStage: 'live',
+    walletMode: 'none',
+    featured: true,
+    sortOrder: 25,
+    accent: 'from-emerald-400/20 via-amber-300/12 to-black/30',
     sound: 'truco.play',
   },
   {

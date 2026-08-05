@@ -20,7 +20,7 @@ import {
 interface SiteHeaderProps {
   kicker?: string
   jackpotPrize?: string | null
-  activePath?: 'home' | 'juegos' | 'participar' | 'ganadores' | 'mi-cuenta' | 'truco' | 'golden-bear' | 'viborita'
+  activePath?: 'home' | 'juegos' | 'participar' | 'ganadores' | 'mi-cuenta' | 'truco' | 'truco-anotador' | 'golden-bear' | 'viborita'
   compact?: boolean
 }
 
@@ -36,6 +36,7 @@ type HeaderGameLink = {
 const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
   bingo: Ticket,
   truco: Swords,
+  truco_anotador: Swords,
   golden_bear: Trophy,
   viborita: Gamepad2,
   future_games: Grid3X3,
@@ -44,6 +45,7 @@ const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> =
 const activePathByGame: Record<PlatformGameId, HeaderActivePath> = {
   bingo: 'participar',
   truco: 'truco',
+  truco_anotador: 'truco-anotador',
   golden_bear: 'golden-bear',
   viborita: 'viborita',
   future_games: 'juegos',

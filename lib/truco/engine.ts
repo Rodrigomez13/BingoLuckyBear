@@ -47,6 +47,8 @@ export interface GameState {
   envidoValue: number
   // Flor state
   florResolved: boolean
+  sideScores: Record<Player, number>
+  sideScoreLabels: string[]
   // Round result modal
   lastResult: string | null
   // Epoch ms (server time) marking when the current decision window started.
@@ -104,6 +106,8 @@ export function createGame(targetScore: 15 | 30, rules: TrucoRules = DEFAULT_TRU
     envidoPending: null,
     envidoValue: 0,
     florResolved: false,
+    sideScores: { player: 0, opponent: 0 },
+    sideScoreLabels: [],
     lastResult: null,
     turnStartedAt: Date.now(),
   }
@@ -128,6 +132,8 @@ export function startRound(prev: GameState, mano: Player): GameState {
     envidoPending: null,
     envidoValue: 0,
     florResolved: false,
+    sideScores: { player: 0, opponent: 0 },
+    sideScoreLabels: [],
     lastResult: null,
     turnStartedAt: Date.now(),
     log: [
@@ -156,7 +162,7 @@ export function hasFlor(cards: TrucoCard[]): boolean {
 
 export function computeFlor(cards: TrucoCard[]): number {
   if (!hasFlor(cards)) return 0
-  return 20 + cards.slice(0, 3).reduce((sum, card) => sum + envidoCardValue(card.rank), 0)
+  return computeEnvido(cards.slice(0, 3))
 }
 
 export function canCallFlor(state: GameState, by: Player): boolean {
@@ -268,18 +274,21 @@ export function playCard(state: GameState, by: Player, cardId: string): GameStat
 
 function finishRound(state: GameState, winner: Player): GameState {
   const points = trucoPoints(state.trucoLevel)
-  const scores = { ...state.scores, [winner]: state.scores[winner] + points }
-  const result = `${winner === 'player' ? 'Ganaste' : 'Gano el oso'} la mano (+${points} ${points === 1 ? 'punto' : 'puntos'})`
+  const settled = settleHandScores(state, winner, points)
+  const result = `${winner === 'player' ? 'Ganaste' : 'Gano el oso'} la mano (+${points} ${points === 1 ? 'punto' : 'puntos'}${settled.sideTotal ? `; ${settled.sideTotal} pendientes` : ''})`
   let next: GameState = {
     ...state,
-    scores,
+    scores: settled.scores,
+    sideScores: { player: 0, opponent: 0 },
+    sideScoreLabels: [],
     phase: 'round-over',
     lastResult: result,
   }
   next = pushLog(next, 'system', result)
 
-  if (scores[winner] >= state.targetScore) {
-    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
+  const gameWinner = scoreWinner(next)
+  if (gameWinner) {
+    next = { ...next, phase: 'game-over', lastResult: `${gameWinner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
   }
   return next
 }
@@ -289,16 +298,22 @@ export function goToMazo(state: GameState, by: Player): GameState {
   if (state.phase !== 'playing') return state
   const winner = other(by)
   const points = Math.max(1, trucoPoints(state.trucoLevel))
-  const scores = { ...state.scores, [winner]: state.scores[winner] + points }
+  const baseState = shouldAwardUnplayedEnvido(state)
+    ? queueSideScore(state, winner, 1, 'Envido no jugado')
+    : state
+  const settled = settleHandScores(baseState, winner, points)
   let next: GameState = {
-    ...state,
-    scores,
+    ...baseState,
+    scores: settled.scores,
+    sideScores: { player: 0, opponent: 0 },
+    sideScoreLabels: [],
     phase: 'round-over',
-    lastResult: `${by === 'player' ? 'Te fuiste' : 'El oso se fue'} al mazo. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}`,
+    lastResult: `${by === 'player' ? 'Te fuiste' : 'El oso se fue'} al mazo. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}${settled.sideTotal ? `; ${settled.sideTotal} pendientes` : ''}`,
   }
   next = pushLog(next, by, `${by === 'player' ? 'Te vas' : 'Se va'} al mazo`)
-  if (scores[winner] >= state.targetScore) {
-    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
+  const gameWinner = scoreWinner(next)
+  if (gameWinner) {
+    next = { ...next, phase: 'game-over', lastResult: `${gameWinner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
   }
   return next
 }
@@ -320,22 +335,17 @@ export function callFlor(state: GameState, by: Player): GameState {
   }
 
   const points = 3
-  const scores = { ...state.scores, [winner]: state.scores[winner] + points }
   let next = pushLog(state, by, 'Flor')
   const detail = opponentHasFlor
     ? `Flor: vos ${playerFlor} - oso ${opponentFlor}. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}`
     : `${by === 'player' ? 'Tenés' : 'El oso tiene'} Flor. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points}`
   next = pushLog(next, 'system', detail)
+  next = queueSideScore(next, winner, points, 'Flor')
   next = {
     ...next,
-    scores,
     florResolved: true,
     envidoResolved: true,
     envidoPending: null,
-  }
-
-  if (scores[winner] >= state.targetScore) {
-    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
   }
   return next
 }
@@ -388,17 +398,20 @@ export function respondTruco(state: GameState, by: Player, accept: boolean): Gam
   }
   const winner = pending.by
   const points = Math.max(1, trucoPoints((pending.level - 1) as TrucoLevel))
-  const scores = { ...state.scores, [winner]: state.scores[winner] + points }
+  const settled = settleHandScores(state, winner, points)
   let next = pushLog(state, by, 'No quiero')
   next = {
     ...next,
-    scores,
+    scores: settled.scores,
+    sideScores: { player: 0, opponent: 0 },
+    sideScoreLabels: [],
     trucoPending: null,
     phase: 'round-over',
-    lastResult: `${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points} (no quiso el Truco)`,
+    lastResult: `${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${points} (no quiso el Truco)${settled.sideTotal ? `; ${settled.sideTotal} pendientes` : ''}`,
   }
-  if (scores[winner] >= state.targetScore) {
-    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
+  const gameWinner = scoreWinner(next)
+  if (gameWinner) {
+    next = { ...next, phase: 'game-over', lastResult: `${gameWinner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
   }
   return next
 }
@@ -455,17 +468,13 @@ export function respondEnvido(state: GameState, by: Player, accept: boolean): Ga
 
   if (!accept) {
     const winner = pending.by
-    const scores = { ...state.scores, [winner]: state.scores[winner] + declined }
     let next = pushLog(state, by, 'No quiero el envido')
+    next = queueSideScore(next, winner, declined, 'Envido no querido')
     next = {
       ...next,
-      scores,
       envidoPending: null,
       envidoResolved: true,
       envidoValue: declined,
-    }
-    if (scores[winner] >= state.targetScore) {
-      next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
     }
     return next
   }
@@ -476,20 +485,61 @@ export function respondEnvido(state: GameState, by: Player, accept: boolean): Ga
   if (playerEnv === oppEnv) winner = state.hand
   else winner = playerEnv > oppEnv ? 'player' : 'opponent'
 
-  const scores = { ...state.scores, [winner]: state.scores[winner] + want }
   let next = pushLog(state, by, 'Quiero')
   next = pushLog(next, 'system', `Envido: vos ${playerEnv} - oso ${oppEnv}. ${winner === 'player' ? 'Ganaste' : 'Gano el oso'} +${want}`)
+  next = queueSideScore(next, winner, want, 'Envido')
   next = {
     ...next,
-    scores,
     envidoPending: null,
     envidoResolved: true,
     envidoValue: want,
   }
-  if (scores[winner] >= state.targetScore) {
-    next = { ...next, phase: 'game-over', lastResult: `${winner === 'player' ? 'GANASTE LA PARTIDA' : 'EL OSO GANA LA PARTIDA'}` }
-  }
   return next
+}
+
+function queueSideScore(state: GameState, player: Player, points: number, label: string): GameState {
+  return {
+    ...state,
+    sideScores: { ...state.sideScores, [player]: (state.sideScores?.[player] ?? 0) + points },
+    sideScoreLabels: [...(state.sideScoreLabels ?? []), label],
+  }
+}
+
+function sideScores(state: GameState): Record<Player, number> {
+  return state.sideScores ?? { player: 0, opponent: 0 }
+}
+
+function settleHandScores(state: GameState, handWinner: Player, handPoints: number) {
+  const pending = sideScores(state)
+  const sideTotal = pending.player + pending.opponent
+  const afterSide = {
+    player: state.scores.player + pending.player,
+    opponent: state.scores.opponent + pending.opponent,
+  }
+
+  if (afterSide.player >= state.targetScore || afterSide.opponent >= state.targetScore) {
+    return { scores: afterSide, sideTotal }
+  }
+
+  return {
+    scores: {
+      ...afterSide,
+      [handWinner]: afterSide[handWinner] + handPoints,
+    },
+    sideTotal,
+  }
+}
+
+function scoreWinner(state: GameState): Player | null {
+  if (state.scores.player >= state.targetScore) return 'player'
+  if (state.scores.opponent >= state.targetScore) return 'opponent'
+  return null
+}
+
+function shouldAwardUnplayedEnvido(state: GameState): boolean {
+  if (state.envidoResolved || state.envidoPending || state.trucoLevel > 0) return false
+  const dealer = other(state.hand)
+  return state.played.filter((played) => played.by === dealer).length === 0
 }
 
 export function nextRound(state: GameState): GameState {
