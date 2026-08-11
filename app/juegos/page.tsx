@@ -76,6 +76,21 @@ export default async function GamesPage() {
               : 'El catálogo muestra las experiencias disponibles de LuckyBingoBear, con navegación rápida y diseño preparado para jugar en cualquier pantalla.'}
           </div>
         </section>
+
+        <section className="mt-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Catálogo LBB</p>
+              <h2 className="mt-2 text-3xl font-black text-white">Juegos nativos disponibles</h2>
+            </div>
+            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-300">
+              {ACTIVE_PLATFORM_GAMES.length} juegos
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {ACTIVE_PLATFORM_GAMES.map((game, index) => <GameCatalogCard key={game.id} game={game} priority={index < 2} />)}
+          </div>
+        </section>
       </div>
     </main>
   )

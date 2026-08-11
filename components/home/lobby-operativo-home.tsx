@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { BearLogo } from '@/components/bear-logo'
 import { GameCatalogCard } from '@/components/games/game-catalog-card'
+import { CasinoDemoHome } from '@/components/home/casino-demo-home'
 import { UserMenu } from '@/components/user-menu'
 import { CONTACT_LINKS } from '@/lib/contact'
 import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
@@ -142,6 +143,7 @@ export function LobbyOperativoHome({
             <div className="min-w-0 space-y-5">
               <HeroLobby jackpotPrize={jackpotPrize} />
               <GamesPlatformGrid />
+              <CasinoDemoHome />
               <OriginalsShowcase />
               <LiveActivityPanel rooms={roomRows} raffleName={raffle?.name ?? 'Bingo LBB'} jackpotPrize={jackpotPrize} />
             </div>
