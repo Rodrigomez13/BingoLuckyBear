@@ -10,15 +10,15 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
-  title: 'Lucky Bingo Bear - Sorteos de Bingo',
-  description: 'Participa en nuestros emocionantes sorteos de bingo. Solicita tu carton y gana increibles premios!',
+  title: 'Lucky Bear - Truco online argentino',
+  description: 'Jugá Truco online, creá mesas y gestioná tus créditos desde una sola cuenta.',
   generator: 'v0.app',
-  applicationName: 'Lucky Bingo Bear',
+  applicationName: 'Lucky Bear',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Lucky Bingo Bear',
+    title: 'Lucky Bear',
   },
   icons: {
     icon: [

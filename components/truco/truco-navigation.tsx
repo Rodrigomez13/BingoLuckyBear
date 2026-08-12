@@ -53,12 +53,12 @@ export function TrucoNavigation({ active }: TrucoNavigationProps) {
 
   return (
     <>
-      <header className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-[#03130a]/90 px-3 py-2 shadow-2xl shadow-black/45 backdrop-blur-xl sm:px-4">
+      <header className="flex min-h-16 items-center justify-between gap-2 rounded-2xl border border-amber-300/20 bg-[#03130a]/90 px-3 py-2 shadow-2xl shadow-black/45 backdrop-blur-xl sm:px-4">
         <Link href="/truco" className="flex min-w-0 items-center gap-3">
           <BearLogo size={42} />
           <div className="min-w-0">
-            <p className="truncate font-mono text-base font-black uppercase leading-tight text-white sm:text-lg">Truco LBB</p>
-            <p className="text-[9px] font-black uppercase tracking-[.2em] text-amber-300">Mesas online</p>
+            <p className="truncate font-mono text-base font-black uppercase leading-tight text-white sm:text-lg">Lucky Bear</p>
+            <p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-300">Truco argentino</p>
           </div>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
@@ -69,7 +69,7 @@ export function TrucoNavigation({ active }: TrucoNavigationProps) {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
           {authenticated ? (
-            <Link href="/truco/perfil" className="inline-flex h-10 max-w-[11rem] items-center gap-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-2 text-amber-50 transition hover:bg-amber-300/15 sm:max-w-[15rem]">
+            <Link href="/truco/perfil" className="inline-flex h-10 max-w-[3rem] items-center gap-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-2 text-amber-50 transition hover:bg-amber-300/15 sm:max-w-[15rem]">
               <Image src={avatarSrc} alt="" width={28} height={28} unoptimized className="h-7 w-7 shrink-0 rounded-lg object-cover" />
               <span className="hidden min-w-0 text-left sm:block"><span className="block truncate text-xs font-black">{alias}</span><span className="block text-[10px] font-bold text-amber-300">{formatAccountBalance(balance)}</span></span>
               <UserRound className="h-4 w-4 sm:hidden" />
@@ -79,7 +79,7 @@ export function TrucoNavigation({ active }: TrucoNavigationProps) {
           )}
         </div>
       </header>
-      <nav aria-label="Navegación de Truco" className="fixed bottom-3 left-3 right-3 z-50 grid grid-cols-3 rounded-2xl border border-amber-300/20 bg-[#03130a]/95 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-xl md:hidden">
+      <nav aria-label="Navegación de Truco" className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-3 right-3 z-50 grid grid-cols-3 rounded-2xl border border-amber-300/20 bg-[#03130a]/95 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-xl md:hidden">
         {links.map((item) => <NavLink key={item.href} {...item} selected={active === item.active} mobile />)}
       </nav>
     </>

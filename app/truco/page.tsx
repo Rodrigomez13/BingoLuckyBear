@@ -57,7 +57,7 @@ export default function TrucoPage() {
           )}
         </section>
 
-        {!game.active && <p className="px-2 py-5 text-center text-xs text-emerald-50/45">Truco LBB · Los créditos se habilitan después de la aprobación de transferencia vigente.</p>}
+        {!game.active && <p className="px-2 py-5 text-center text-xs text-emerald-50/45">Lucky Bear · Truco argentino con créditos habilitados después de la aprobación de transferencia vigente.</p>}
       </div>
     </main>
   )

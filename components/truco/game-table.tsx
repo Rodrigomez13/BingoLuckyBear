@@ -518,7 +518,7 @@ export function GameTable({
           <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-100/15 sm:inset-3 sm:rounded-[1.65rem]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
           <div className="pointer-events-none absolute -left-6 bottom-10 hidden h-14 w-14 rotate-[-12deg] place-items-center rounded-full border-2 border-dashed border-white/50 bg-amber-300/80 text-[10px] font-black text-amber-950 shadow-xl shadow-black/40 sm:grid">
-            LBB
+            LB
           </div>
           <div className="pointer-events-none absolute -left-1 bottom-24 hidden h-12 w-12 rotate-[9deg] place-items-center rounded-full border-2 border-dashed border-white/50 bg-red-500/80 text-[10px] font-black text-white shadow-xl shadow-black/40 sm:grid">
             30

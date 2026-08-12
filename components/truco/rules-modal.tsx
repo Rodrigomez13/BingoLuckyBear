@@ -51,7 +51,7 @@ export function RulesModal({ compact = false }: { compact?: boolean }) {
         <DialogHeader>
           <DialogTitle className="font-mono text-2xl font-black text-amber-300">Reglas rápidas del Truco</DialogTitle>
           <DialogDescription className="text-emerald-100/70">
-            Resumen práctico para jugar en Lucky Bingo Bear. Las variantes regionales pueden cambiar algunos detalles finos.
+            Resumen práctico para jugar en Lucky Bear. Las variantes regionales argentinas pueden cambiar algunos detalles finos.
           </DialogDescription>
         </DialogHeader>
 

@@ -16,11 +16,11 @@ export function BearLogo({ size = 100, sad = false, className = '', variant = 's
       <span
         className={`relative inline-flex shrink-0 overflow-visible ${className}`}
         style={{ width: size, height: size }}
-        aria-label="Lucky Bingo Bear"
+        aria-label="Lucky Bear"
       >
         <Image
           src={src}
-          alt="Lucky Bingo Bear"
+          alt="Lucky Bear"
           fill
           sizes={`${size}px`}
           className="object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.42)]"
