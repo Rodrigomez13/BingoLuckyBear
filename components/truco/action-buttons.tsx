@@ -51,7 +51,7 @@ export function ActionButtons({
     const pendingLabel = formatEnvidoSequence(state.envidoPending?.calls ?? [])
 
     return (
-      <div className={`${panelClass(compact)} border-emerald-300/35`}>
+      <div className={`${panelClass(compact)} lbb-truco-action-panel lbb-truco-response-panel border-emerald-300/35`}>
         <p className="mb-1.5 text-center text-[11px] font-bold text-emerald-100 sm:mb-2 sm:text-sm">
           Tu rival canta <span className="uppercase">{pendingLabel}</span>
         </p>
@@ -81,15 +81,13 @@ export function ActionButtons({
     const raiseLabel = canRaiseTruco(state, player) ? nextTrucoRaiseLabel(state) : null
 
     return (
-      <div className={`${panelClass(compact)} border-amber-300/35`}>
+      <div className={`${panelClass(compact)} lbb-truco-action-panel lbb-truco-response-panel border-amber-300/35`}>
         <p className="mb-1.5 text-center text-[11px] font-bold text-amber-200 sm:mb-2 sm:text-sm">
           Tu rival canta <span className="uppercase">{label}</span>
         </p>
         {(canEnvido || canFlor) && (
           <div className="mb-2 rounded-xl border border-emerald-300/15 bg-emerald-400/5 p-1.5">
-            <p className="mb-1 text-center text-[10px] font-bold uppercase tracking-wider text-emerald-100/55">
-              El tanto está primero
-            </p>
+            <p className="mb-1 text-center text-[10px] font-bold uppercase tracking-wider text-emerald-100/55">El tanto está primero</p>
             {canFlor && (
               <Button data-sound="truco.flor" onClick={onFlor} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
                 Flor
@@ -125,7 +123,7 @@ export function ActionButtons({
   const trucoLabel = ['Truco', 'Retruco', 'Vale Cuatro'][state.trucoLevel] ?? 'Vale Cuatro'
 
   return (
-    <div className={panelClass(compact)}>
+    <div className={`${panelClass(compact)} lbb-truco-action-panel`}>
       {!compact && <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>}
       {canFlor && (
         <Button data-sound="truco.flor" onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
@@ -148,7 +146,7 @@ export function ActionButtons({
               disabled={!canTruco}
               data-sound={trucoSound(trucoLabel)}
               onClick={onTruco}
-              className="h-9 bg-amber-400 px-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
+              className="lbb-truco-primary-action h-9 bg-amber-400 px-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
               {compact ? shortTrucoLabel(trucoLabel) : trucoLabel}
             </Button>
@@ -157,7 +155,7 @@ export function ActionButtons({
               data-sound="truco.mazo"
               onClick={onMazo}
               variant="outline"
-              className="h-9 border-rose-400/40 bg-transparent px-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
+              className="lbb-truco-fold-action h-9 border-rose-400/40 bg-transparent px-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
               Mazo
             </Button>
@@ -223,7 +221,7 @@ function ActionBtn({
       data-sound={sound}
       onClick={onClick}
       variant="outline"
-      className="h-9 border-emerald-300/30 bg-transparent px-1.5 text-[10px] font-bold text-emerald-100 hover:bg-emerald-400/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-xs"
+      className="lbb-truco-secondary-action h-9 border-emerald-300/30 bg-transparent px-1.5 text-[10px] font-bold text-emerald-100 hover:bg-emerald-400/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-xs"
     >
       {children}
     </Button>
