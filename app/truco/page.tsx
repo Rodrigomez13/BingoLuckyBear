@@ -7,6 +7,7 @@ import { CircleDollarSign, ShieldCheck, Swords, Trophy } from 'lucide-react'
 import { GameShell } from '@/components/lobby/game-shell'
 import { RoomLobby } from '@/components/truco/room-lobby'
 import { GameTable } from '@/components/truco/game-table'
+import { LuckyBearVisualSkin } from '@/components/truco/luckybear-visual-skin'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
 import { DEFAULT_TRUCO_RULES, type TrucoRules } from '@/lib/truco/rules'
 import { LbbSoundEffects } from '@/components/audio/lbb-sound-effects'
@@ -27,38 +28,38 @@ export default function TrucoPage() {
   }, [])
 
   return (
-    <>
+    <LuckyBearVisualSkin>
       <LbbSoundEffects />
       <GameShell
-      active="truco"
-      eyebrow="Lobby de Truco"
-      title={game.active ? 'Mesa en vivo' : 'Mesas de Truco'}
-      subtitle={game.active ? 'Jugá tu mano y seguí el tanteador.' : 'Entrá a mesas públicas, creá partidas o apostá desde afuera.'}
-      aside={!game.active ? <TrucoLobbyAside /> : undefined}
-    >
-      <div className="relative">
-        {game.active ? (
-          <GameTable
-            target={game.target}
-            rules={game.rules}
-            mode={game.mode}
-            roomCode={game.mode === 'online' ? game.roomCode : undefined}
-            onlineRole={game.mode === 'online' ? game.role : undefined}
-            onlineSecret={game.mode === 'online' ? game.secret : undefined}
-            onExit={() => setGame({ active: false, target: game.target, rules: game.rules, mode: 'bot' })}
-          />
-        ) : (
-          <RoomLobby
-            initialRoomCode={initialRoomCode}
-            onPlayBot={(target, rules) => setGame({ active: true, target, rules, mode: 'bot' })}
-            onPlayOnline={({ target, rules, roomCode, role, secret }) =>
-              setGame({ active: true, target, rules, mode: 'online', roomCode, role, secret })
-            }
-          />
-        )}
-      </div>
+        active="truco"
+        eyebrow="Lobby de Truco"
+        title={game.active ? 'Mesa en vivo' : 'Mesas de Truco'}
+        subtitle={game.active ? 'Jugá tu mano y seguí el tanteador.' : 'Entrá a mesas públicas, creá partidas o apostá desde afuera.'}
+        aside={!game.active ? <TrucoLobbyAside /> : undefined}
+      >
+        <div className="relative">
+          {game.active ? (
+            <GameTable
+              target={game.target}
+              rules={game.rules}
+              mode={game.mode}
+              roomCode={game.mode === 'online' ? game.roomCode : undefined}
+              onlineRole={game.mode === 'online' ? game.role : undefined}
+              onlineSecret={game.mode === 'online' ? game.secret : undefined}
+              onExit={() => setGame({ active: false, target: game.target, rules: game.rules, mode: 'bot' })}
+            />
+          ) : (
+            <RoomLobby
+              initialRoomCode={initialRoomCode}
+              onPlayBot={(target, rules) => setGame({ active: true, target, rules, mode: 'bot' })}
+              onPlayOnline={({ target, rules, roomCode, role, secret }) =>
+                setGame({ active: true, target, rules, mode: 'online', roomCode, role, secret })
+              }
+            />
+          )}
+        </div>
       </GameShell>
-    </>
+    </LuckyBearVisualSkin>
   )
 }
 
