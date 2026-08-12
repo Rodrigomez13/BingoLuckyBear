@@ -140,7 +140,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
   const roomLink = useMemo(() => {
     if (typeof window === 'undefined') return ''
-    return `${window.location.origin}/truco?sala=${roomCode}`
+    return `${window.location.origin}/truco/mesa/${roomCode}`
   }, [roomCode])
 
   const guestIdentity = useMemo<TrucoIdentity | null>(() => {
@@ -476,7 +476,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
           {!account.user && (
             <p className="mt-3 text-xs text-emerald-100/55">
-              Como invitado podés crear mesas sin apuesta. <Link href="/mi-cuenta" className="font-bold text-amber-200 underline">Ingresá o creá una cuenta</Link> para usar saldo.
+              Como invitado podés crear mesas sin apuesta. <Link href="/truco/perfil" className="font-bold text-amber-200 underline">Ingresá o creá una cuenta</Link> para usar saldo.
             </p>
           )}
 
@@ -534,7 +534,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
 
           {!account.user && selectedPublicRoom?.entryFeePoints ? (
             <Button asChild className="mt-4 w-full bg-amber-300 font-bold text-amber-950 hover:bg-amber-200">
-              <Link href="/mi-cuenta">Ingresar para usar saldo</Link>
+              <Link href="/truco/perfil">Ingresar para usar saldo</Link>
             </Button>
           ) : null}
 

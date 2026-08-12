@@ -11,6 +11,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
+  const pathname = request.nextUrl.pathname
+  const excludedGamePaths = [
+    '/juegos',
+    '/participar',
+    '/casino',
+    '/en-vivo',
+    '/ganadores',
+    '/mi-cuenta',
+  ]
+
+  if (excludedGamePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/truco/perfil'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
   return await updateSession(request)
 }
 

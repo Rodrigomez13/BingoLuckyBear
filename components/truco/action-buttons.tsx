@@ -58,17 +58,17 @@ export function ActionButtons({
         {raiseOptions.length > 0 && (
           <div className="mb-2 grid grid-cols-3 gap-1.5">
             {raiseOptions.map((option) => (
-              <ActionBtn key={option.call} sound={envidoSound(option.call)} onClick={() => onEnvido(option.call)}>
+              <ActionBtn key={option.call} onClick={() => onEnvido(option.call)}>
                 {option.label}
               </ActionBtn>
             ))}
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Button data-sound="truco.quiero" onClick={() => onRespond(true)} className={mainButtonClass('green')}>
+          <Button data-sound-off="true" onClick={() => onRespond(true)} className={mainButtonClass('green')}>
             Quiero
           </Button>
-          <Button data-sound="truco.no-quiero" onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
+          <Button data-sound-off="true" onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
             No quiero
           </Button>
         </div>
@@ -91,29 +91,29 @@ export function ActionButtons({
               El tanto está primero
             </p>
             {canFlor && (
-              <Button data-sound="truco.flor" onClick={onFlor} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
+              <Button data-sound-off="true" onClick={onFlor} className="mb-1.5 h-8 w-full bg-amber-300 px-2 text-[11px] font-black text-amber-950 hover:bg-amber-200 sm:h-9 sm:text-xs">
                 Flor
               </Button>
             )}
             {canEnvido && (
               <div className="grid grid-cols-3 gap-1.5">
-                <ActionBtn sound="truco.envido" onClick={() => onEnvido('envido')}>Envido</ActionBtn>
-                <ActionBtn sound="truco.real-envido" onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
-                <ActionBtn sound="truco.falta-envido" onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+                <ActionBtn onClick={() => onEnvido('envido')}>Envido</ActionBtn>
+                <ActionBtn onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
+                <ActionBtn onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
               </div>
             )}
           </div>
         )}
         <div className={raiseLabel ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
-          <Button data-sound="truco.quiero" onClick={() => onRespond(true)} className={mainButtonClass('green')}>
+          <Button data-sound-off="true" onClick={() => onRespond(true)} className={mainButtonClass('green')}>
             Quiero
           </Button>
           {raiseLabel && (
-            <Button data-sound={trucoSound(raiseLabel)} onClick={onTruco} className={mainButtonClass('amber')}>
+            <Button data-sound-off="true" onClick={onTruco} className={mainButtonClass('amber')}>
               {compact ? shortTrucoLabel(raiseLabel) : raiseLabel}
             </Button>
           )}
-          <Button data-sound="truco.no-quiero" onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
+          <Button data-sound-off="true" onClick={() => onRespond(false)} variant="outline" className={mainButtonClass('red')}>
             No quiero
           </Button>
         </div>
@@ -128,7 +128,7 @@ export function ActionButtons({
     <div className={panelClass(compact)}>
       {!compact && <h3 className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-amber-300">Acciones</h3>}
       {canFlor && (
-        <Button data-sound="truco.flor" onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
+        <Button data-sound-off="true" onClick={onFlor} className="mb-2 h-9 w-full bg-amber-300 text-xs font-black text-amber-950 hover:bg-amber-200 sm:h-10 sm:text-sm">
           Flor
         </Button>
       )}
@@ -136,9 +136,9 @@ export function ActionButtons({
         <div className={compact ? 'col-span-3' : ''}>
           {!compact && <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100/50">Envido</p>}
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            <ActionBtn sound="truco.envido" disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
-            <ActionBtn sound="truco.real-envido" disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
-            <ActionBtn sound="truco.falta-envido" disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('envido')}>Envido</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('real-envido')}>Real</ActionBtn>
+            <ActionBtn disabled={!canEnvido} onClick={() => onEnvido('falta-envido')}>Falta</ActionBtn>
           </div>
         </div>
         <div className={compact ? 'col-span-2' : ''}>
@@ -146,7 +146,7 @@ export function ActionButtons({
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <Button
               disabled={!canTruco}
-              data-sound={trucoSound(trucoLabel)}
+              data-sound-off="true"
               onClick={onTruco}
               className="h-9 bg-amber-400 px-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
             >
@@ -154,7 +154,7 @@ export function ActionButtons({
             </Button>
             <Button
               disabled={state.phase !== 'playing'}
-              data-sound="truco.mazo"
+              data-sound-off="true"
               onClick={onMazo}
               variant="outline"
               className="h-9 border-rose-400/40 bg-transparent px-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-sm"
@@ -185,18 +185,6 @@ function shortTrucoLabel(label: string) {
   return label
 }
 
-function trucoSound(label: string) {
-  if (label === 'Retruco') return 'truco.retruco'
-  if (label === 'Vale Cuatro') return 'truco.vale-cuatro'
-  return 'truco.truco'
-}
-
-function envidoSound(call: EnvidoCall) {
-  if (call === 'real-envido') return 'truco.real-envido'
-  if (call === 'falta-envido') return 'truco.falta-envido'
-  return 'truco.envido'
-}
-
 function formatEnvidoSequence(calls: EnvidoCall[]) {
   if (calls.length === 0) return 'Envido'
   return calls.map((call) => {
@@ -209,18 +197,16 @@ function formatEnvidoSequence(calls: EnvidoCall[]) {
 function ActionBtn({
   children,
   disabled,
-  sound = 'ui.click',
   onClick,
 }: {
   children: React.ReactNode
   disabled?: boolean
-  sound?: string
   onClick: () => void
 }) {
   return (
     <Button
       disabled={disabled}
-      data-sound={sound}
+      data-sound-off="true"
       onClick={onClick}
       variant="outline"
       className="h-9 border-emerald-300/30 bg-transparent px-1.5 text-[10px] font-bold text-emerald-100 hover:bg-emerald-400/10 disabled:opacity-30 sm:h-10 sm:px-2 sm:text-xs"

@@ -3,11 +3,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ArrowRight, CircleDollarSign, ShieldCheck, Swords, Trophy, Users } from 'lucide-react'
-import { BearLogo } from '@/components/bear-logo'
+import { ArrowRight, ShieldCheck, Swords, Trophy, Users } from 'lucide-react'
 import { GameTable } from '@/components/truco/game-table'
 import { RoomLobby } from '@/components/truco/room-lobby'
 import { LbbSoundEffects } from '@/components/audio/lbb-sound-effects'
+import { TrucoNavigation } from '@/components/truco/truco-navigation'
 import { normalizeRoomCode, type OnlineRole } from '@/lib/truco/online'
 import { DEFAULT_TRUCO_RULES, type TrucoRules } from '@/lib/truco/rules'
 
@@ -33,22 +33,8 @@ export default function TrucoPage() {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_78%_8%,rgba(37,99,235,.26),transparent_25rem),radial-gradient(circle_at_16%_18%,rgba(16,185,129,.14),transparent_24rem),linear-gradient(130deg,rgba(2,7,16,.98),rgba(5,16,31,.94)_48%,rgba(2,10,16,.98))]" />
       <div className="pointer-events-none fixed inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(147,197,253,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(147,197,253,.7)_1px,transparent_1px)] [background-size:44px_44px]" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-3 py-3 sm:px-5 sm:py-5">
-        <header className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-sky-300/15 bg-[#071426]/85 px-3 py-2 shadow-2xl shadow-black/45 backdrop-blur-xl sm:px-4">
-          <Link href="/truco" className="flex min-w-0 items-center gap-3">
-            <BearLogo size={42} />
-            <div className="min-w-0">
-              <p className="truncate font-mono text-base font-black uppercase leading-tight text-white sm:text-lg">Truco LBB</p>
-              <p className="text-[9px] font-black uppercase tracking-[.2em] text-sky-300">Mesas online</p>
-            </div>
-          </Link>
-          <div className="flex shrink-0 items-center gap-2">
-            <Link href="/auth/login?next=/truco" className="hidden h-10 items-center rounded-xl border border-white/10 bg-white/[.04] px-3 text-xs font-black uppercase text-slate-100 transition hover:bg-white/[.09] sm:inline-flex">Ingresar</Link>
-            <Link href="/mi-cuenta/jugador" className="inline-flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-3 text-xs font-black uppercase text-white shadow-lg shadow-sky-950/40 transition hover:bg-sky-400">
-              <CircleDollarSign className="h-4 w-4" /> Créditos
-            </Link>
-          </div>
-        </header>
+      <div className="relative z-10 mx-auto max-w-7xl px-3 py-3 pb-24 sm:px-5 sm:py-5 md:pb-5">
+        <TrucoNavigation active={game.active ? 'lobby' : 'home'} />
 
         {!game.active && <section className="relative mt-4 overflow-hidden rounded-[1.8rem] border border-sky-300/15 bg-[#071426]/78 px-5 py-7 shadow-2xl shadow-black/40 backdrop-blur-xl sm:px-8 sm:py-9">
           <div className="absolute right-0 top-0 h-48 w-72 bg-sky-400/10 blur-3xl" />
@@ -58,7 +44,7 @@ export default function TrucoPage() {
               <h1 className="mt-4 max-w-3xl font-mono text-4xl font-black uppercase leading-[.93] text-white sm:text-6xl">Entrá a jugar Truco, sin distracciones.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Mesas públicas, salas privadas y partidas contra el oso. Tu cuenta, tus créditos y tu historial se usan únicamente dentro de la experiencia de Truco.</p>
               <div className="mt-5 flex flex-wrap gap-2">
-                {['Mesas en vivo', 'Partidas privadas', 'Ranking', 'Con Flor'].map((item) => <span key={item} className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-[.14em] text-slate-200">{item}</span>)}
+                {['1v1 en vivo', '2v2 próximamente', 'Partidas privadas', 'Con Flor'].map((item) => <span key={item} className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-[.14em] text-slate-200">{item}</span>)}
               </div>
               <a href="#lobby-truco" className="mt-6 inline-flex h-12 items-center gap-2 rounded-xl bg-sky-500 px-5 text-sm font-black text-white shadow-lg shadow-sky-950/40 transition hover:bg-sky-400">Elegir mesa <ArrowRight className="h-4 w-4" /></a>
             </div>
@@ -69,7 +55,7 @@ export default function TrucoPage() {
                 <TrucoFlow icon={<Users className="h-4 w-4" />} title="Mesa con pozo" text="El saldo se reserva y liquida desde el backend." />
                 <TrucoFlow icon={<Trophy className="h-4 w-4" />} title="Historial y ranking" text="Cada partida queda vinculada a tu perfil." />
               </div>
-              <Link href="/mi-cuenta/jugador" className="mt-4 inline-flex text-xs font-black text-sky-200 hover:text-white">Cargar créditos aprobados →</Link>
+              <Link href="/truco/perfil#creditos" className="mt-4 inline-flex text-xs font-black text-sky-200 hover:text-white">Cargar créditos aprobados →</Link>
             </div>
           </div>
         </section>}
