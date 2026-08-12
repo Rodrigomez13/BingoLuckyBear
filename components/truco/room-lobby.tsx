@@ -282,7 +282,7 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
   }
 
   return (
-    <div className="relative mx-auto flex max-w-6xl flex-col px-4 py-4 lbb-fade-up sm:py-5">
+    <div className="relative mx-auto flex w-full max-w-[1560px] flex-col px-4 py-4 lbb-fade-up sm:py-5 2xl:max-w-[1720px] 2xl:px-7">
       <TrucoLoadingOverlay show={busy} message={mode === 'join' ? 'Entrando a la mesa…' : 'Preparando la mesa…'} />
 
       {error && (

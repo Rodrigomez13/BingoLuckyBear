@@ -51,9 +51,9 @@ export function TrucoProfile() {
   const avatar = getCustomerAvatarImageSrc(playerData?.player?.avatar_key)
 
   return (
-    <main className="min-h-screen bg-[#06112a] text-white">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(32,99,182,.32),transparent_35%),radial-gradient(circle_at_85%_12%,rgba(12,146,130,.2),transparent_31%),linear-gradient(180deg,#071b3a_0%,#06112a_60%,#030917_100%)]" />
-      <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-10"><TrucoNavigation active="profile" />
+    <main className="min-h-screen bg-[#020b06] text-white">
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(31,141,82,.27),transparent_35%),radial-gradient(circle_at_85%_12%,rgba(245,184,42,.12),transparent_31%),linear-gradient(180deg,#03170b_0%,#020b06_60%,#010704_100%)]" />
+      <div className="mx-auto w-full max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 sm:pt-6 xl:max-w-[1760px] 2xl:max-w-[1920px] 2xl:px-8 lg:pb-10"><TrucoNavigation active="profile" />
         {loading ? <div className="flex min-h-[50vh] items-center justify-center gap-3 text-cyan-100"><Loader2 className="h-5 w-5 animate-spin" /> Cargando tu cuenta...</div> : !playerData ? (
           <section className="mx-auto mt-8 max-w-lg rounded-3xl border border-white/10 bg-slate-950/55 p-8 text-center shadow-2xl"><UserRound className="mx-auto h-12 w-12 text-cyan-300" /><h1 className="mt-4 text-2xl font-black">Ingresá para ver tu perfil</h1><p className="mt-2 text-sm text-slate-300">Tus créditos y partidas de Truco permanecen asociados a tu cuenta.</p><Link href="/auth/login?next=/truco/perfil" className="mt-6 inline-flex rounded-xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950">Iniciar sesión</Link></section>
         ) : <div className="mt-6 space-y-6">

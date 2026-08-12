@@ -404,7 +404,7 @@ export function GameTable({
 
   const shellClass = isFullscreen
     ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
-    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-7xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
+    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] w-full max-w-[1560px] flex-col px-2 pb-28 text-emerald-50 sm:px-4 2xl:max-w-[1720px] 2xl:px-7 lg:pb-10'
 
   const tableHeightClass = isFullscreen
     ? 'h-[calc(100svh-11rem)] min-h-[300px]'
