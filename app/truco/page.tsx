@@ -1,3 +1,19 @@
+import TrucoPlayer from '@/components/truco-visuals/truco-player'
+
+export const metadata = {
+  title: 'Truco - LuckyBingoBear',
+}
+
+export default function TrucoPage() {
+  return (
+    <main className="min-h-screen pt-28">
+      <div className="mx-auto max-w-6xl px-4">
+        <h1 className="mb-6 text-2xl font-bold text-white">Truco — Juego exclusivo</h1>
+        <TrucoPlayer />
+      </div>
+    </main>
+  )
+}
 'use client'
 
 import { useEffect, useState } from 'react'

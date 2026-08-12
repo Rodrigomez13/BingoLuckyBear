@@ -49,16 +49,14 @@ const activePathByGame: Record<PlatformGameId, HeaderActivePath> = {
   future_games: 'juegos',
 }
 
-const gameLinks: HeaderGameLink[] = [
-  { href: '/juegos', label: 'Todos los juegos', description: 'Lobby LBB', icon: Grid3X3, active: 'juegos' },
-  ...ACTIVE_PLATFORM_GAMES.map((game) => ({
-    href: game.href,
-    label: game.name,
-    description: game.subtitle,
-    icon: gameIcons[game.id],
-    active: activePathByGame[game.id],
-  })),
-]
+// Only expose the Truco game in this branch/UI
+const gameLinks: HeaderGameLink[] = ACTIVE_PLATFORM_GAMES.filter((g) => g.id === 'truco').map((game) => ({
+  href: game.href,
+  label: game.name,
+  description: game.subtitle,
+  icon: gameIcons[game.id],
+  active: activePathByGame[game.id],
+}))
 
 export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, activePath = 'home', compact = false }: SiteHeaderProps) {
   const gamesActive = gameLinks.some((link) => link.active === activePath)
@@ -89,6 +87,7 @@ export function SiteHeader({ kicker = 'Plataforma de juegos', jackpotPrize, acti
               </span>
             )}
             <HeaderLink href="/" active={activePath === 'home'} label="Inicio" className="hidden lg:inline-flex" />
+            <HeaderLink href="/truco" active={activePath === 'truco'} label="Truco" className="hidden lg:inline-flex" />
             <GamesDropdown active={gamesActive} />
             {authenticated ? (
               <HeaderLink href="/ganadores" active={activePath === 'ganadores'} label="Historial" className="hidden md:inline-flex" />

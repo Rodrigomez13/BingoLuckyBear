@@ -19,8 +19,7 @@ interface MenuLink {
 
 const PLATFORM_LINKS: MenuLink[] = [
   { href: '/', label: 'Inicio', icon: Home },
-  { href: '/juegos', label: 'Todos los juegos', icon: Grid3X3 },
-  { href: '/participar', label: 'Promociones', icon: Ticket },
+  { href: '/truco', label: 'Truco', icon: Swords },
   { href: CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones', label: 'Ayuda', icon: HelpCircle },
 ]
 
@@ -34,7 +33,8 @@ const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> =
   future_games: Sparkles,
 }
 
-const GAME_LINKS: MenuLink[] = ACTIVE_PLATFORM_GAMES.map((game) => ({
+// Only include Truco in mobile game links
+const GAME_LINKS: MenuLink[] = ACTIVE_PLATFORM_GAMES.filter((g) => g.id === 'truco').map((game) => ({
   href: game.href,
   label: game.name,
   icon: gameIcons[game.id],
@@ -140,12 +140,12 @@ export function MobileMenu() {
 
             <div className="border-t border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <Link
-                href="/juegos"
+                href="/truco"
                 onClick={() => setOpen(false)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-amber-300 px-4 py-3 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/20"
               >
-                <Grid3X3 className="h-4 w-4" />
-                Elegir juego
+                <Swords className="h-4 w-4" />
+                Jugar Truco
               </Link>
             </div>
           </div>
