@@ -19,3 +19,6 @@ prod-server*.log
 .DS_Store
 
 .vercel
+
+# ignore temporary imports/clone directories
+tmp/
