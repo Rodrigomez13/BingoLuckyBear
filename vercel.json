@@ -2,18 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm run build",
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": ".",
-      "routePrefix": "/",
-      "framework": "nextjs"
-    },
-    "paddle-ocr": {
-      "entrypoint": "services/paddle-ocr",
-      "routePrefix": "/paddle-ocr",
-      "framework": "fastapi"
-    }
-  },
+  "framework": "nextjs",
+  "devCommand": "pnpm run dev",
   "redirects": [
     {
       "source": "/:path*",
