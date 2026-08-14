@@ -26,7 +26,7 @@ export function ScoreBoard({
   const rival = perspective === 'player' ? 'opponent' : 'player'
 
   return (
-    <div className={`rounded-2xl border border-amber-300/20 bg-[#06140e]/80 ${compact ? 'p-2' : 'p-4'} shadow-xl shadow-black/30`}>
+    <div className={`rounded-2xl border border-accent/20 bg-card/90 ${compact ? 'p-2' : 'p-4'} shadow-xl shadow-black/30 backdrop-blur-xl`}>
       <div className={`${compact ? 'mb-1.5' : 'mb-3'} flex items-center justify-between`}>
         <h3 className={`${compact ? 'text-[10px]' : 'text-xs'} font-black uppercase tracking-[0.2em] text-amber-300`}>Marcador</h3>
         <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[10px] font-bold text-amber-200">

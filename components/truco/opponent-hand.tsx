@@ -11,7 +11,13 @@ export function OpponentHand({ count, name = 'Rival' }: { count: number; name?: 
           <p className="py-3 text-sm text-emerald-100/60 sm:py-4">Sin cartas</p>
         ) : (
           Array.from({ length: count }).map((_, i) => (
-            <PlayingCard key={i} faceDown size="md" eager className="-rotate-2 first:rotate-2" />
+            <PlayingCard
+              key={i}
+              faceDown
+              size="md"
+              eager
+              className={`truco-card-enter ${i === 0 ? 'rotate-[6deg] translate-y-1' : i === 2 ? 'rotate-[-6deg] translate-y-1' : ''}`}
+            />
           ))
         )}
       </div>

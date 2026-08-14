@@ -28,8 +28,8 @@ export function PlayingCard({
   className?: string
 }) {
   const Wrapper = selectable ? 'button' : 'div'
-  const interactive = selectable ? 'cursor-pointer active:-translate-y-2 active:scale-[1.02] sm:hover:-translate-y-3 sm:hover:scale-[1.02] sm:hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
-  const selectedClass = selected ? '-translate-y-3 scale-[1.02] drop-shadow-[0_0_20px_rgba(251,191,36,0.45)]' : ''
+  const interactive = selectable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:-translate-y-2 active:scale-[1.03] sm:hover:-translate-y-4 sm:hover:scale-[1.035] sm:hover:drop-shadow-[0_16px_28px_rgba(221,175,55,0.34)]' : ''
+  const selectedClass = selected ? '-translate-y-4 scale-[1.03] drop-shadow-[0_0_22px_rgba(221,175,55,0.5)]' : ''
   const backgroundPosition = faceDown || !card ? '0% 100%' : cardSpritePosition(card)
 
   return (

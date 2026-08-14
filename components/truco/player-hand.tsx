@@ -18,13 +18,14 @@ export function PlayerHand({
         {cards.length === 0 ? (
           <p className="py-4 text-sm text-emerald-100/60 sm:py-6">Sin cartas en la mano</p>
         ) : (
-          cards.map((card) => (
+          cards.map((card, index) => (
             <PlayingCard
               key={card.id}
               card={card}
               size="lg"
               selectable={canPlay}
               eager
+              className={`truco-card-enter ${index === 0 ? 'rotate-[-7deg] translate-y-2' : index === 2 ? 'rotate-[7deg] translate-y-2' : ''}`}
               onClick={() => canPlay && onPlay(card.id)}
             />
           ))

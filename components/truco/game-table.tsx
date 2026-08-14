@@ -413,12 +413,12 @@ export function GameTable({
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
 
   const shellClass = isFullscreen
-    ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
-    : 'relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-7xl flex-col px-2 pb-28 text-emerald-50 sm:px-4 lg:pb-10'
+    ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-background px-2 pb-20 pt-2 text-foreground sm:px-4 lg:pb-4'
+    : 'relative mx-auto flex min-h-[calc(100svh-9rem)] max-w-[1480px] flex-col pb-28 text-foreground lg:pb-6'
 
   const tableHeightClass = isFullscreen
     ? 'h-[calc(100svh-11rem)] min-h-[300px]'
-    : 'h-[calc(100svh-18rem)] min-h-[300px]'
+    : 'h-[clamp(32rem,67svh,47rem)] min-h-[32rem]'
 
   return (
     <div ref={gameShellRef} className={shellClass}>
@@ -510,15 +510,16 @@ export function GameTable({
         />
       </div>
 
-      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className={`relative overflow-hidden rounded-[1.5rem] border-2 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-2 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:border-4 sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
-          <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
+      <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className={`truco-table-felt relative overflow-hidden rounded-[2.25rem] border-[6px] border-[#3a250d] p-3 ring-1 ring-accent/55 sm:rounded-[4rem] sm:border-[10px] sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
+          <div className="pointer-events-none absolute inset-1 rounded-[1.8rem] border-2 border-accent/35 shadow-[inset_0_0_0_5px_rgba(0,0,0,.24)] sm:inset-2 sm:rounded-[3.25rem]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 size-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent/10 sm:size-48" />
+          <p className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-xl font-black uppercase tracking-[0.35em] text-accent/10 sm:text-3xl">LBB</p>
 
           <div className="relative flex h-full flex-col items-center justify-between gap-1 sm:gap-3">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
 
-            <div className="w-full rounded-xl border border-amber-300/10 bg-black/20 py-0.5 sm:rounded-2xl sm:py-1.5">
+            <div className="w-full max-w-xl rounded-3xl border border-accent/10 bg-black/10 py-0.5 backdrop-blur-[1px] sm:py-1.5">
               <PlayedCards played={state.played} currentTrick={state.currentTrick} perspective={actor} rivalLabel={rivalLabel} />
             </div>
 
@@ -526,7 +527,7 @@ export function GameTable({
           </div>
         </div>
 
-        <aside className="hidden flex-col gap-4 overflow-hidden lg:flex">
+        <aside className="hidden flex-col gap-3 overflow-hidden lg:flex">
           <ScoreBoard
             scores={state.scores}
             target={state.targetScore}
