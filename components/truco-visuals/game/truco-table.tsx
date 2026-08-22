@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import Image from "next/image"
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { envidoPoints } from '@/lib/truco/cards'
+import { computeEnvido } from '@/lib/truco/cards'
 import type { Difficulty } from '@/lib/truco/ai'
 import {
   canCallEnvido,
@@ -20,7 +20,7 @@ function BazaSlots({
   cards,
   align,
 }: {
-  cards: (import('@/lib/truco/cards').Card | undefined)[]
+  cards: (import('@/lib/truco/cards').TrucoCard | undefined)[]
   align: "top" | "bottom"
 }) {
   return (
@@ -55,7 +55,7 @@ export function TrucoTable({ difficulty }: { difficulty: Difficulty }) {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [state.log])
 
-  const humanEnvido = envidoPoints(initialHandOf(state, "human"))
+  const humanEnvido = computeEnvido(initialHandOf(state, "human"))
   const isHumanTurn = state.turn === "human"
   const botThinking =
     (state.phase === "playing" || state.phase === "await-response") && state.turn === "bot"
