@@ -1,13 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import { MobileBottomNav } from '@/components/mobile-bottom-nav'
 import { InstallPrompt } from '@/components/install-prompt'
+import './fonts.css'
 import './globals.css'
-
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
   title: 'Lucky Bingo Bear - Sorteos de Bingo',
@@ -48,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${dmSans.variable} ${spaceGrotesk.variable} bg-background`}>
+    <html lang="es" className="bg-background">
       <body className="font-sans antialiased pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
         <FloatingWhatsApp />
