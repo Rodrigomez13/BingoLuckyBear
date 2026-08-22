@@ -84,7 +84,6 @@ export function SiteHeader() {
                 variant="outline"
                 className="border-yellow-500/50 bg-transparent text-emerald-50 hover:bg-yellow-500/10 hover:text-yellow-400"
                 asChild
-                fullWidth
               >
                 <Link href="/auth/login">Iniciar sesión</Link>
               </Button>

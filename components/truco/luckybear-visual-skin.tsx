@@ -31,9 +31,9 @@ export function LuckyBearVisualSkin({ children }: { children: ReactNode }) {
           z-index: -3;
           pointer-events: none;
           background:
+            linear-gradient(145deg, rgba(3,19,12,.96), rgba(6,29,18,.9)),
+            url('/truco/preview-lobby-home.webp') center / cover,
             radial-gradient(55rem 34rem at 50% 42%, rgba(18,105,57,.25), transparent 72%),
-            radial-gradient(34rem 26rem at 12% 8%, rgba(223,178,63,.11), transparent 72%),
-            radial-gradient(30rem 22rem at 90% 88%, rgba(18,122,70,.12), transparent 72%),
             linear-gradient(145deg, #03130c 0%, #061d12 42%, #020b07 100%);
         }
 
