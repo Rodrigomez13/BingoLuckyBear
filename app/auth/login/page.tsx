@@ -13,15 +13,25 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BearLogo } from '@/components/bear-logo'
+import { SiteHeader } from '@/components/site-header'
+import { LBB_MASCOT } from '@/lib/brand/assets'
+import { normalizeInternalPath } from '@/lib/site-url'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [nextPath, setNextPath] = useState('/mi-cuenta/jugador')
   const router = useRouter()
+  const isAdminAccess = nextPath.startsWith('/admin')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setNextPath(normalizeInternalPath(params.get('next') ?? '/mi-cuenta/jugador'))
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +45,7 @@ export default function LoginPage() {
         password,
       })
       if (error) throw error
-      router.push('/admin')
+      router.push(nextPath)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Error al iniciar sesion')
     } finally {
@@ -44,24 +54,40 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_34rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] p-4 text-zinc-100">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute left-8 top-20 h-24 w-24 rounded-full border-8 border-amber-400/25" />
-        <div className="absolute bottom-24 right-12 flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20">
+    <div className="lbb-page-shell relative flex min-h-screen items-center justify-center p-4 pt-24 text-zinc-100">
+      <div className="lbb-ambient" />
+      <SiteHeader kicker={isAdminAccess ? 'Acceso privado' : 'Acceso jugador'} compact />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="lbb-float absolute left-8 top-28 h-24 w-24 rounded-full border-8 border-amber-400/25" />
+        <div className="lbb-float absolute bottom-24 right-12 flex h-16 w-16 items-center justify-center rounded-full bg-amber-300 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/20">
           21
         </div>
       </div>
       
-      <Card className="w-full max-w-md relative z-10 border-zinc-800 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/30 backdrop-blur-sm">
+      <Card className="lbb-premium-panel lbb-fade-up relative z-10 w-[min(100%,28rem)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[1.5rem] border-white/10 text-zinc-100">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(251,191,36,.18),transparent)]" />
+        <div className="relative mx-5 mt-5 overflow-hidden rounded-[1.25rem] border border-amber-300/20 bg-black/35">
+          <img
+            src={LBB_MASCOT.profile}
+            alt="Lucky Bingo Bear"
+            className="block h-36 w-full max-w-full object-cover object-[50%_18%] opacity-95"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/10 to-transparent" />
+          <div className="absolute bottom-3 left-3 rounded-full border border-amber-300/25 bg-black/45 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
+            Una cuenta, múltiples juegos
+          </div>
+        </div>
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <BearLogo size={80} />
+            <BearLogo size={92} className="drop-shadow-2xl" />
           </div>
-          <CardTitle className="text-2xl font-bold text-white">
-            Panel Administrador
+          <CardTitle className="font-mono text-3xl font-bold text-white">
+            {isAdminAccess ? 'Panel Administrador' : 'Acceso de jugador'}
           </CardTitle>
           <CardDescription className="text-zinc-400">
-            Ingresa tus credenciales para gestionar los sorteos
+            {isAdminAccess
+              ? 'Ingresá tus credenciales para gestionar la operación.'
+              : 'Ingresá para jugar con tu saldo general LBB.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,7 +101,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                className="rounded-xl border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             <div className="space-y-2">
@@ -86,7 +112,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
+                className="rounded-xl border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 focus:ring-amber-400"
               />
             </div>
             {error && (
@@ -94,7 +120,7 @@ export default function LoginPage() {
             )}
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg"
+              className="h-11 w-full rounded-full bg-amber-300 font-bold text-zinc-950 shadow-lg shadow-amber-500/20 hover:bg-amber-200"
               disabled={isLoading}
             >
               {isLoading ? 'Ingresando...' : 'Ingresar'}

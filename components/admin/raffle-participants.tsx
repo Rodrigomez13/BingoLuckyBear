@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CalendarDays, ClipboardCopy, DollarSign, ExternalLink, Gift, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users } from 'lucide-react'
+import { CalendarDays, CheckCircle2, ClipboardCopy, DollarSign, ExternalLink, Gift, Landmark, Plus, RefreshCw, Save, Search, Trash2, Trophy, Users, XCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,11 +20,14 @@ import {
   getCurrentPrizeTarget,
   getPrizeAmounts,
   getPrizeAwards,
+  getPrizeSchedule,
   getBingoColumnLabels,
   getBingoRows,
   isMarked,
   normalizePrizeAmounts,
 } from '@/lib/bingo'
+import { formatArgentinaDate, formatArgentinaDateTime, parseArgentinaDateTimeLocal, toArgentinaDateTimeLocal } from '@/lib/date'
+import { formatPhoneInput } from '@/lib/phone'
 
 interface Raffle {
   id: string
@@ -33,6 +36,7 @@ interface Raffle {
   prize?: string | null
   additional_prizes?: string[] | null
   amount?: string | null
+  card_price?: number | null
   bundle_offers?: string[] | null
   draw_date?: string | null
   is_active: boolean
@@ -41,6 +45,7 @@ interface Raffle {
   countdown_seconds?: number | null
   draw_started_at?: string | null
   drawn_numbers?: number[] | null
+  payment_account_id?: string | null
 }
 
 interface BingoCard {
@@ -54,21 +59,38 @@ interface BingoCard {
   payment_receipt_url: string
   payment_method?: string | null
   payment_reference?: string | null
+  payout_account_kind?: string | null
+  payout_account?: string | null
+  payout_holder_name?: string | null
+  payment_status?: 'pending' | 'approved' | 'rejected' | null
+  receipt_amount?: number | null
+  receipt_operation_number?: string | null
+  receipt_destination_account?: string | null
+  receipt_date?: string | null
+  receipt_raw_text?: string | null
+  receipt_parse_status?: 'not_parsed' | 'parsed' | 'failed' | 'not_configured' | null
+  receipt_parse_error?: string | null
+  receipt_validation_notes?: string | null
+  receipt_parsed_at?: string | null
+  winner_photo_url?: string | null
+  winner_testimonial?: string | null
   created_at: string
   bingo_numbers: number[][] | null
 }
 
 interface RaffleParticipantsProps {
   raffle: Raffle
+  paymentAccounts: PaymentAccount[]
   onRaffleUpdated: (raffle: Raffle) => void
 }
 
-function toDateTimeLocalValue(value: string | null) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return offsetDate.toISOString().slice(0, 16)
+interface PaymentAccount {
+  id: string
+  name: string
+  holder: string
+  alias?: string | null
+  cbu?: string | null
+  is_default: boolean
 }
 
 function MiniBingoCard({
@@ -150,21 +172,31 @@ function MiniBingoCard({
   )
 }
 
-export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipantsProps) {
+export function RaffleParticipants({ raffle, paymentAccounts, onRaffleUpdated }: RaffleParticipantsProps) {
   const [cards, setCards] = useState<BingoCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingDetails, setIsSavingDetails] = useState(false)
+  const [isSavingShowcase, setIsSavingShowcase] = useState(false)
   const [selectedCard, setSelectedCard] = useState<BingoCard | null>(null)
+  const [winnerPhotoFile, setWinnerPhotoFile] = useState<File | null>(null)
+  const [winnerTestimonial, setWinnerTestimonial] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [winnerOnly, setWinnerOnly] = useState(false)
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [participantsPage, setParticipantsPage] = useState(1)
   const [details, setDetails] = useState({
     prize: raffle.prize ?? '',
     additional_prizes: raffle.additional_prizes ?? [],
     amount: raffle.amount ?? '',
+    card_price: raffle.card_price?.toString() ?? '',
+    payment_account_id: raffle.payment_account_id ?? '',
     bundle_offers: raffle.bundle_offers ?? [],
-    draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+    draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
   })
-  const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '']
+  const detailPrizeValues = [details.prize, details.additional_prizes[0] ?? '', details.additional_prizes[1] ?? '', details.additional_prizes[2] ?? '']
+  const detailPrizeTargets = getPrizeSchedule(detailPrizeValues)
 
   const fetchCards = useCallback(async () => {
     setIsLoading(true)
@@ -194,10 +226,12 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       prize: raffle.prize ?? '',
       additional_prizes: raffle.additional_prizes ?? [],
       amount: raffle.amount ?? '',
+      card_price: raffle.card_price?.toString() ?? '',
+      payment_account_id: raffle.payment_account_id ?? '',
       bundle_offers: raffle.bundle_offers ?? [],
-      draw_date: toDateTimeLocalValue(raffle.draw_date ?? null),
+      draw_date: toArgentinaDateTimeLocal(raffle.draw_date ?? null),
     })
-  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.bundle_offers, raffle.draw_date])
+  }, [raffle.id, raffle.prize, raffle.additional_prizes, raffle.amount, raffle.card_price, raffle.payment_account_id, raffle.bundle_offers, raffle.draw_date])
 
   const drawnNumbers = useMemo(() => raffle.drawn_numbers ?? [], [raffle.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle.prize, raffle.additional_prizes), [raffle.prize, raffle.additional_prizes])
@@ -212,14 +246,60 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
 
     return cards.filter((card) => {
       const matchesWinner = !winnerOnly || awardedCardIds.has(card.id)
+      const matchesPaymentStatus = paymentStatusFilter === 'all' || (card.payment_status ?? 'pending') === paymentStatusFilter
+      const cardTime = new Date(card.created_at).getTime()
+      const fromTime = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null
+      const toTime = dateTo ? new Date(`${dateTo}T23:59:59`).getTime() : null
+      const matchesDateFrom = fromTime === null || cardTime >= fromTime
+      const matchesDateTo = toTime === null || cardTime <= toTime
       const matchesSearch =
         !normalizedSearch ||
-        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '']
+        [card.card_number, card.full_name, card.dni, card.phone, card.email, card.payment_reference ?? '', card.receipt_operation_number ?? '', card.receipt_destination_account ?? '', card.payout_account ?? '', card.payout_holder_name ?? '']
           .some((value) => value.toLowerCase().includes(normalizedSearch))
 
-      return matchesWinner && matchesSearch
+      return matchesWinner && matchesPaymentStatus && matchesDateFrom && matchesDateTo && matchesSearch
     })
-  }, [awardedCardIds, cards, searchTerm, winnerOnly])
+  }, [awardedCardIds, cards, dateFrom, dateTo, paymentStatusFilter, searchTerm, winnerOnly])
+  const paymentStatusCounts = useMemo(() => ({
+    pending: cards.filter((card) => (card.payment_status ?? 'pending') === 'pending').length,
+    approved: cards.filter((card) => card.payment_status === 'approved').length,
+    rejected: cards.filter((card) => card.payment_status === 'rejected').length,
+  }), [cards])
+  const participantsPerPage = 8
+  const participantsPageCount = Math.max(1, Math.ceil(filteredCards.length / participantsPerPage))
+  const visibleCards = filteredCards.slice((participantsPage - 1) * participantsPerPage, participantsPage * participantsPerPage)
+
+  useEffect(() => {
+    setParticipantsPage(1)
+  }, [dateFrom, dateTo, paymentStatusFilter, searchTerm, winnerOnly, raffle.id])
+
+  useEffect(() => {
+    if (participantsPage > participantsPageCount) {
+      setParticipantsPage(participantsPageCount)
+    }
+  }, [participantsPage, participantsPageCount])
+
+  useEffect(() => {
+    setWinnerPhotoFile(null)
+    setWinnerTestimonial(selectedCard?.winner_testimonial ?? '')
+  }, [selectedCard])
+
+  const statusLabel =
+    raffle.draw_status === 'finished'
+      ? 'Cerrado'
+      : raffle.draw_status === 'running'
+        ? 'En vivo'
+        : raffle.is_active
+          ? 'Disponible'
+          : 'Pausado'
+  const statusClass =
+    raffle.draw_status === 'finished'
+      ? 'bg-zinc-600 text-white hover:bg-zinc-600'
+      : raffle.draw_status === 'running'
+        ? 'bg-red-500 text-white hover:bg-red-500'
+        : raffle.is_active
+          ? 'bg-green-500 text-white hover:bg-green-500'
+          : 'bg-gray-400 text-zinc-950 hover:bg-gray-400'
 
   const updateDetailPrize = (index: number, value: string) => {
     setDetails((current) => {
@@ -227,7 +307,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
         return { ...current, prize: value }
       }
 
-      const additionalPrizes = [current.additional_prizes[0] ?? '', current.additional_prizes[1] ?? '']
+      const additionalPrizes = [current.additional_prizes[0] ?? '', current.additional_prizes[1] ?? '', current.additional_prizes[2] ?? '']
       additionalPrizes[index - 1] = value
       return { ...current, additional_prizes: additionalPrizes }
     })
@@ -243,17 +323,25 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
       const supabase = createClient()
       const sortedPrizes = normalizePrizeAmounts(detailPrizeValues)
 
-      if (sortedPrizes.length !== 3) {
-        alert('Carga los 3 montos de premios antes de guardar.')
+      if (sortedPrizes.length !== 4) {
+        alert('Carga los 4 montos de premios antes de guardar.')
+        return
+      }
+
+      const cardPrice = Math.trunc(Number(details.card_price))
+      if (!Number.isFinite(cardPrice) || cardPrice <= 0) {
+        alert('Carga un precio numérico por cartón mayor a cero.')
         return
       }
 
       const payload = {
         prize: sortedPrizes[0],
-        additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
-        amount: details.amount || null,
+        additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
+        amount: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(cardPrice),
+        card_price: cardPrice,
+        payment_account_id: details.payment_account_id || null,
         bundle_offers: details.bundle_offers.map((item) => item.trim()).filter(Boolean),
-        draw_date: details.draw_date || null,
+        draw_date: parseArgentinaDateTimeLocal(details.draw_date),
       }
       const { data, error } = await supabase
         .from('raffles')
@@ -274,17 +362,26 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
   const exportToCSV = () => {
     if (filteredCards.length === 0) return
 
-    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Metodo Pago', 'Operacion', 'Fecha Registro']
+    const headers = ['Numero Carton', 'Nombre Completo', 'DNI', 'Direccion', 'Telefono', 'Email', 'Estado Pago', 'Metodo Pago', 'Operacion Informada', 'Monto Detectado', 'Operacion Detectada', 'Destino Detectado', 'Parseo', 'Notas Validacion', 'Tipo Cuenta Premio', 'Cuenta Premio', 'Titular Cuenta Premio', 'Fecha Registro']
     const rows = filteredCards.map(card => [
       card.card_number,
       card.full_name,
       card.dni,
       card.address,
-      card.phone,
+      formatPhoneInput(card.phone),
       card.email,
+      getPaymentStatusLabel(card.payment_status),
       card.payment_method ?? '',
       card.payment_reference ?? '',
-      new Date(card.created_at).toLocaleString('es-ES')
+      card.receipt_amount ?? '',
+      card.receipt_operation_number ?? '',
+      card.receipt_destination_account ?? '',
+      getReceiptParseStatusLabel(card.receipt_parse_status),
+      card.receipt_validation_notes ?? card.receipt_parse_error ?? '',
+      card.payout_account_kind ?? '',
+      card.payout_account ?? '',
+      card.payout_holder_name ?? '',
+      formatArgentinaDateTime(card.created_at)
     ])
 
     const csvContent = [
@@ -299,8 +396,57 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
     link.click()
   }
 
+  const saveWinnerShowcase = async () => {
+    if (!selectedCard) return
+
+    setIsSavingShowcase(true)
+
+    try {
+      let winnerPhotoUrl = selectedCard.winner_photo_url ?? null
+
+      if (winnerPhotoFile) {
+        const uploadForm = new FormData()
+        uploadForm.append('file', winnerPhotoFile)
+        uploadForm.append('purpose', 'winner-photo')
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadForm,
+        })
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'No se pudo subir la foto')
+        }
+
+        winnerPhotoUrl = uploadData.pathname
+      }
+
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('bingo_cards')
+        .update({
+          winner_photo_url: winnerPhotoUrl,
+          winner_testimonial: winnerTestimonial.trim() || null,
+        })
+        .eq('id', selectedCard.id)
+        .select('*')
+        .single()
+
+      if (error) throw error
+
+      setCards((current) => current.map((card) => (card.id === selectedCard.id ? data as BingoCard : card)))
+      setSelectedCard(data as BingoCard)
+      setWinnerPhotoFile(null)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo guardar la referencia del ganador.')
+    } finally {
+      setIsSavingShowcase(false)
+    }
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 overflow-hidden">
       <DrawControls raffle={raffle} cards={cards} onRaffleUpdated={onRaffleUpdated} />
 
       <Card className="border-zinc-800 bg-zinc-950/80 text-zinc-100 shadow-xl shadow-black/20">
@@ -311,17 +457,20 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[180px_210px_auto] lg:items-end">
+          <div className="grid gap-3 lg:grid-cols-[180px_210px_minmax(220px,1fr)_auto] lg:items-end">
             <div className="space-y-2">
               <label htmlFor="raffle-amount" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
                 <DollarSign className="h-4 w-4 text-amber-200" />
-                Monto del carton
+                Precio por cartón
               </label>
               <Input
                 id="raffle-amount"
-                value={details.amount}
-                onChange={(event) => setDetails((current) => ({ ...current, amount: event.target.value }))}
-                placeholder="$2.000"
+                type="number"
+                min={1}
+                step={1}
+                value={details.card_price}
+                onChange={(event) => setDetails((current) => ({ ...current, card_price: event.target.value }))}
+                placeholder="2000"
                 className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
               />
             </div>
@@ -338,6 +487,25 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                 className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
               />
             </div>
+            <div className="space-y-2">
+              <label htmlFor="raffle-payment-account" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <Landmark className="h-4 w-4 text-amber-200" />
+                Cuenta de cobro
+              </label>
+              <select
+                id="raffle-payment-account"
+                value={details.payment_account_id}
+                onChange={(event) => setDetails((current) => ({ ...current, payment_account_id: event.target.value }))}
+                className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+              >
+                <option value="">Usar datos por defecto</option>
+                {paymentAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}{account.is_default ? ' - predeterminada' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Button
               type="button"
               onClick={saveRaffleDetails}
@@ -353,24 +521,29 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
             <div>
               <p className="font-semibold text-white">Premios por fila</p>
               <p className="text-sm text-zinc-400">
-                El sistema ordena estos tres montos de mayor a menor. El sorteo se juega en orden inverso: premio 3, premio 2 y premio 1.
+                Menor: fila 3. Intermedio: fila 2. Grande: fila 1. Mayor: carton completo.
               </p>
             </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              {detailPrizeValues.map((item, index) => (
+            <div className="mt-3 grid gap-3 md:grid-cols-4">
+              {detailPrizeValues.map((item, index) => {
+                const target = detailPrizeTargets[index]
+
+                return (
                 <div key={index} className="space-y-2">
                   <label htmlFor={`raffle-row-prize-${index}`} className="text-sm font-medium text-zinc-300">
-                    Monto de premio {index + 1}
+                    {target?.label ?? `Premio ${index + 1}`}
                   </label>
                     <Input
                       id={`raffle-row-prize-${index}`}
                       value={item}
                       onChange={(event) => updateDetailPrize(index, event.target.value)}
-                      placeholder={index === 0 ? '$100.000' : index === 1 ? '$50.000' : '$25.000'}
+                      placeholder={index === 0 ? '$25.000' : index === 1 ? '$50.000' : index === 2 ? '$100.000' : '$250.000'}
                       className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400"
                     />
+                    <p className="text-xs text-zinc-500">{target?.conditionLabel}</p>
                   </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -438,11 +611,8 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               {raffle.name}
-              <Badge 
-                variant={raffle.is_active ? 'default' : 'secondary'}
-                className={raffle.is_active ? 'bg-green-500' : 'bg-gray-400'}
-              >
-                {raffle.is_active ? 'Activo' : 'Inactivo'}
+              <Badge className={statusClass}>
+                {statusLabel}
               </Badge>
             </CardTitle>
             <p className="text-sm text-zinc-400 mt-1">
@@ -484,36 +654,38 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-5 grid gap-3 md:grid-cols-3">
+        <div className="mb-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <SummaryTile icon={<Users className="h-5 w-5" />} label="Participantes" value={String(cards.length)} />
-          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/3`} />
+          <SummaryTile icon={<Trophy className="h-5 w-5" />} label="Premios adjudicados" value={`${prizeAwards.length}/4`} />
           <SummaryTile icon={<Search className="h-5 w-5" />} label="Vista actual" value={String(filteredCards.length)} />
+          <SummaryTile icon={<RefreshCw className="h-5 w-5" />} label="Pendientes" value={String(paymentStatusCounts.pending)} />
+          <SummaryTile icon={<CheckCircle2 className="h-5 w-5" />} label="Aprobados" value={String(paymentStatusCounts.approved)} />
+          <SummaryTile icon={<XCircle className="h-5 w-5" />} label="Rechazados" value={String(paymentStatusCounts.rejected)} />
         </div>
 
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/25 bg-amber-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premio en juego</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premios pendientes</p>
             <p className="mt-2 text-xl font-bold text-white">
-              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Sorteo completo'}
+              {currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Sorteo completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
               {currentPrizeTarget
-                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
-                : 'Ya se adjudicaron los 3 premios.'}
+                ? 'Las bolillas pueden completar cualquier premio, sin orden fijo.'
+                : 'Ya se adjudicaron los 4 premios.'}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Orden del sorteo</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {[3, 2, 1].map((prizeNumber) => {
-                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
-                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+            <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Premios del sorteo</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+              {getPrizeSchedule(prizeAmounts).map((target) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
 
                 return (
-                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-black/20 p-3">
-                    <p className="font-bold text-white">Premio {prizeNumber}</p>
-                    <p className="text-sm text-amber-100">{amount}</p>
-                    <p className="mt-1 text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  <div key={target.prizeNumber} className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <p className="font-bold text-white">{target.label}</p>
+                    <p className="text-sm text-amber-100">{target.amount || 'A confirmar'}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : target.conditionLabel}</p>
                   </div>
                 )
               })}
@@ -521,16 +693,38 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col gap-3 md:flex-row">
+        <div className="mb-5 flex flex-col gap-3 xl:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar por carton, nombre, DNI, telefono, email u operacion"
+              placeholder="Buscar por carton, nombre, DNI, telefono, email, operacion o destino"
               className="border-zinc-700 bg-zinc-900 pl-9 text-white focus:border-amber-400"
             />
           </div>
+          <select
+            value={paymentStatusFilter}
+            onChange={(event) => setPaymentStatusFilter(event.target.value as typeof paymentStatusFilter)}
+            className="h-10 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-amber-400"
+          >
+            <option value="all">Todos los pagos</option>
+            <option value="pending">Pendientes</option>
+            <option value="approved">Aprobados</option>
+            <option value="rejected">Rechazados</option>
+          </select>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(event) => setDateFrom(event.target.value)}
+            className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 xl:w-40"
+          />
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(event) => setDateTo(event.target.value)}
+            className="border-zinc-700 bg-zinc-900 text-white focus:border-amber-400 xl:w-40"
+          />
           <Button
             type="button"
             variant={winnerOnly ? 'default' : 'outline'}
@@ -565,21 +759,22 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="hidden grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] gap-3 border-b border-zinc-800 px-3 pb-2 text-sm font-semibold text-amber-200 xl:grid">
+            <div className="hidden grid-cols-[1.05fr_1.25fr_0.7fr_0.9fr_0.75fr_0.8fr_140px] gap-3 border-b border-zinc-800 px-3 pb-2 text-sm font-semibold text-amber-200 xl:grid">
               <span>Carton</span>
               <span>Nombre</span>
               <span>DNI</span>
               <span>Telefono</span>
+              <span>Pago</span>
               <span>Fecha</span>
               <span>Acciones</span>
             </div>
-            {filteredCards.map((card) => {
+            {visibleCards.map((card) => {
               const cardAwards = prizeAwards.filter((award) => award.winners.some((winner) => winner.id === card.id))
 
               return (
                 <div
                   key={card.id}
-                  className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.75fr_1fr_0.65fr_140px] xl:items-center"
+                  className="grid gap-3 rounded-md border border-zinc-800 bg-white/[0.03] p-3 text-sm transition-colors hover:border-amber-400/40 hover:bg-white/[0.05] xl:grid-cols-[1.05fr_1.25fr_0.7fr_0.9fr_0.75fr_0.8fr_140px] xl:items-center"
                 >
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Carton</p>
@@ -591,7 +786,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                       <p className="truncate font-medium text-white">{card.full_name}</p>
                       {cardAwards.map((award) => (
                         <Badge key={award.prizeNumber} className="bg-emerald-500 text-white hover:bg-emerald-500">
-                          Premio {award.prizeNumber}
+                          {award.label}
                         </Badge>
                       ))}
                     </div>
@@ -602,11 +797,16 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Telefono</p>
-                    <p className="break-all">{card.phone}</p>
+                    <p className="break-all">{formatPhoneInput(card.phone)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 xl:hidden">Pago</p>
+                    <PaymentStatusBadge status={card.payment_status} />
+                    <p className="mt-1 text-xs text-zinc-500">{getReceiptParseStatusLabel(card.receipt_parse_status)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-zinc-500 xl:hidden">Fecha</p>
-                    <p className="text-zinc-400">{new Date(card.created_at).toLocaleDateString('es-ES')}</p>
+                    <p className="text-zinc-400">{formatArgentinaDate(card.created_at)}</p>
                   </div>
                   <Button
                     size="sm"
@@ -619,20 +819,29 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                 </div>
               )
             })}
+            {filteredCards.length > participantsPerPage && (
+              <PaginationControls
+                page={participantsPage}
+                pageCount={participantsPageCount}
+                total={filteredCards.length}
+                onPrevious={() => setParticipantsPage((page) => Math.max(1, page - 1))}
+                onNext={() => setParticipantsPage((page) => Math.min(participantsPageCount, page + 1))}
+              />
+            )}
           </div>
         )}
       </CardContent>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(96vw,1180px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] w-[min(99vw,1760px)] max-w-none grid-rows-none flex-col overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
           <DialogHeader className="border-b border-zinc-800 px-5 py-4">
             <DialogTitle className="text-white">
               Detalles del Participante
             </DialogTitle>
           </DialogHeader>
             {selectedCard && (
-            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,0.95fr)_minmax(260px,0.8fr)_minmax(220px,320px)] xl:overflow-hidden">
+            <div className="lbb-scrollbar grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,0.92fr)_minmax(280px,0.68fr)_minmax(240px,320px)] xl:overflow-hidden">
               <div className="min-w-0 space-y-4 border-b border-zinc-800 p-4 sm:p-5 xl:border-b-0">
                 <div className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 p-4">
                   <p className="text-sm font-medium text-zinc-950">Numero de Carton</p>
@@ -652,7 +861,7 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                   </div>
                   <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Telefono</p>
-                    <p className="truncate font-medium text-white">{selectedCard.phone}</p>
+                    <p className="truncate font-medium text-white">{formatPhoneInput(selectedCard.phone)}</p>
                   </div>
                   <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Email</p>
@@ -670,13 +879,69 @@ export function RaffleParticipants({ raffle, onRaffleUpdated }: RaffleParticipan
                     <p className="text-zinc-400">Operacion</p>
                     <p className="truncate font-medium text-white">{selectedCard.payment_reference ?? 'Sin registrar'}</p>
                   </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Tipo Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_account_kind ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_account ?? 'Sin registrar'}</p>
+                  </div>
+                  <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
+                    <p className="text-zinc-400">Titular Cuenta Premio</p>
+                    <p className="truncate font-medium text-white">{selectedCard.payout_holder_name ?? 'Sin registrar'}</p>
+                  </div>
                   <div className="col-span-2 min-w-0 rounded-md border border-zinc-800 bg-white/[0.03] p-2 sm:p-3">
                     <p className="text-zinc-400">Fecha de Registro</p>
                     <p className="truncate font-medium text-white">
-                      {new Date(selectedCard.created_at).toLocaleString('es-ES')}
+                      {formatArgentinaDateTime(selectedCard.created_at)}
                     </p>
                   </div>
                 </div>
+
+                <div className="rounded-md border border-sky-300/25 bg-sky-400/10 p-3">
+                  <p className="flex items-center gap-2 font-semibold text-white">
+                    Estado del pago
+                    <PaymentStatusBadge status={selectedCard.payment_status} />
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    La lectura OCR, aprobacion y rechazo de comprobantes se gestionan desde la seccion Pagos del panel.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <InfoChip label="OCR" value={getReceiptParseStatusLabel(selectedCard.receipt_parse_status)} />
+                    <InfoChip label="Monto detectado" value={selectedCard.receipt_amount ? String(selectedCard.receipt_amount) : 'Sin detectar'} />
+                    <InfoChip label="Operacion" value={selectedCard.receipt_operation_number ?? selectedCard.payment_reference ?? 'Sin registrar'} />
+                  </div>
+                </div>
+
+                {awardedCardIds.has(selectedCard.id) && (
+                  <div className="rounded-md border border-emerald-400/25 bg-emerald-500/10 p-3">
+                    <p className="font-semibold text-white">Referencia publica del ganador</p>
+                    <p className="mt-1 text-sm text-zinc-400">Estos datos pueden mostrarse en Ganadores para generar confianza.</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-[220px_minmax(0,1fr)]">
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(event) => setWinnerPhotoFile(event.target.files?.[0] ?? null)}
+                        className="border-zinc-700 bg-zinc-900 text-white file:mr-3 file:rounded file:border-0 file:bg-amber-400 file:px-3 file:py-1 file:text-sm file:font-bold file:text-zinc-950"
+                      />
+                      <Input
+                        value={winnerTestimonial}
+                        onChange={(event) => setWinnerTestimonial(event.target.value)}
+                        placeholder="Ej: Premio pagado y ganador verificado"
+                        className="border-zinc-700 bg-zinc-900 text-white"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={saveWinnerShowcase}
+                      disabled={isSavingShowcase}
+                      className="mt-3 bg-emerald-500 font-bold text-white hover:bg-emerald-600"
+                    >
+                      {isSavingShowcase ? 'Guardando' : 'Guardar referencia'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="border-b border-zinc-800 bg-black/20 p-4 sm:p-5 xl:border-b-0 xl:border-l">
@@ -737,6 +1002,82 @@ function SummaryTile({ icon, label, value }: { icon: ReactNode; label: string; v
         {label}
       </p>
       <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+    </div>
+  )
+}
+
+function getPaymentStatusLabel(status?: BingoCard['payment_status']) {
+  if (status === 'approved') return 'Aprobado'
+  if (status === 'rejected') return 'Rechazado'
+  return 'Pendiente'
+}
+
+function getReceiptParseStatusLabel(status?: BingoCard['receipt_parse_status']) {
+  if (status === 'parsed') return 'Leido'
+  if (status === 'failed') return 'Lectura fallida'
+  if (status === 'not_configured') return 'OCR no configurado'
+  return 'Sin leer'
+}
+
+function InfoChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-white/10 bg-black/20 p-2">
+      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-white">{value}</p>
+    </div>
+  )
+}
+
+function PaymentStatusBadge({ status }: { status?: BingoCard['payment_status'] }) {
+  if (status === 'approved') {
+    return <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">Aprobado</Badge>
+  }
+
+  if (status === 'rejected') {
+    return <Badge className="bg-red-500 text-white hover:bg-red-500">Rechazado</Badge>
+  }
+
+  return <Badge className="bg-amber-400 text-zinc-950 hover:bg-amber-400">Pendiente</Badge>
+}
+
+function PaginationControls({
+  page,
+  pageCount,
+  total,
+  onPrevious,
+  onNext,
+}: {
+  page: number
+  pageCount: number
+  total: number
+  onPrevious: () => void
+  onNext: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-black/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-zinc-400">
+        {total} resultado{total !== 1 ? 's' : ''} - pagina {page} de {pageCount}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrevious}
+          disabled={page <= 1}
+          className="border-zinc-600 bg-transparent text-zinc-200 hover:bg-white/10"
+        >
+          Anterior
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onNext}
+          disabled={page >= pageCount}
+          className="border-amber-400/40 bg-transparent text-amber-200 hover:bg-amber-400/10"
+        >
+          Siguiente
+        </Button>
+      </div>
     </div>
   )
 }

@@ -24,12 +24,13 @@ const LEGACY_BINGO_RANGES = [
 ] as const
 
 export type BingoCell = number | null | 'FREE'
-export type BingoPrizeNumber = 1 | 2 | 3
+export type BingoPrizeNumber = 1 | 2 | 3 | 4
 
 export interface BingoPrizeCard {
   id: string
   card_number: string
   full_name: string
+  phone?: string | null
   bingo_numbers?: number[][] | null
 }
 
@@ -37,6 +38,9 @@ export interface BingoPrizeTarget {
   prizeNumber: BingoPrizeNumber
   rowIndex: number
   amount: string
+  label: string
+  conditionLabel: string
+  kind: 'row' | 'full_card'
 }
 
 export interface BingoPrizeAward extends BingoPrizeTarget {
@@ -105,19 +109,11 @@ export function generateBingoNumbers(): number[][] {
   return card
 }
 
-function amountValue(value: string) {
-  const normalized = value.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')
-  const parsed = Number(normalized)
-
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export function normalizePrizeAmounts(prizes: string[]) {
   return prizes
     .map((item) => item.trim())
     .filter(Boolean)
-    .sort((a, b) => amountValue(b) - amountValue(a))
-    .slice(0, 3)
+    .slice(0, 4)
 }
 
 export function formatMoneyAmount(value?: string | null, fallback = 'A confirmar') {
@@ -145,15 +141,44 @@ export function getPrizeAmounts(prize?: string | null, additionalPrizes?: string
 export function getPrizeSchedule(prizeAmounts: string[]): BingoPrizeTarget[] {
   const amounts = normalizePrizeAmounts(prizeAmounts)
 
-  return [3, 2, 1].map((prizeNumber) => ({
-    prizeNumber: prizeNumber as BingoPrizeNumber,
-    rowIndex: prizeNumber - 1,
-    amount: amounts[prizeNumber - 1] ?? '',
-  }))
+  return [
+    {
+      prizeNumber: 1 as const,
+      rowIndex: 2,
+      amount: amounts[0] ?? '',
+      label: 'Premio menor',
+      conditionLabel: 'Fila 3',
+      kind: 'row' as const,
+    },
+    {
+      prizeNumber: 2 as const,
+      rowIndex: 1,
+      amount: amounts[1] ?? '',
+      label: 'Premio intermedio',
+      conditionLabel: 'Fila 2',
+      kind: 'row' as const,
+    },
+    {
+      prizeNumber: 3 as const,
+      rowIndex: 0,
+      amount: amounts[2] ?? '',
+      label: 'Premio grande',
+      conditionLabel: 'Fila 1',
+      kind: 'row' as const,
+    },
+    {
+      prizeNumber: 4 as const,
+      rowIndex: -1,
+      amount: amounts[3] ?? '',
+      label: 'Premio mayor',
+      conditionLabel: 'Carton completo',
+      kind: 'full_card' as const,
+    },
+  ]
 }
 
 export function getPrizeLabel(prizeNumber: BingoPrizeNumber) {
-  return `Premio ${prizeNumber}`
+  return getPrizeSchedule([]).find((target) => target.prizeNumber === prizeNumber)?.label ?? `Premio ${prizeNumber}`
 }
 
 export function getBingoRows(cardNumbers: number[][] | null | undefined): BingoCell[][] {
@@ -203,15 +228,34 @@ export function isBingoRowComplete(cardNumbers: number[][] | null | undefined, r
   return rowNumbers.length === 5 && rowNumbers.every((number) => drawnNumbers.includes(number))
 }
 
+export function getBingoCardNumbers(cardNumbers: number[][] | null | undefined) {
+  if (!isBingo90Card(cardNumbers)) {
+    return []
+  }
+
+  return cardNumbers.flat().filter((number) => number > 0)
+}
+
+export function isBingoCardComplete(cardNumbers: number[][] | null | undefined, drawnNumbers: number[]) {
+  const cardNumbersToMatch = getBingoCardNumbers(cardNumbers)
+
+  return cardNumbersToMatch.length === 15 && cardNumbersToMatch.every((number) => drawnNumbers.includes(number))
+}
+
+function isPrizeTargetComplete(cardNumbers: number[][] | null | undefined, target: BingoPrizeTarget, drawnNumbers: number[]) {
+  return target.kind === 'full_card'
+    ? isBingoCardComplete(cardNumbers, drawnNumbers)
+    : isBingoRowComplete(cardNumbers, target.rowIndex, drawnNumbers)
+}
+
 export function getPrizeAwards(cards: BingoPrizeCard[], drawnNumbers: number[], prizeAmounts: string[]) {
   const awards: BingoPrizeAward[] = []
   const schedule = getPrizeSchedule(prizeAmounts)
-  let searchStartIndex = 0
 
   for (const target of schedule) {
-    for (let drawIndex = searchStartIndex; drawIndex < drawnNumbers.length; drawIndex++) {
+    for (let drawIndex = 0; drawIndex < drawnNumbers.length; drawIndex++) {
       const currentDrawnNumbers = drawnNumbers.slice(0, drawIndex + 1)
-      const winners = cards.filter((card) => isBingoRowComplete(card.bingo_numbers, target.rowIndex, currentDrawnNumbers))
+      const winners = cards.filter((card) => isPrizeTargetComplete(card.bingo_numbers, target, currentDrawnNumbers))
 
       if (winners.length > 0) {
         awards.push({
@@ -220,7 +264,6 @@ export function getPrizeAwards(cards: BingoPrizeCard[], drawnNumbers: number[], 
           drawnNumber: drawnNumbers[drawIndex],
           winners,
         })
-        searchStartIndex = drawIndex
         break
       }
     }
@@ -245,9 +288,14 @@ export function getWinningLines(cardNumbers: number[][] | null | undefined, draw
       const numbers = row.filter((cell): cell is number => typeof cell === 'number')
 
       if (numbers.length === 5 && numbers.every((number) => drawnNumbers.includes(number))) {
-        lines.push(`${getPrizeLabel((index + 1) as BingoPrizeNumber)} - fila ${index + 1}`)
+        const prizeNumber = (3 - index) as BingoPrizeNumber
+        lines.push(`${getPrizeLabel(prizeNumber)} - fila ${index + 1}`)
       }
     })
+
+    if (isBingoCardComplete(cardNumbers, drawnNumbers)) {
+      lines.push(`${getPrizeLabel(4)} - carton completo`)
+    }
 
     return lines
   }

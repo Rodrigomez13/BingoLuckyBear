@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Pause, Play, RefreshCw, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
+import { AlertTriangle, MessageCircle, Pause, Play, RefreshCw, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,9 @@ import {
   getCurrentPrizeTarget,
   getPrizeAmounts,
   getPrizeAwards,
+  getPrizeSchedule,
 } from '@/lib/bingo'
+import { buildWinnerWhatsAppUrl } from '@/lib/whatsapp'
 
 interface Raffle {
   id: string
@@ -34,6 +36,7 @@ interface BingoCard {
   id: string
   card_number: string
   full_name: string
+  phone?: string | null
   bingo_numbers?: number[][] | null
 }
 
@@ -135,7 +138,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
       const updatedAwards = getPrizeAwards(cards, updatedDrawnNumbers, prizeAmounts)
       const updatedTarget = getCurrentPrizeTarget(cards, updatedDrawnNumbers, prizeAmounts)
 
-      if (updatedDrawnNumbers.length >= BINGO_TOTAL_BALLS || !updatedTarget || updatedAwards.length >= 3) {
+      if (updatedDrawnNumbers.length >= BINGO_TOTAL_BALLS || !updatedTarget || updatedAwards.length >= 4) {
         setIsAutoDrawEnabled(false)
         setAutoStatus('Automatico pausado: ya se adjudicaron los premios del sorteo.')
       }
@@ -155,7 +158,7 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
   ])
 
   return (
-    <Card className="border-amber-400/25 bg-zinc-950/85 text-white shadow-xl shadow-black/20">
+    <Card className="min-w-0 overflow-hidden border-amber-400/25 bg-zinc-950/85 text-white shadow-xl shadow-black/20">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-white">
@@ -166,12 +169,12 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             {raffle.draw_status === 'running'
               ? 'En vivo'
               : raffle.draw_status === 'finished'
-                ? 'Finalizado'
+                ? 'Cerrado'
                 : 'Sin iniciar'}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-5 p-4 sm:p-6">
+      <CardContent className="min-w-0 space-y-5 overflow-hidden p-4 sm:p-6">
         <div className="grid auto-rows-fr gap-3 md:grid-cols-3">
           <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-400">Cuenta</p>
@@ -193,28 +196,27 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
 
         <div className="grid gap-3 md:grid-cols-[1fr_1.35fr]">
           <div className="rounded-md border border-amber-400/30 bg-amber-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Se esta jugando</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Premios pendientes</p>
             <p className="mt-2 text-2xl font-bold text-white">
-              {currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
+              {currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
             </p>
             <p className="mt-1 text-sm text-zinc-300">
               {currentPrizeTarget
-                ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'monto a confirmar'}`
-                : 'Ya se adjudicaron los tres premios.'}
+                ? 'Cualquier premio se adjudica cuando el carton completa su condicion.'
+                : 'Ya se adjudicaron los cuatro premios.'}
             </p>
           </div>
           <div className="rounded-md border border-white/10 bg-black/20 p-4">
-            <p className="mb-3 text-sm font-semibold text-zinc-200">Orden inverso del sorteo</p>
-            <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-              {[3, 2, 1].map((prizeNumber) => {
-                const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
-                const amount = prizeAmounts[prizeNumber - 1] ?? 'A confirmar'
+            <p className="mb-3 text-sm font-semibold text-zinc-200">Premios del sorteo</p>
+            <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+              {getPrizeSchedule(prizeAmounts).map((target) => {
+                const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
 
                 return (
-                  <div key={prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
-                    <p className="font-semibold text-white">Premio {prizeNumber}</p>
-                    <p className="text-amber-100">{amount}</p>
-                    <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</p>
+                  <div key={target.prizeNumber} className="rounded-md border border-white/10 bg-white/[0.04] p-3 text-sm">
+                    <p className="font-semibold text-white">{target.label}</p>
+                    <p className="text-amber-100">{target.amount || 'A confirmar'}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{award ? `Salio con el ${award.drawnNumber}` : target.conditionLabel}</p>
                   </div>
                 )
               })}
@@ -314,9 +316,9 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
           </Button>
         </div>
 
-        <div className="rounded-md border border-white/10 bg-black/20 p-3">
+        <div className="min-w-0 overflow-hidden rounded-md border border-white/10 bg-black/20 p-3">
           <p className="mb-3 text-sm font-semibold text-zinc-200">Numeros que ya salieron</p>
-          <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1">
+          <div className="no-scrollbar flex w-full max-w-full snap-x gap-2 overflow-x-auto overscroll-x-contain pb-1">
             {drawnNumbers.length === 0 ? (
               <div className="w-full flex-none rounded-md border border-dashed border-white/10 p-4 text-center text-sm text-zinc-500">
                 Todavia no se canto ningun numero.
@@ -350,15 +352,38 @@ export function DrawControls({ raffle, cards, onRaffleUpdated }: DrawControlsPro
             <div className="space-y-2">
               {prizeAwards.map((award) => (
                 <div key={award.prizeNumber} className="rounded-md bg-black/20 p-3 text-sm">
-                  <p className="font-bold text-white">Premio {award.prizeNumber} - {award.amount || 'monto a confirmar'}</p>
+                  <p className="font-bold text-white">{award.label} - {award.amount || 'monto a confirmar'}</p>
                   <p className="text-emerald-100">
-                    Fila {award.rowIndex + 1}, adjudicado con el numero {award.drawnNumber}
+                    {award.conditionLabel}, adjudicado con el numero {award.drawnNumber}
                   </p>
                   <div className="mt-2 space-y-1">
                     {award.winners.map((winner) => (
-                      <p key={`${award.prizeNumber}-${winner.id}`} className="text-zinc-200">
-                        {winner.full_name} - {winner.card_number}
-                      </p>
+                      <div key={`${award.prizeNumber}-${winner.id}`} className="flex flex-col gap-2 rounded-md border border-white/10 bg-white/[0.03] p-2 text-zinc-200 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                          {winner.full_name} - {winner.card_number}
+                        </span>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="bg-[#25d366] font-bold text-zinc-950 hover:bg-[#30e17b]"
+                        >
+                          <a
+                            href={buildWinnerWhatsAppUrl({
+                              to: winner.phone ?? '',
+                              fullName: winner.full_name,
+                              raffleName: raffle.name,
+                              prizeLabel: award.label,
+                              amount: award.amount,
+                              cardNumber: winner.card_number,
+                            })}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            WhatsApp
+                          </a>
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>

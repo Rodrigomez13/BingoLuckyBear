@@ -1,25 +1,45 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { DM_Sans, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
+import { MobileBottomNav } from '@/components/mobile-bottom-nav'
+import { InstallPrompt } from '@/components/install-prompt'
 import './globals.css'
 
-const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
   title: 'Lucky Bingo Bear - Sorteos de Bingo',
   description: 'Participa en nuestros emocionantes sorteos de bingo. Solicita tu carton y gana increibles premios!',
   generator: 'v0.app',
+  applicationName: 'Lucky Bingo Bear',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Lucky Bingo Bear',
+  },
   icons: {
     icon: [
       {
-        url: '/logo-solo.svg',
+        url: '/truco/golden-bear-mascot.webp',
         type: 'image/svg+xml',
       },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: '/logo-solo.svg',
-    apple: '/logo-solo.svg',
+    shortcut: '/truco/golden-bear-mascot.webp',
+    apple: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0b0b10',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -28,10 +48,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} bg-background`}>
-      <body className="font-sans antialiased">
+    <html lang="es" className={`${dmSans.variable} ${spaceGrotesk.variable} bg-background`}>
+      <body className="font-sans antialiased pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
         <FloatingWhatsApp />
+        <MobileBottomNav />
+        <InstallPrompt />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

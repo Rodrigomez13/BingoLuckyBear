@@ -1,7 +1,16 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get('host')?.toLowerCase()
+
+  if (host === 'luckybingbear.com') {
+    const url = request.nextUrl.clone()
+    url.hostname = 'www.luckybingbear.com'
+    url.protocol = 'https'
+    return NextResponse.redirect(url, 308)
+  }
+
   return await updateSession(request)
 }
 

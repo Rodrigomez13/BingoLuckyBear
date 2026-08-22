@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts } from '@/lib/bingo'
+import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
+import { dispatchLbbSound } from '@/components/audio/lbb-sound-effects'
 
 interface Raffle {
   id: string
@@ -31,8 +33,8 @@ interface LiveDrawCardProps {
 
 interface ActiveRaffleResponse {
   raffle: Raffle | null
-  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string } | null
-  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number }[]
+  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string; label?: string; conditionLabel?: string } | null
+  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; label?: string; conditionLabel?: string }[]
 }
 
 function formatTime(seconds: number) {
@@ -48,6 +50,9 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
   const [remaining, setRemaining] = useState(() =>
     getCountdownRemainingSeconds(initialRaffle?.draw_started_at ?? null, initialRaffle?.countdown_seconds ?? null)
   )
+  const lastNumberRef = useRef<number | null>(null)
+  const awardCountRef = useRef(0)
+  const awardsInitializedRef = useRef(false)
 
   useEffect(() => {
     const loadRaffle = async () => {
@@ -77,12 +82,39 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
   const drawnNumbers = useMemo(() => raffle?.drawn_numbers ?? [], [raffle?.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle?.prize, raffle?.additional_prizes), [raffle?.prize, raffle?.additional_prizes])
-  const firstPrize = prizeAmounts[0]
+  const prizeSchedule = useMemo(() => getPrizeSchedule(prizeAmounts), [prizeAmounts])
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
   const cardAmount = formatMoneyAmount(raffle?.amount)
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
   const isRunning = raffle?.draw_status === 'running'
   const isFinished = raffle?.draw_status === 'finished'
   const hasStarted = isRunning || isFinished || drawnNumbers.length > 0
+
+  useEffect(() => {
+    if (!lastNumber) return
+    if (lastNumberRef.current === null) {
+      lastNumberRef.current = lastNumber
+      return
+    }
+    if (lastNumberRef.current === lastNumber) return
+
+    lastNumberRef.current = lastNumber
+    dispatchLbbSound('bingo.ball')
+    window.setTimeout(() => dispatchLbbSound(`bingo.number.${lastNumber}`), 420)
+  }, [lastNumber])
+
+  useEffect(() => {
+    if (!awardsInitializedRef.current) {
+      awardCountRef.current = prizeAwards.length
+      awardsInitializedRef.current = true
+      return
+    }
+    if (prizeAwards.length <= awardCountRef.current) return
+
+    const latestAward = prizeAwards[prizeAwards.length - 1]
+    awardCountRef.current = prizeAwards.length
+    dispatchLbbSound(latestAward?.label?.toLowerCase().includes('bingo') ? 'bingo.win' : 'bingo.line')
+  }, [prizeAwards])
 
   if (!raffle) {
     return null
@@ -90,7 +122,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
 
   return (
     <section className={compact ? '' : 'px-4 py-10 sm:px-6 lg:px-8'}>
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-xl shadow-black/30 backdrop-blur">
+      <div className="mx-auto max-w-[1280px] overflow-hidden rounded-lg border border-amber-400/30 bg-zinc-950/80 shadow-xl shadow-black/30 backdrop-blur">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -101,50 +133,50 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               {isFinished && (
                 <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">
                   <Crown className="mr-1 h-3.5 w-3.5" />
-                  Finalizado
+                  Cerrado
                 </Badge>
               )}
             </div>
 
-            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl md:text-3xl">
               {raffle.name}
             </h2>
-            {firstPrize && (
+            {jackpotPrize?.amount && (
               <div className="mt-4 rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-4 text-zinc-950 shadow-lg shadow-amber-950/20">
-                <p className="text-xs font-semibold uppercase tracking-wide">Primer premio</p>
-                <p className="mt-1 break-words text-3xl font-bold tracking-tight sm:text-4xl">
-                  {firstPrize}
+                <p className="text-xs font-semibold uppercase tracking-wide">Premio mayor</p>
+                <p className="mt-1 break-words text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+                  {jackpotPrize.amount}
                 </p>
               </div>
             )}
-            {raffle.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300">{raffle.description}</p>}
+            {raffle.description && <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-300 sm:text-sm">{raffle.description}</p>}
 
             <div className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-3">
               <LiveInfo
                 icon={<Gift className="h-4 w-4" />}
-                label="Ahora en juego"
-                value={currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
-                detail={currentPrizeTarget ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'A confirmar'}` : '3 premios adjudicados'}
+                label="Premios pendientes"
+                value={currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
+                detail={currentPrizeTarget ? 'Sin orden fijo' : '4 premios adjudicados'}
               />
               <LiveInfo icon={<WalletCards className="h-4 w-4" />} label="Monto" value={cardAmount} />
               <LiveInfo
                 icon={<CalendarDays className="h-4 w-4" />}
                 label="Fecha"
-                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+                value={formatArgentinaDateTime(raffle.draw_date)}
               />
             </div>
 
             {prizeAmounts.length > 0 && (
               <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">Todos los premios</p>
-                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-                  {[1, 2, 3].map((prizeNumber) => {
-                    const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                <div className="grid auto-rows-fr gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {prizeSchedule.map((target) => {
+                    const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
                     return (
-                    <span key={prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">
-                      <span className="block text-xs uppercase">Premio {prizeNumber}</span>
-                      {prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}
-                      <span className="block text-xs text-zinc-400">{award ? `Con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
+                    <span key={target.prizeNumber} className="min-w-0 rounded-md bg-amber-400/10 px-2 py-2 text-xs font-semibold text-amber-100 sm:px-3 sm:text-sm">
+                      <span className="block text-[10px] uppercase">{target.label}</span>
+                      {target.amount || 'A confirmar'}
+                      <span className="block text-[10px] text-zinc-400">{award ? `Con el ${award.drawnNumber}` : target.conditionLabel}</span>
                     </span>
                     )
                   })}
@@ -165,30 +197,30 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
               </div>
             )}
 
-            <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-3">
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+            <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4">
                 <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-amber-300">
                   <Clock className="h-4 w-4" />
                   Cuenta regresiva
                 </p>
-                <p className="mt-2 font-mono text-3xl font-bold text-white">{formatTime(remaining)}</p>
+                <p className="mt-2 font-mono text-2xl font-bold text-white sm:text-3xl">{formatTime(remaining)}</p>
               </div>
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Ultimo numero</p>
-                <p className="mt-2 text-3xl font-bold text-white">
+                <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">
                   {formatDrawnNumber(lastNumber)}
                 </p>
               </div>
-              <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
+              <div className="rounded-md border border-white/10 bg-white/[0.04] p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-300">Numeros cantados</p>
-                <p className="mt-2 text-3xl font-bold text-white">{drawnNumbers.length}<span className="text-base text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
+                <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{drawnNumbers.length}<span className="text-base text-zinc-400">/{BINGO_TOTAL_BALLS}</span></p>
               </div>
             </div>
           </div>
 
           <div className="min-w-0 border-t border-white/10 bg-black/30 p-4 sm:p-5 lg:border-l lg:border-t-0">
             <p className="mb-3 text-sm font-semibold text-zinc-200">Bolillero</p>
-            <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-2">
+            <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-2">
               {drawnNumbers.length === 0 ? (
                 <div className="w-full flex-none rounded-md border border-dashed border-white/15 p-5 text-center text-sm text-zinc-400">
                   Todavia no salieron numeros.
@@ -197,7 +229,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
                 [...drawnNumbers].reverse().map((number) => (
                   <div
                     key={number}
-                    className="flex h-12 w-12 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-14 sm:w-14"
+                    className="flex h-9 w-9 flex-none snap-start items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950 shadow-lg shadow-amber-500/20 sm:h-10 sm:w-10"
                   >
                     {number}
                   </div>
@@ -207,7 +239,7 @@ export function LiveDrawCard({ initialRaffle = null, compact = false }: LiveDraw
             <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-3 text-center font-semibold leading-tight text-zinc-950 hover:bg-amber-300">
               <Link href="/participar" className="flex items-center justify-center">
                 <Ticket className="mr-2 h-4 w-4" />
-                {firstPrize ? `Participar por ${firstPrize}` : 'Ver mi carton'}
+                {jackpotPrize?.amount ? `Participar por ${jackpotPrize.amount}` : 'Ver mi carton'}
               </Link>
             </Button>
           </div>

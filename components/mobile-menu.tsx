@@ -1,0 +1,182 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Menu, X, Gamepad2, Trophy, Ticket, Home, BarChart3, HelpCircle, Grid3X3, WalletCards, Sparkles, Swords } from 'lucide-react'
+import type { ComponentType } from 'react'
+import { BearLogo } from '@/components/bear-logo'
+import { CONTACT_LINKS } from '@/lib/contact'
+import { ACTIVE_PLATFORM_GAMES, type PlatformGameId } from '@/lib/games/registry'
+import { useAuthenticatedSession } from '@/hooks/use-authenticated-session'
+
+interface MenuLink {
+  href: string
+  label: string
+  icon: ComponentType<{ className?: string }>
+}
+
+const PLATFORM_LINKS: MenuLink[] = [
+  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/truco', label: 'Truco', icon: Swords },
+  { href: CONTACT_LINKS.whatsappUrl || '/terminos-y-condiciones', label: 'Ayuda', icon: HelpCircle },
+]
+
+const WALLET_LINK: MenuLink = { href: '/mi-cuenta/jugador', label: 'Wallet LBB', icon: WalletCards }
+
+const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
+  bingo: Ticket,
+  truco: Swords,
+  golden_bear: Trophy,
+  viborita: Gamepad2,
+  future_games: Sparkles,
+}
+
+// Only include Truco in mobile game links
+const GAME_LINKS: MenuLink[] = ACTIVE_PLATFORM_GAMES.filter((g) => g.id === 'truco').map((game) => ({
+  href: game.href,
+  label: game.name,
+  icon: gameIcons[game.id],
+}))
+
+const SECONDARY_LINKS: MenuLink[] = [
+  { href: '/ganadores', label: 'Historial y ganadores', icon: Trophy },
+  { href: '/truco/ranking', label: 'Ranking de Truco', icon: BarChart3 },
+  { href: '/#como-funciona', label: 'Cómo funciona', icon: HelpCircle },
+]
+
+export function MobileMenu() {
+  const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const pathname = usePathname() || '/'
+  const { authenticated } = useAuthenticatedSession()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (open) {
+      const original = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = original
+      }
+    }
+  }, [open])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Abrir menú"
+        aria-expanded={open}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-amber-300/30 hover:text-amber-100 md:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {open && mounted && createPortal(
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Menú de navegación">
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          />
+
+          <div className="absolute right-0 top-0 flex h-full w-[min(84vw,20rem)] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+              <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+                <BearLogo size={34} />
+                <span className="font-mono text-sm font-bold text-white">LuckyBingoBear</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Cerrar menú"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:text-amber-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Plataforma</p>
+              <ul className="flex flex-col gap-1">
+                {(authenticated ? [...PLATFORM_LINKS, WALLET_LINK] : PLATFORM_LINKS).map((link) => (
+                  <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
+                ))}
+              </ul>
+
+              <p className="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/70">Juegos</p>
+              <ul className="flex flex-col gap-1">
+                {GAME_LINKS.map((link) => (
+                  <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
+                ))}
+              </ul>
+
+              <p className="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Más</p>
+              <ul className="flex flex-col gap-1">
+                {SECONDARY_LINKS.map((link) => (
+                  <MenuRow key={link.href} link={link} active={isActive(pathname, link.href)} onClick={() => setOpen(false)} />
+                ))}
+              </ul>
+            </nav>
+
+            <div className="border-t border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <Link
+                href="/truco"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-amber-300 px-4 py-3 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/20"
+              >
+                <Swords className="h-4 w-4" />
+                Jugar Truco
+              </Link>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
+function isActive(pathname: string, href: string) {
+  if (href === '/') return pathname === '/'
+  if (href.startsWith('/#')) return false
+  return pathname.startsWith(href)
+}
+
+function MenuRow({ link, active, onClick }: { link: MenuLink; active: boolean; onClick: () => void }) {
+  const Icon = link.icon
+  return (
+    <li>
+      <Link
+        href={link.href}
+        onClick={onClick}
+        aria-current={active ? 'page' : undefined}
+        className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+          active ? 'bg-amber-300/10 text-amber-100 ring-1 ring-amber-300/25' : 'text-slate-300 hover:bg-white/5 hover:text-amber-100'
+        }`}
+      >
+        <Icon className="h-5 w-5 shrink-0" />
+        {link.label}
+      </Link>
+    </li>
+  )
+}

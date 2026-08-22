@@ -1,12 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { CalendarDays, Clock, Crown, Gift, Radio, Ticket, WalletCards } from 'lucide-react'
+import { CalendarDays, Clock, Crown, Gift, Ticket, Trophy, WalletCards } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts } from '@/lib/bingo'
+import { BINGO_TOTAL_BALLS, formatDrawnNumber, formatMoneyAmount, getCountdownRemainingSeconds, getPrizeAmounts, getPrizeSchedule } from '@/lib/bingo'
+import { formatArgentinaDateTime } from '@/lib/date'
+import { SiteHeader } from '@/components/site-header'
+import { PLACEHOLDER_RAFFLES } from '@/lib/bingo-placeholder-raffles'
+import { dispatchLbbSound } from '@/components/audio/lbb-sound-effects'
 
 interface Raffle {
   id: string
@@ -27,8 +31,8 @@ interface Raffle {
 interface ActiveRaffleResponse {
   raffle: Raffle | null
   participantCount?: number
-  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string } | null
-  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; winners: { id: string; full_name: string; card_number: string }[] }[]
+  currentPrizeTarget?: { prizeNumber: number; rowIndex: number; amount: string; label?: string; conditionLabel?: string } | null
+  prizeAwards?: { prizeNumber: number; amount: string; drawnNumber: number; label?: string; conditionLabel?: string; winners: { id: string; full_name: string; card_number: string }[] }[]
 }
 
 function formatTime(seconds: number) {
@@ -43,6 +47,9 @@ export function LiveWall() {
   const [currentPrizeTarget, setCurrentPrizeTarget] = useState<ActiveRaffleResponse['currentPrizeTarget']>(null)
   const [prizeAwards, setPrizeAwards] = useState<NonNullable<ActiveRaffleResponse['prizeAwards']>>([])
   const [remaining, setRemaining] = useState(0)
+  const lastNumberRef = useRef<number | null>(null)
+  const awardCountRef = useRef(0)
+  const awardsInitializedRef = useRef(false)
 
   useEffect(() => {
     const loadRaffle = async () => {
@@ -73,23 +80,78 @@ export function LiveWall() {
 
   const drawnNumbers = useMemo(() => raffle?.drawn_numbers ?? [], [raffle?.drawn_numbers])
   const prizeAmounts = useMemo(() => getPrizeAmounts(raffle?.prize, raffle?.additional_prizes), [raffle?.prize, raffle?.additional_prizes])
-  const firstPrize = prizeAmounts[0]
+  const prizeSchedule = useMemo(() => getPrizeSchedule(prizeAmounts), [prizeAmounts])
+  const jackpotPrize = prizeSchedule.find((target) => target.prizeNumber === 4)
   const cardAmount = formatMoneyAmount(raffle?.amount)
   const lastNumber = drawnNumbers[drawnNumbers.length - 1]
   const hasStarted = raffle?.draw_status === 'running' || raffle?.draw_status === 'finished' || drawnNumbers.length > 0
 
+  useEffect(() => {
+    if (!lastNumber) return
+    if (lastNumberRef.current === null) {
+      lastNumberRef.current = lastNumber
+      return
+    }
+    if (lastNumberRef.current === lastNumber) return
+
+    lastNumberRef.current = lastNumber
+    dispatchLbbSound('bingo.ball')
+    window.setTimeout(() => dispatchLbbSound(`bingo.number.${lastNumber}`), 420)
+  }, [lastNumber])
+
+  useEffect(() => {
+    if (!awardsInitializedRef.current) {
+      awardCountRef.current = prizeAwards.length
+      awardsInitializedRef.current = true
+      return
+    }
+    if (prizeAwards.length <= awardCountRef.current) return
+
+    const latestAward = prizeAwards[prizeAwards.length - 1]
+    awardCountRef.current = prizeAwards.length
+    dispatchLbbSound(latestAward?.label?.toLowerCase().includes('bingo') ? 'bingo.win' : 'bingo.line')
+  }, [prizeAwards])
+
   if (!raffle) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
-        <div className="max-w-xl text-center">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 py-10 text-zinc-100">
+        <div className="max-w-5xl text-center">
           <Image src="/logo-contexto.svg" alt="Lucky Bingo Bear" width={240} height={240} className="mx-auto h-auto w-48" />
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white">
-            No hay sorteo activo
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-amber-300">Cartelera visual</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+            Próximos sorteos Lucky Bear
           </h1>
-          <p className="mt-3 text-zinc-300">Cuando actives un sorteo desde el panel, esta pantalla se actualizara para proyectarlo.</p>
-          <Button asChild className="mt-6 bg-amber-400 font-bold text-zinc-950 hover:bg-amber-300">
-            <Link href="/">Volver al inicio</Link>
-          </Button>
+          <p className="mx-auto mt-3 max-w-2xl text-zinc-300">La pantalla permanece activa con sorteos de muestra. Cuando haya un sorteo oficial disponible, esta vista mostrará cuenta regresiva, bolillas y premios en juego.</p>
+          <div className="mt-7 grid gap-3 md:grid-cols-3">
+            {PLACEHOLDER_RAFFLES.map((item) => (
+              <div key={item.name} className="rounded-2xl border border-amber-300/20 bg-zinc-900/70 p-4 text-left">
+                <p className="text-[10px] font-black uppercase tracking-wide text-zinc-500">{item.status}</p>
+                <h2 className="mt-2 text-xl font-black text-white">{item.name}</h2>
+                <p className="mt-1 text-sm text-zinc-400">{item.dateLabel}</p>
+                <p className="mt-4 font-mono text-3xl font-black text-amber-300">{item.prize}</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {['$350.000', '$200.000', '$150.000', '$50.000'].map((prize) => (
+              <span
+                key={prize}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-sm font-bold text-amber-100"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                {prize}
+              </span>
+            ))}
+          </div>
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button asChild className="h-12 w-full rounded-full bg-amber-300 font-bold text-zinc-950 hover:bg-amber-200 sm:w-auto">
+              <Link href="/ganadores">Ver ultimos ganadores</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-12 w-full rounded-full border-white/20 bg-transparent font-bold text-white hover:border-amber-300 hover:text-amber-200 sm:w-auto">
+              <Link href="/">Volver al inicio</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -97,20 +159,8 @@ export function LiveWall() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(245,158,11,0.26),transparent_34rem),radial-gradient(circle_at_85%_20%,rgba(16,185,129,0.14),transparent_30rem),linear-gradient(135deg,#09090b,#18181b_45%,#111827)] text-zinc-100">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo-solo.svg" alt="Lucky Bingo Bear" width={58} height={58} className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-200">Lucky Bingo Bear</p>
-              <p className="text-xs text-zinc-400">Pantalla en vivo</p>
-            </div>
-          </Link>
-          <div className="rounded-md border border-red-400/35 bg-red-500/15 px-4 py-2 text-sm font-bold uppercase tracking-wide text-red-100">
-            <Radio className="mr-2 inline h-4 w-4" />
-            {hasStarted ? 'En vivo' : 'Sorteo activo'}
-          </div>
-        </header>
+      <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col px-4 py-6 sm:px-6 lg:px-8 2xl:px-10">
+        <SiteHeader activePath="participar" kicker={hasStarted ? 'Bingo en vivo' : 'Sorteo activo'} compact />
 
         <section className="grid flex-1 items-center gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0">
@@ -125,11 +175,11 @@ export function LiveWall() {
             <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
               {raffle.name}
             </h1>
-            {firstPrize && (
+            {jackpotPrize?.amount && (
               <div className="mt-6 max-w-2xl rounded-lg border border-amber-300/35 bg-gradient-to-r from-amber-300 to-orange-500 p-5 text-zinc-950 shadow-2xl shadow-amber-950/20">
-                <p className="text-sm font-semibold uppercase tracking-wide">Primer premio</p>
+                <p className="text-sm font-semibold uppercase tracking-wide">Premio mayor</p>
                 <p className="mt-1 break-words text-4xl font-bold tracking-tight sm:text-5xl">
-                  {firstPrize}
+                  {jackpotPrize.amount}
                 </p>
               </div>
             )}
@@ -138,16 +188,16 @@ export function LiveWall() {
             <div className="mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
               <Stat
                 icon={<Gift className="h-6 w-6" />}
-                label="Ahora en juego"
-                value={currentPrizeTarget ? `Premio ${currentPrizeTarget.prizeNumber}` : 'Completo'}
-                detail={currentPrizeTarget ? `Fila ${currentPrizeTarget.rowIndex + 1} - ${currentPrizeTarget.amount || 'A confirmar'}` : '3 premios adjudicados'}
+                label="Premios pendientes"
+                value={currentPrizeTarget ? `${4 - prizeAwards.length} por adjudicar` : 'Completo'}
+                detail={currentPrizeTarget ? 'Sin orden fijo' : '4 premios adjudicados'}
                 compact
               />
               <Stat icon={<WalletCards className="h-6 w-6" />} label="Monto" value={cardAmount} compact />
               <Stat
                 icon={<CalendarDays className="h-6 w-6" />}
                 label="Fecha"
-                value={raffle.draw_date ? new Date(raffle.draw_date).toLocaleString('es-ES') : 'A confirmar'}
+                value={formatArgentinaDateTime(raffle.draw_date)}
                 compact
               />
               <Stat icon={<Clock className="h-6 w-6" />} label="Cuenta regresiva" value={formatTime(remaining)} />
@@ -158,14 +208,14 @@ export function LiveWall() {
             {prizeAmounts.length > 0 && (
               <div className="mt-5 max-w-4xl rounded-lg border border-amber-400/20 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
               <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-200">Todos los premios</p>
-                <div className="grid auto-rows-fr gap-2 sm:grid-cols-3">
-                  {[1, 2, 3].map((prizeNumber) => {
-                    const award = prizeAwards.find((item) => item.prizeNumber === prizeNumber)
+                <div className="grid auto-rows-fr gap-2 sm:grid-cols-4">
+                  {prizeSchedule.map((target) => {
+                    const award = prizeAwards.find((item) => item.prizeNumber === target.prizeNumber)
                     return (
-                    <div key={prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
-                      <span className="block text-xs uppercase text-amber-200">Premio {prizeNumber}</span>
-                      <span>{prizeAmounts[prizeNumber - 1] ?? 'A confirmar'}</span>
-                      <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : `Fila ${prizeNumber}`}</span>
+                    <div key={target.prizeNumber} className="min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-semibold text-white">
+                      <span className="block text-xs uppercase text-amber-200">{target.label}</span>
+                      <span>{target.amount || 'A confirmar'}</span>
+                      <span className="mt-1 block text-xs text-zinc-400">{award ? `Adjudicado con el ${award.drawnNumber}` : target.conditionLabel}</span>
                     </div>
                     )
                   })}
@@ -188,41 +238,35 @@ export function LiveWall() {
           </div>
 
           <aside className="rounded-lg border border-amber-400/25 bg-zinc-950/75 p-5 shadow-2xl shadow-black/35 backdrop-blur">
-            <div className="rounded-md border border-white/10 bg-black/25 p-5 text-center">
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-200">Numero actual</p>
-              <div className="mt-5 flex aspect-square items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-orange-500 text-zinc-950 shadow-2xl shadow-amber-500/20">
-                <span className="text-6xl font-bold sm:text-7xl">{lastNumber ?? '--'}</span>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-200">Bolillero</p>
+                <h2 className="text-3xl font-bold tracking-tight text-white">{hasStarted ? 'Sorteo en curso' : 'Esperando inicio'}</h2>
+              </div>
+              <Crown className="h-10 w-10 text-amber-300" />
+            </div>
+
+            <div className="flex min-h-[16rem] items-center justify-center rounded-3xl border border-amber-300/15 bg-[radial-gradient(circle,#27272a_0%,#09090b_70%)] shadow-inner">
+              <div className="flex h-44 w-44 items-center justify-center rounded-full border-8 border-amber-300/25 bg-zinc-950 shadow-2xl shadow-amber-950/30">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-500 text-6xl font-black text-zinc-950 shadow-inner">
+                  {formatDrawnNumber(lastNumber)}
+                </div>
               </div>
             </div>
 
-            <div className="mt-5 rounded-md border border-white/10 bg-black/20 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-zinc-200">Bolillero</p>
-                <p className="text-sm text-amber-200">{drawnNumbers.length}/{BINGO_TOTAL_BALLS}</p>
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Números cantados</p>
+              <div className="grid max-h-[21rem] grid-cols-6 gap-2 overflow-y-auto pr-1">
+                {Array.from({ length: BINGO_TOTAL_BALLS }, (_, index) => index + 1).map((number) => {
+                  const drawn = drawnNumbers.includes(number)
+                  return (
+                    <span key={number} className={`flex aspect-square items-center justify-center rounded-full text-sm font-bold ${drawn ? 'bg-amber-300 text-zinc-950' : 'bg-white/5 text-zinc-600'}`}>
+                      {number}
+                    </span>
+                  )
+                })}
               </div>
-              <div className="grid max-h-64 grid-cols-5 gap-2 overflow-hidden sm:grid-cols-6 lg:grid-cols-5">
-                {[...drawnNumbers].reverse().slice(0, 30).map((number) => (
-                  <div key={number} className="flex aspect-square items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-zinc-950">
-                    {number}
-                  </div>
-                ))}
-              </div>
-              {drawnNumbers.length === 0 && <p className="py-8 text-center text-sm text-zinc-500">Todavia no salieron numeros.</p>}
             </div>
-
-            <Button asChild className="mt-5 h-auto w-full whitespace-normal bg-amber-400 py-5 text-center font-bold leading-tight text-zinc-950 hover:bg-amber-300">
-              <Link href="/participar" className="flex items-center justify-center">
-                <Ticket className="mr-2 h-5 w-5" />
-                {firstPrize ? `Participar por ${firstPrize}` : 'Participar desde el celular'}
-              </Link>
-            </Button>
-
-            {raffle.draw_status === 'finished' && (
-              <div className="mt-4 rounded-md border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-emerald-100">
-                <Crown className="mx-auto mb-2 h-6 w-6" />
-                Sorteo finalizado
-              </div>
-            )}
           </aside>
         </section>
       </div>
@@ -232,13 +276,11 @@ export function LiveWall() {
 
 function Stat({ icon, label, value, detail, compact = false }: { icon?: ReactNode; label: string; value: string; detail?: string; compact?: boolean }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-zinc-950/70 p-5 shadow-xl shadow-black/20">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-200">
-        {icon}
-        {label}
-      </p>
-      <p className={`mt-3 break-words font-bold text-white ${compact ? 'text-lg' : 'text-3xl'}`}>{value}</p>
-      {detail && <p className="mt-1 text-sm font-semibold text-zinc-300">{detail}</p>}
+    <div className={`rounded-lg border border-white/10 bg-zinc-950/70 p-4 shadow-xl shadow-black/20 ${compact ? '' : 'sm:col-span-1'}`}>
+      {icon && <div className="mb-2 text-amber-300">{icon}</div>}
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="mt-1 break-words text-3xl font-bold text-white">{value}</p>
+      {detail && <p className="mt-2 text-sm text-zinc-500">{detail}</p>}
     </div>
   )
 }

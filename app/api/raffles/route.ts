@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { normalizePrizeAmounts } from '@/lib/bingo'
+import { parseArgentinaDateTimeLocal } from '@/lib/date'
+import { formatCardPrice, normalizePositiveInteger } from '@/lib/economy/money'
 
 function cleanTextItems(items: unknown) {
   return Array.isArray(items) ? items.map((item) => String(item).trim()).filter(Boolean) : []
@@ -20,29 +22,50 @@ export async function POST(request: Request) {
     const body = await request.json()
     const name = String(body.name ?? '').trim()
     const description = String(body.description ?? '').trim()
-    const amount = String(body.amount ?? '').trim()
-    const drawDate = String(body.draw_date ?? '').trim()
+    const cardPrice = normalizePositiveInteger(body.card_price)
+    const drawDate = parseArgentinaDateTimeLocal(String(body.draw_date ?? '').trim())
+    const paymentAccountId = String(body.payment_account_id ?? '').trim()
     const sortedPrizes = normalizePrizeAmounts(cleanTextItems(body.prizes))
 
     if (!name) {
       return NextResponse.json({ error: 'Carga el nombre del sorteo' }, { status: 400 })
     }
 
-    if (sortedPrizes.length !== 3) {
-      return NextResponse.json({ error: 'Carga los 3 montos de premios' }, { status: 400 })
+    if (!cardPrice) {
+      return NextResponse.json({ error: 'Carga un precio numérico por cartón mayor a cero' }, { status: 400 })
+    }
+
+    if (sortedPrizes.length !== 4) {
+      return NextResponse.json({ error: 'Carga los 4 montos de premios' }, { status: 400 })
     }
 
     const supabase = await createServiceClient()
+
+    if (paymentAccountId) {
+      const { data: account, error: accountError } = await supabase
+        .from('payment_accounts')
+        .select('id')
+        .eq('id', paymentAccountId)
+        .eq('admin_id', user.id)
+        .single()
+
+      if (accountError || !account) {
+        return NextResponse.json({ error: 'Selecciona una cuenta de cobro valida' }, { status: 400 })
+      }
+    }
+
     const { data, error } = await supabase
       .from('raffles')
       .insert({
         name,
         description: description || null,
         prize: sortedPrizes[0],
-        additional_prizes: [sortedPrizes[1], sortedPrizes[2]],
-        amount: amount || null,
+        additional_prizes: [sortedPrizes[1], sortedPrizes[2], sortedPrizes[3]],
+        amount: formatCardPrice(cardPrice),
+        card_price: cardPrice,
         bundle_offers: cleanTextItems(body.bundle_offers),
-        draw_date: drawDate || null,
+        draw_date: drawDate,
+        payment_account_id: paymentAccountId || null,
         admin_id: user.id,
         is_active: false,
       })
@@ -50,7 +73,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      const isMissingColumn = /schema cache|column|additional_prizes|bundle_offers|draw_date|prize|amount/i.test(error.message)
+      const isMissingColumn = /schema cache|column|additional_prizes|bundle_offers|draw_date|prize|amount|card_price/i.test(error.message)
       return NextResponse.json(
         {
           error: isMissingColumn
