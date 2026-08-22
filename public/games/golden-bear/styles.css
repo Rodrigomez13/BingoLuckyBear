@@ -173,3 +173,191 @@ canvas{min-height:0}
   .bet-controls{flex:0 0 130px;width:130px}
   .action-group{flex:1 1 0;width:auto;min-width:0}
 }
+
+/* Golden Bear premium polish: richer motion, modular symbols and balanced cabinet states. */
+.machine:before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  inset:8px 8px auto;
+  height:9px;
+  border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(255,235,145,.82),rgba(69,242,167,.36),rgba(255,235,145,.82),transparent);
+  opacity:.62;
+  filter:blur(.3px);
+  animation:gbTopShimmer 3.2s ease-in-out infinite;
+}
+.machine.spinning:before{animation-duration:1.15s;opacity:.95}
+.screen{
+  background:radial-gradient(circle at 50% 24%,rgba(255,210,84,.13),transparent 36%),linear-gradient(180deg,#36040d,#160005 58%,#280407)!important;
+}
+.screen:before{
+  content:"";
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  inset:0;
+  opacity:.28;
+  background:
+    linear-gradient(90deg,rgba(255,222,105,.22) 0 1px,transparent 1px),
+    linear-gradient(180deg,rgba(255,222,105,.12) 0 1px,transparent 1px),
+    radial-gradient(circle at 50% 0,rgba(255,216,92,.28),transparent 42%);
+  background-size:calc(100% / 6) 100%,100% calc(100% / 7),100% 100%;
+  mix-blend-mode:screen;
+  animation:gbScreenBreath 4.8s ease-in-out infinite;
+}
+.machine.free-spin-mode .screen:before{
+  opacity:.42;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(69,242,167,.24),transparent 40%),
+    linear-gradient(90deg,rgba(69,242,167,.22) 0 1px,transparent 1px),
+    linear-gradient(180deg,rgba(255,222,105,.14) 0 1px,transparent 1px);
+  background-size:100% 100%,calc(100% / 6) 100%,100% calc(100% / 7);
+}
+.machine.spinning .screen{animation:gbReelGlow .62s ease-in-out infinite alternate}
+.cascade-callout{
+  top:10px!important;
+  min-width:260px;
+  padding:10px 18px!important;
+  border-radius:8px!important;
+  background:linear-gradient(180deg,rgba(95,28,7,.96),rgba(34,7,2,.96))!important;
+  border:3px solid #ffc94f!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 30px rgba(255,205,82,.32),inset 0 0 0 1px rgba(255,244,186,.18)!important;
+}
+.cascade-callout.show{animation:gbCalloutPop .42s cubic-bezier(.18,1.4,.32,1)}
+.multiplier.bump{animation:gbMultiplierBump .52s cubic-bezier(.18,1.4,.32,1)}
+.win-layer.show{animation:gbLayerBloom .32s ease-out both}
+.win-card{
+  position:relative;
+  overflow:visible;
+  border-radius:16px!important;
+  background:radial-gradient(circle at 50% 0,rgba(255,248,192,.38),transparent 46%),linear-gradient(180deg,rgba(112,33,7,.98),rgba(38,7,2,.98))!important;
+  box-shadow:0 0 90px rgba(255,190,47,.52),0 28px 70px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,238,162,.2)!important;
+}
+.win-layer.show .win-card{animation:gbWinCard .58s cubic-bezier(.18,1.35,.32,1) both}
+.win-card:after{
+  content:"";
+  position:absolute;
+  inset:-18px;
+  z-index:-1;
+  border-radius:22px;
+  background:conic-gradient(from 0deg,transparent,#ffd45d,transparent,#45f2a7,transparent);
+  filter:blur(18px);
+  opacity:.42;
+  animation:gbSpinAura 3s linear infinite;
+}
+.pay-transition{
+  border-radius:10px!important;
+  border:2px solid rgba(255,214,83,.64)!important;
+  background:linear-gradient(180deg,rgba(91,27,6,.98),rgba(18,5,1,.98))!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.5),0 0 24px rgba(255,202,72,.28)!important;
+}
+.pay-transition.show{animation:gbPayFloat .55s cubic-bezier(.18,1.2,.32,1)}
+.money-box,.bet-view,.pay-item,.history-row,.detail-row{position:relative;overflow:hidden}
+.money-box:after,.bet-view:after,.pay-item:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(120deg,transparent 0 35%,rgba(255,255,255,.08),transparent 65%);
+  transform:translateX(-130%);
+}
+.money-box:hover:after,.bet-view:hover:after,.pay-item:hover:after{animation:gbSweep .72s ease}
+.pay-grid{align-items:stretch}
+.pay-item{
+  grid-template-columns:54px minmax(0,1fr) auto!important;
+  min-height:74px!important;
+}
+.pay-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pay-symbol{
+  width:52px!important;
+  height:52px!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+}
+.pay-symbol-bear{font-size:0;background-image:url("assets/lbb-role-symbols.webp")!important;background-size:500% 300%!important;background-position:0 0!important}
+.pay-symbol-wild{font-size:0;background-image:url("assets/lbb-role-symbols.webp")!important;background-size:500% 300%!important;background-position:25% 50%!important}
+.pay-symbol-bonus{font-size:0;background-image:url("assets/lbb-role-variants.webp")!important;background-size:500% 300%!important;background-position:100% 0!important}
+.pay-symbol-fox{font-size:0;background-image:url("assets/golden-bear-symbols.webp")!important;background-size:300% 200%!important;background-position:50% 0!important}
+.pay-symbol-eagle{font-size:0;background-image:url("assets/golden-bear-symbols.webp")!important;background-size:300% 200%!important;background-position:100% 0!important}
+.pay-symbol-horse{font-size:0;background-image:url("assets/golden-bear-symbols.webp")!important;background-size:300% 200%!important;background-position:0 100%!important}
+.pay-symbol-honey{font-size:0;background-image:url("assets/golden-bear-symbols.webp")!important;background-size:300% 200%!important;background-position:50% 100%!important}
+.modal.show .modal-card{animation:gbModalIn .28s cubic-bezier(.18,1.1,.32,1) both}
+.bonus-card:before{
+  content:"";
+  position:absolute;
+  inset:-30px;
+  z-index:-1;
+  background:radial-gradient(circle,rgba(69,242,167,.26),transparent 56%),radial-gradient(circle at 50% 14%,rgba(255,216,92,.34),transparent 36%);
+  animation:gbBonusPulse 1.4s ease-in-out infinite alternate;
+}
+.loader{background:radial-gradient(circle at 50% 32%,rgba(255,218,94,.25),transparent 30%),radial-gradient(circle at 50% 68%,rgba(69,242,167,.14),transparent 34%),#020704!important}
+.loader-icon{animation:loaderBounce 1.1s ease-in-out infinite,gbMascotGlow 2s ease-in-out infinite!important}
+
+@keyframes gbTopShimmer{50%{opacity:.95;filter:blur(.1px) brightness(1.25)}}
+@keyframes gbScreenBreath{50%{opacity:.42;transform:scale(1.01)}}
+@keyframes gbReelGlow{to{filter:brightness(1.12) saturate(1.12)}}
+@keyframes gbCalloutPop{0%{opacity:0;transform:translate(-50%,-20px) scale(.82)}70%{transform:translate(-50%,0) scale(1.05)}100%{transform:translate(-50%,0) scale(1)}}
+@keyframes gbMultiplierBump{35%{transform:scale(1.34) rotate(-4deg);filter:brightness(1.35)}70%{transform:scale(.94) rotate(2deg)}}
+@keyframes gbLayerBloom{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.04)}}
+@keyframes gbWinCard{0%{opacity:0;transform:translateY(18px) scale(.72)}65%{transform:translateY(-6px) scale(1.06)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes gbSpinAura{to{transform:rotate(360deg)}}
+@keyframes gbPayFloat{0%{opacity:0;transform:translateY(16px) scale(.9)}70%{transform:translateY(-4px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes gbSweep{to{transform:translateX(130%)}}
+@keyframes gbModalIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes gbBonusPulse{to{opacity:.62;transform:scale(1.04)}}
+@keyframes gbMascotGlow{50%{filter:drop-shadow(0 15px 20px rgba(0,0,0,.5)) drop-shadow(0 0 22px rgba(255,210,75,.6))}}
+
+.game-logo{
+  width:min(100%,230px)!important;
+  aspect-ratio:1.8/1!important;
+  margin:0 auto!important;
+  background:url("assets/golden-bear-logo-polish.webp") center/contain no-repeat!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+  text-shadow:none!important;
+}
+.game-logo span{display:none!important}
+.spin-btn{
+  background:url("assets/golden-bear-spin-orb-polish.webp") center/contain no-repeat!important;
+  color:transparent!important;
+  text-shadow:none!important;
+  border-color:transparent!important;
+  box-shadow:0 0 28px rgba(255,183,31,.36),0 10px 20px rgba(0,0,0,.34)!important;
+}
+.spin-btn:after{display:none!important}
+#turboBtn,#autoBtn{
+  color:transparent!important;
+  text-shadow:none!important;
+  background-color:transparent!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+#turboBtn{background-image:url("assets/golden-bear-turbo-button-polish.webp")!important}
+#autoBtn{background-image:url("assets/golden-bear-auto-button-polish.webp")!important}
+#turboBtn:hover:not(:disabled),#autoBtn:hover:not(:disabled){filter:brightness(1.12) saturate(1.1)}
+.bet-view{background-image:linear-gradient(rgba(7,3,1,.62),rgba(7,3,1,.68)),url("assets/golden-bear-bet-panel-polish.webp")!important;background-position:center!important;background-repeat:no-repeat!important;background-size:100% 100%!important}
+.pay-symbol-bear,.pay-symbol-fox,.pay-symbol-eagle,.pay-symbol-horse,.pay-symbol-honey,.pay-symbol-a,.pay-symbol-k,.pay-symbol-q,.pay-symbol-j,.pay-symbol-wild,.pay-symbol-bonus{
+  font-size:0!important;
+  background-image:url("assets/golden-bear-polish-symbols.webp")!important;
+  background-size:400% 300%!important;
+  background-repeat:no-repeat!important;
+}
+.pay-symbol-bear{background-position:0 0!important}
+.pay-symbol-fox{background-position:33.333% 0!important}
+.pay-symbol-eagle{background-position:66.666% 0!important}
+.pay-symbol-horse{background-position:100% 0!important}
+.pay-symbol-honey{background-position:0 50%!important}
+.pay-symbol-a{background-position:33.333% 50%!important}
+.pay-symbol-k{background-position:66.666% 50%!important}
+.pay-symbol-q{background-position:100% 50%!important}
+.pay-symbol-j{background-position:0 100%!important}
+.pay-symbol-wild{background-position:33.333% 100%!important}
+.pay-symbol-bonus{background-position:66.666% 100%!important}

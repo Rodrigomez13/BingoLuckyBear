@@ -176,6 +176,8 @@ export function GameViewport({
   frameClassName = '',
   logicalWidth,
   logicalHeight,
+  mobileLogicalWidth,
+  mobileLogicalHeight,
 }: {
   children: ReactNode
   aspectRatio?: string
@@ -184,18 +186,23 @@ export function GameViewport({
   frameClassName?: string
   logicalWidth?: number
   logicalHeight?: number
+  mobileLogicalWidth?: number
+  mobileLogicalHeight?: number
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState(1)
+  const [usesMobileStage, setUsesMobileStage] = useState(false)
   const usesLogicalStage = Boolean(logicalWidth && logicalHeight)
+  const activeLogicalWidth = usesMobileStage && mobileLogicalWidth ? mobileLogicalWidth : logicalWidth
+  const activeLogicalHeight = usesMobileStage && mobileLogicalHeight ? mobileLogicalHeight : logicalHeight
 
   useLayoutEffect(() => {
-    if (!usesLogicalStage || !logicalWidth || !logicalHeight || !frameRef.current) return
+    if (!usesLogicalStage || !activeLogicalWidth || !activeLogicalHeight || !frameRef.current) return
 
     const updateScale = () => {
       const rect = frameRef.current?.getBoundingClientRect()
       if (!rect?.width || !rect.height) return
-      setScale(Math.min(rect.width / logicalWidth, rect.height / logicalHeight))
+      setScale(Math.min(rect.width / activeLogicalWidth, rect.height / activeLogicalHeight))
     }
 
     updateScale()
@@ -207,7 +214,23 @@ export function GameViewport({
       observer.disconnect()
       window.removeEventListener('orientationchange', updateScale)
     }
-  }, [logicalHeight, logicalWidth, usesLogicalStage])
+  }, [activeLogicalHeight, activeLogicalWidth, usesLogicalStage])
+
+  useEffect(() => {
+    if (!mobileLogicalWidth || !mobileLogicalHeight) return
+
+    const query = window.matchMedia('(max-width: 760px) and (orientation: portrait)')
+    const update = () => setUsesMobileStage(query.matches)
+
+    update()
+    query.addEventListener('change', update)
+    window.addEventListener('orientationchange', update)
+
+    return () => {
+      query.removeEventListener('change', update)
+      window.removeEventListener('orientationchange', update)
+    }
+  }, [mobileLogicalHeight, mobileLogicalWidth])
 
   const style: GameCssVars = {
     '--lbb-game-aspect': aspectRatio,
@@ -224,12 +247,12 @@ export function GameViewport({
         data-mobile-aspect={mobileAspectRatio ? 'true' : 'false'}
         className={`lbb-game-viewport-frame relative min-h-0 overflow-hidden rounded-xl border border-[color:rgba(221,175,55,.22)] bg-black/55 shadow-2xl shadow-black/45 backdrop-blur-xl ${frameClassName}`}
       >
-        {usesLogicalStage && logicalWidth && logicalHeight ? (
+        {usesLogicalStage && activeLogicalWidth && activeLogicalHeight ? (
           <div
             className="absolute left-1/2 top-1/2 overflow-hidden"
             style={{
-              width: logicalWidth,
-              height: logicalHeight,
+              width: activeLogicalWidth,
+              height: activeLogicalHeight,
               transform: `translate(-50%, -50%) scale(${scale})`,
               transformOrigin: 'center center',
             }}
