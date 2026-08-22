@@ -28,6 +28,7 @@ const WALLET_LINK: MenuLink = { href: '/mi-cuenta/jugador', label: 'Wallet LBB',
 const gameIcons: Record<PlatformGameId, ComponentType<{ className?: string }>> = {
   bingo: Ticket,
   truco: Swords,
+  truco_anotador: Swords,
   golden_bear: Trophy,
   viborita: Gamepad2,
   future_games: Sparkles,

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Juegos | LuckyBingoBear',
-  description: 'Lobby de juegos disponibles de LuckyBingoBear con Bingo, Truco, Golden Bear y Viborita.',
+  description: 'Lobby de juegos disponibles de LuckyBingoBear con Bingo, Truco, Anotador de Truco, Golden Bear y Viborita.',
 }
 
 async function hasVerifiedUser() {
@@ -50,17 +50,31 @@ export default async function GamesPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {ACTIVE_PLATFORM_GAMES.map((game, index) => (
-            <GameCatalogCard key={game.id} game={game} priority={index < 2} />
-          ))}
-        </section>
+        <section className="mt-6 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Wallet LBB</p>
+            <h2 className="mt-3 text-3xl font-black text-white">Usá el mismo saldo para todos los juegos</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              Cada juego disponible en el lobby puede consumir o acreditar saldo desde la misma billetera central de LuckyBingoBear.
+              Esto incluye desde cartones de bingo hasta slots y experiencias arcade.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/mi-cuenta/jugador" className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-zinc-950 transition hover:bg-amber-200">
+                <WalletCards className="h-4 w-4" />
+                Ver saldo y cargar créditos
+              </Link>
+              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-300">
+                {showWallet ? 'Saldo habilitado' : 'Iniciá sesión para ver tu wallet'}
+              </span>
+            </div>
+          </div>
 
-        <section className="mt-6 rounded-[1.5rem] border border-emerald-300/15 bg-emerald-300/5 p-5 text-sm leading-6 text-emerald-50/80">
-          <Grid3X3 className="mb-3 h-5 w-5 text-amber-300" />
-          {showWallet
-            ? 'Todos los juegos de créditos consumen y acreditan desde el mismo saldo LBB. El catálogo queda preparado para ranking, límites y misiones.'
-            : 'El catálogo muestra las experiencias disponibles de LuckyBingoBear, con navegación rápida y diseño preparado para jugar en cualquier pantalla.'}
+          <div className="rounded-[1.5rem] border border-emerald-300/15 bg-emerald-300/5 p-5 text-sm leading-6 text-emerald-50/80">
+            <Grid3X3 className="mb-3 h-5 w-5 text-amber-300" />
+            {showWallet
+              ? 'Todos los juegos de créditos consumen y acreditan desde el mismo saldo LBB. El catálogo queda preparado para ranking, límites y misiones.'
+              : 'El catálogo muestra las experiencias disponibles de LuckyBingoBear, con navegación rápida y diseño preparado para jugar en cualquier pantalla.'}
+          </div>
         </section>
       </div>
     </main>

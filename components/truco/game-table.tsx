@@ -12,6 +12,7 @@ import {
   createGame,
   getActivePlayer,
   goToMazo,
+  nextTrucoRaiseLabel,
   nextRound,
   playCard,
   respondEnvido,
@@ -411,6 +412,21 @@ export function GameTable({
 
   const statusLabel = getOnlineStatusLabel(onlineStatus, isOnline)
   const resultText = formatResultForPerspective(state.lastResult, mode, actor)
+  const actorSideScore = state.sideScores?.[actor] ?? 0
+  const rivalSideScore = state.sideScores?.[rival] ?? 0
+  const pendingSideTotal = actorSideScore + rivalSideScore
+  const handStake = [1, 2, 3, 4][state.trucoLevel] ?? 4
+  const wonByActor = state.trickWinners.filter((winner) => winner === actor).length
+  const wonByRival = state.trickWinners.filter((winner) => winner === rival).length
+  const tableCallLabel = state.trucoPending
+    ? `${nextTrucoRaiseLabel(state) ?? 'Truco'} pendiente`
+    : state.envidoPending
+      ? formatEnvidoSequence(state.envidoPending.calls)
+      : state.sideScoreLabels?.length
+        ? state.sideScoreLabels.join(' + ')
+        : state.envidoResolved
+          ? 'Tanto cerrado'
+          : 'Libres'
 
   const shellClass = isFullscreen
     ? 'fixed inset-0 z-[90] mx-0 flex h-[100svh] max-w-none flex-col overflow-hidden bg-[#020805] px-2 pb-20 pt-2 text-emerald-50 sm:px-4 lg:pb-4'
@@ -497,6 +513,19 @@ export function GameTable({
         florEnabled={activeRules.florEnabled}
       />
 
+      <HandDashboard
+        hand={state.hand}
+        actor={actor}
+        handStake={handStake}
+        wonByActor={wonByActor}
+        wonByRival={wonByRival}
+        rivalLabel={rivalLabel}
+        pendingSideTotal={pendingSideTotal}
+        actorSideScore={actorSideScore}
+        rivalSideScore={rivalSideScore}
+        callLabel={tableCallLabel}
+      />
+
       <div className="mb-2 lg:hidden">
         <ScoreBoard
           scores={state.scores}
@@ -511,9 +540,18 @@ export function GameTable({
       </div>
 
       <div className="grid flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className={`relative overflow-hidden rounded-[1.5rem] border-2 border-amber-900/40 bg-gradient-to-b from-[#0d3325] to-[#072018] p-2 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:border-4 sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
-          <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-300/15 sm:inset-3 sm:rounded-[1.5rem]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
+        <div className={`relative overflow-hidden rounded-[1.5rem] border-[6px] border-[#6d4128] bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,255,255,.10),transparent_42%),repeating-linear-gradient(36deg,rgba(255,255,255,.025)_0_1px,transparent_1px_6px),linear-gradient(180deg,#14543a,#062016)] p-2 shadow-[inset_0_0_0_2px_rgba(30,13,5,.85),inset_0_0_54px_rgba(0,0,0,.38),0_28px_70px_rgba(0,0,0,.55)] sm:rounded-[2.25rem] sm:border-[10px] sm:p-6 lg:h-auto lg:p-8 ${tableHeightClass}`}>
+          <div className="pointer-events-none absolute inset-2 rounded-[1.15rem] border border-amber-100/15 sm:inset-3 sm:rounded-[1.65rem]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:22px_22px]" />
+          <div className="pointer-events-none absolute -left-6 bottom-10 hidden h-14 w-14 rotate-[-12deg] place-items-center rounded-full border-2 border-dashed border-white/50 bg-amber-300/80 text-[10px] font-black text-amber-950 shadow-xl shadow-black/40 sm:grid">
+            LBB
+          </div>
+          <div className="pointer-events-none absolute -left-1 bottom-24 hidden h-12 w-12 rotate-[9deg] place-items-center rounded-full border-2 border-dashed border-white/50 bg-red-500/80 text-[10px] font-black text-white shadow-xl shadow-black/40 sm:grid">
+            30
+          </div>
+          <div className="pointer-events-none absolute right-5 top-5 hidden rounded-full border border-amber-200/20 bg-black/25 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/70 sm:block">
+            Mazo español · 40
+          </div>
 
           <div className="relative flex h-full flex-col items-center justify-between gap-1 sm:gap-3">
             <OpponentHand count={state.hands[rival].length} name={rivalLabel} />
@@ -631,6 +669,61 @@ function applyLocalAction(state: GameState, actor: Player, action: OnlineAction,
     default:
       return state
   }
+}
+
+function HandDashboard({
+  hand,
+  actor,
+  handStake,
+  wonByActor,
+  wonByRival,
+  rivalLabel,
+  pendingSideTotal,
+  actorSideScore,
+  rivalSideScore,
+  callLabel,
+}: {
+  hand: Player
+  actor: Player
+  handStake: number
+  wonByActor: number
+  wonByRival: number
+  rivalLabel: string
+  pendingSideTotal: number
+  actorSideScore: number
+  rivalSideScore: number
+  callLabel: string
+}) {
+  const pendingLabel = pendingSideTotal
+    ? `Vos +${actorSideScore} · ${rivalLabel} +${rivalSideScore}`
+    : 'Sin tantos pendientes'
+
+  return (
+    <section className="mb-2 grid gap-2 rounded-2xl border border-amber-300/15 bg-black/28 p-2 shadow-xl shadow-black/25 backdrop-blur-sm sm:grid-cols-4 sm:p-3">
+      <DashboardStat label="Mano" value={hand === actor ? 'Sos mano' : `${rivalLabel} mano`} />
+      <DashboardStat label="Vale" value={`${handStake} ${handStake === 1 ? 'tanto' : 'tantos'}`} />
+      <DashboardStat label="Bazas" value={`${wonByActor} · ${wonByRival}`} />
+      <DashboardStat label={pendingSideTotal ? 'Pendientes' : 'Cantos'} value={pendingSideTotal ? pendingLabel : callLabel} />
+    </section>
+  )
+}
+
+function DashboardStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-xl border border-emerald-100/10 bg-emerald-950/35 px-3 py-2 text-center">
+      <p className="truncate text-[9px] font-black uppercase tracking-[0.16em] text-emerald-100/45">{label}</p>
+      <p className="mt-1 truncate font-serif text-sm font-black text-amber-100 sm:text-base" title={value}>{value}</p>
+    </div>
+  )
+}
+
+function formatEnvidoSequence(calls: EnvidoCall[]) {
+  if (calls.length === 0) return 'Envido'
+  return calls.map((call) => {
+    if (call === 'real-envido') return 'Real envido'
+    if (call === 'falta-envido') return 'Falta envido'
+    return 'Envido'
+  }).join(' + ')
 }
 
 function getBotLogSound(text: string): string | null {

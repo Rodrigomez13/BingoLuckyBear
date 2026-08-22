@@ -8,6 +8,7 @@ const ctx = canvas.getContext('2d')
 const spriteAtlas = new Image(); spriteAtlas.src = 'assets/golden-bear-symbols.webp'; spriteAtlas.onload = () => draw()
 const lbbAtlas = new Image(); lbbAtlas.src = 'assets/lbb-role-symbols.webp'; lbbAtlas.onload = () => draw()
 const lbbVariantAtlas = new Image(); lbbVariantAtlas.src = 'assets/lbb-role-variants.webp'; lbbVariantAtlas.onload = () => draw()
+const polishAtlas = new Image(); polishAtlas.src = 'assets/golden-bear-polish-symbols.webp'; polishAtlas.onload = () => draw()
 const E = collectElements()
 const math = createGameMath(SYMBOLS, { reels: REELS, minRows: MIN_ROWS, maxRows: MAX_ROWS, payoutScale: PAYOUT_SCALE })
 
@@ -21,11 +22,15 @@ const bet = () => BETS[betIndex]
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds))
 const audioManager = new AudioManager({ enabled: soundOn, ...volumeSettings })
 const sfx = createSfx(audioManager, SOUND_FILES)
-const soundAsset = (name, volume = 1, rate = 1) => audioManager.play(name, volume, rate)
 const playNamedSound = (key, volume = 1, rate = 1) => audioManager.play(SOUND_FILES[key], volume, rate)
 const ui = createUi({ elements: E, money, playSound: playNamedSound, getTurbo: () => turbo })
 const { renderPayDetail, pushHistory, clearHistory } = ui
 const symbolByKey = new Map(SYMBOLS.map(symbol => [symbol.key, symbol]))
+const polishSymbolIndex = new Map([
+  ['BEAR', 0], ['FOX', 1], ['EAGLE', 2], ['HORSE', 3],
+  ['HONEY', 4], ['A', 5], ['K', 6], ['Q', 7],
+  ['J', 8], ['WILD', 9], ['BONUS', 10],
+])
 const weightedSymbol = (rng = Math.random) => math.weightedSymbol(rng)
 const makeGrid = rowCounts => math.makeGrid(Math.random, rowCounts)
 const activeWays = math.activeWays
@@ -35,77 +40,223 @@ function updateHud(){const b=money(balance),w=money(lastWin);E.balance.textConte
 function resize(){const r=canvas.getBoundingClientRect();cw=Math.max(320,Math.floor(r.width));ch=Math.max(330,Math.floor(r.height));canvas.width=Math.floor(cw*dpr);canvas.height=Math.floor(ch*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
 function roundRect(x,y,w,h,r){const a=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+a,y);ctx.arcTo(x+w,y,x+w,y+h,a);ctx.arcTo(x+w,y+h,x,y+h,a);ctx.arcTo(x,y+h,x,y,a);ctx.arcTo(x,y,x+w,y,a);ctx.closePath()}
 
-function drawBackground(){const g=ctx.createLinearGradient(0,0,0,ch);g.addColorStop(0,"#160006");g.addColorStop(.5,"#40040c");g.addColorStop(1,"#190006");ctx.fillStyle=g;ctx.fillRect(0,0,cw,ch);ctx.save();ctx.globalAlpha=.22;for(let x=0;x<cw;x+=34){const line=ctx.createLinearGradient(x,0,x+18,0);line.addColorStop(0,"rgba(0,0,0,.52)");line.addColorStop(.5,"rgba(255,123,82,.08)");line.addColorStop(1,"rgba(0,0,0,.32)");ctx.fillStyle=line;ctx.fillRect(x,0,34,ch)}ctx.restore()}
-function drawBear(x,y,w,h){const cx=x+w/2,cy=y+h*.47,r=Math.min(w,h)*.27;ctx.fillStyle="#a95d0b";for(const dx of[-.72,.72]){ctx.beginPath();ctx.arc(cx+dx*r,cy-r*.63,r*.43,0,Math.PI*2);ctx.fill()}const g=ctx.createRadialGradient(cx-r*.35,cy-r*.4,0,cx,cy,r*1.25);g.addColorStop(0,"#ffe27b");g.addColorStop(.58,"#e5a52b");g.addColorStop(1,"#8b4708");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.fillStyle="#643008";ctx.beginPath();ctx.ellipse(cx,cy+r*.22,r*.47,r*.36,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#160b03";for(const dx of[-.33,.33]){ctx.beginPath();ctx.arc(cx+dx*r,cy-r*.14,r*.085,0,Math.PI*2);ctx.fill()}ctx.beginPath();ctx.arc(cx,cy+r*.12,r*.12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff1a9";ctx.font=`1000 ${Math.max(8,w*.11)}px system-ui`;ctx.textAlign="center";ctx.fillText("LUCKY",cx,y+h*.88)}
-function drawHoney(x,y,w,h){const cx=x+w/2,cy=y+h*.53;ctx.fillStyle="#6c3505";roundRect(cx-w*.23,cy-h*.22,w*.46,h*.43,9);ctx.fill();const g=ctx.createLinearGradient(0,cy-h*.15,0,cy+h*.14);g.addColorStop(0,"#fff09a");g.addColorStop(.35,"#ffc329");g.addColorStop(1,"#dc7800");ctx.fillStyle=g;roundRect(cx-w*.18,cy-h*.15,w*.36,h*.3,7);ctx.fill();ctx.fillStyle="#fffbd2";ctx.beginPath();ctx.arc(cx-w*.06,cy-h*.06,w*.05,0,Math.PI*2);ctx.fill();ctx.fillStyle="#45f2a7";ctx.beginPath();ctx.ellipse(cx,cy-h*.26,w*.14,h*.07,0,Math.PI,0);ctx.fill()}
-function drawCrown(x,y,w,h){const cx=x+w/2,cy=y+h*.55;const g=ctx.createLinearGradient(cx,cy-h*.3,cx,cy+h*.18);g.addColorStop(0,"#fff2a0");g.addColorStop(.5,"#ffc52f");g.addColorStop(1,"#d56a00");ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(cx-w*.3,cy+h*.12);ctx.lineTo(cx-w*.24,cy-h*.2);ctx.lineTo(cx-w*.08,cy);ctx.lineTo(cx,cy-h*.31);ctx.lineTo(cx+w*.09,cy);ctx.lineTo(cx+w*.24,cy-h*.2);ctx.lineTo(cx+w*.3,cy+h*.12);ctx.closePath();ctx.fill();ctx.fillStyle="#ff5b65";roundRect(cx-w*.31,cy+h*.08,w*.62,h*.13,5);ctx.fill()}
-function drawClover(x,y,w,h){const cx=x+w/2,cy=y+h*.49,r=Math.min(w,h)*.105;ctx.fillStyle="#45f2a7";ctx.shadowColor="#45f2a7";ctx.shadowBlur=12;for(const [dx,dy] of[[0,-1],[-1,0],[1,0],[0,1]]){ctx.beginPath();ctx.arc(cx+dx*r,cy+dy*r,r,0,Math.PI*2);ctx.fill()}ctx.shadowBlur=0;ctx.strokeStyle="#45f2a7";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(cx,cy+r*1.4);ctx.quadraticCurveTo(cx+w*.1,cy+h*.17,cx+w*.03,cy+h*.3);ctx.stroke()}
-function drawCard(x,y,w,h){ctx.save();ctx.translate(x+w/2,y+h*.51);ctx.rotate(-.14);ctx.fillStyle="#fff7cf";roundRect(-w*.2,-h*.28,w*.4,h*.56,7);ctx.fill();ctx.strokeStyle="#ffc83f";ctx.lineWidth=3;ctx.stroke();ctx.fillStyle="#e73755";ctx.font=`1000 ${Math.max(22,w*.3)}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("A",0,0);ctx.restore()}
-function drawWord(t,x,y,w,h,fill,stroke){ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.font=`1000 ${Math.max(12,Math.min(24,w*.22))}px system-ui`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.strokeText(t,x+w/2,y+h/2);ctx.fillText(t,x+w/2,y+h/2)}
-function drawSymbol(s,x,y,w,h,isWin){ctx.save();ctx.shadowColor=isWin?"#fff36f":"rgba(0,0,0,.62)";ctx.shadowBlur=isWin?28:7;ctx.shadowOffsetY=isWin?0:4;roundRect(x,y,w,h,2);ctx.fillStyle="#27030a";ctx.fill();ctx.clip();const roleAtlas=s.lbbSet===1?lbbVariantAtlas:lbbAtlas;if(Array.isArray(s.lbb)&&roleAtlas.complete&&roleAtlas.naturalWidth){
-    const sw=roleAtlas.naturalWidth/5,sh=roleAtlas.naturalHeight/3,sx=s.lbb[0]*sw,sy=s.lbb[1]*sh;
-    const innerPad=Math.max(2,Math.min(w,h)*.025),scale=Math.min((w-innerPad*2)/sw,(h-innerPad*2)/sh),dw=sw*scale,dh=sh*scale,dx=x+(w-dw)/2,dy=y+(h-dh)/2;
-    const glow=ctx.createRadialGradient(x+w/2,y+h/2,0,x+w/2,y+h/2,Math.max(w,h)*.55);glow.addColorStop(0,isWin?"rgba(255,237,126,.34)":"rgba(255,184,35,.12)");glow.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=glow;ctx.fillRect(x,y,w,h);
-    ctx.drawImage(roleAtlas,sx,sy,sw,sh,dx,dy,dw,dh);ctx.shadowBlur=0;
-    if(s.wild)drawWord("WILD",x,y+h*.61,w,h*.35,"#fff2a0","#512000");
-    if(s.bonus)drawWord("BONUS",x,y+h*.61,w,h*.35,"#fff45c","#6c1500");
+function drawBackground(){
+  const t=performance.now()
+  const g=ctx.createLinearGradient(0,0,0,ch)
+  g.addColorStop(0,"#210009")
+  g.addColorStop(.46,"#43040d")
+  g.addColorStop(1,"#130005")
+  ctx.fillStyle=g
+  ctx.fillRect(0,0,cw,ch)
+
+  ctx.save()
+  ctx.globalAlpha=.36
+  for(let x=-40+(t*.018%34);x<cw+40;x+=34){
+    const line=ctx.createLinearGradient(x,0,x+18,0)
+    line.addColorStop(0,"rgba(0,0,0,.55)")
+    line.addColorStop(.48,"rgba(255,158,44,.1)")
+    line.addColorStop(1,"rgba(0,0,0,.32)")
+    ctx.fillStyle=line
+    ctx.fillRect(x,0,34,ch)
+  }
+  ctx.globalAlpha=.16
+  for(let y=0;y<ch;y+=Math.max(18,ch/22)){
+    ctx.fillStyle=y%2?"rgba(255,217,94,.12)":"rgba(0,0,0,.28)"
+    ctx.fillRect(0,y,cw,1.4)
+  }
+  ctx.globalAlpha=1
+  const glow=ctx.createRadialGradient(cw*.5,ch*.44,0,cw*.5,ch*.44,Math.max(cw,ch)*.7)
+  glow.addColorStop(0,"rgba(255,185,50,.18)")
+  glow.addColorStop(.48,"rgba(72,7,12,.08)")
+  glow.addColorStop(1,"rgba(0,0,0,.72)")
+  ctx.fillStyle=glow
+  ctx.fillRect(0,0,cw,ch)
+
+  const shineX=(Math.sin(t/2200)*.5+.5)*cw
+  const shine=ctx.createLinearGradient(shineX-cw*.24,0,shineX+cw*.12,ch)
+  shine.addColorStop(0,"rgba(255,255,255,0)")
+  shine.addColorStop(.5,"rgba(255,232,153,.09)")
+  shine.addColorStop(1,"rgba(255,255,255,0)")
+  ctx.fillStyle=shine
+  ctx.fillRect(0,0,cw,ch)
+  ctx.restore()
+}
+function drawWord(t,x,y,w,h,fill,stroke){
+  ctx.fillStyle=fill
+  ctx.strokeStyle=stroke
+  ctx.lineWidth=Math.max(2,Math.min(w,h)*.035)
+  ctx.font=`1000 ${Math.max(12,Math.min(28,w*.2,h*.28))}px Georgia`
+  ctx.textAlign="center"
+  ctx.textBaseline="middle"
+  ctx.strokeText(t,x+w/2,y+h/2)
+  ctx.fillText(t,x+w/2,y+h/2)
+}
+
+function drawImageContain(image,sx,sy,sw,sh,x,y,w,h){
+  const scale=Math.min(w/sw,h/sh)
+  const dw=sw*scale,dh=sh*scale
+  ctx.drawImage(image,sx,sy,sw,sh,x+(w-dw)/2,y+(h-dh)/2,dw,dh)
+}
+
+function drawSymbolFrame(x,y,w,h,isWin,color="#ffd45d"){
+  const r=Math.max(5,Math.min(w,h)*.08)
+  const bg=ctx.createLinearGradient(x,y,x+w,y+h)
+  bg.addColorStop(0,"#4b080d")
+  bg.addColorStop(.52,"#1a0105")
+  bg.addColorStop(1,"#3a0709")
+  ctx.fillStyle=bg
+  roundRect(x,y,w,h,r)
+  ctx.fill()
+
+  const inner=ctx.createRadialGradient(x+w*.5,y+h*.44,0,x+w*.5,y+h*.44,Math.max(w,h)*.58)
+  inner.addColorStop(0,isWin?`${color}44`:"rgba(255,177,44,.13)")
+  inner.addColorStop(.62,"rgba(52,2,7,.08)")
+  inner.addColorStop(1,"rgba(0,0,0,.36)")
+  ctx.fillStyle=inner
+  roundRect(x+2,y+2,w-4,h-4,Math.max(3,r-2))
+  ctx.fill()
+
+  const stroke=ctx.createLinearGradient(x,y,x+w,y+h)
+  stroke.addColorStop(0,isWin?"#fff4a8":"#9a4718")
+  stroke.addColorStop(.2,"#f4b735")
+  stroke.addColorStop(.54,"#5b1b07")
+  stroke.addColorStop(.82,"#d7781e")
+  stroke.addColorStop(1,isWin?"#fff1a2":"#6c250a")
+  ctx.lineWidth=isWin?3.8:2
+  ctx.strokeStyle=stroke
+  roundRect(x+1,y+1,w-2,h-2,r)
+  ctx.stroke()
+
+  const corner=Math.min(w,h)*.18
+  ctx.strokeStyle=isWin?"rgba(255,255,188,.96)":"rgba(255,205,82,.62)"
+  ctx.lineWidth=Math.max(1.5,Math.min(w,h)*.025)
+  for(const [sx2,sy2,dx,dy] of [[x+6,y+6,1,1],[x+w-6,y+6,-1,1],[x+6,y+h-6,1,-1],[x+w-6,y+h-6,-1,-1]]){
+    ctx.beginPath()
+    ctx.moveTo(sx2,sy2+dy*corner)
+    ctx.quadraticCurveTo(sx2,sy2,sx2+dx*corner,sy2)
+    ctx.stroke()
+  }
+}
+
+function drawSymbol(s,x,y,w,h,isWin){
+  ctx.save()
+  ctx.shadowColor=isWin?"#fff36f":"rgba(0,0,0,.62)"
+  ctx.shadowBlur=isWin?30:8
+  ctx.shadowOffsetY=isWin?0:5
+  drawSymbolFrame(x,y,w,h,isWin,s.color)
+  const r=Math.max(5,Math.min(w,h)*.08)
+  roundRect(x+2,y+2,w-4,h-4,Math.max(4,r-2))
+  ctx.clip()
+  const roleAtlas=s.lbbSet===1?lbbVariantAtlas:lbbAtlas
+  const artPad=Math.max(4,Math.min(w,h)*.06)
+  const polishIndex=polishSymbolIndex.get(s.key)
+  if(Number.isInteger(polishIndex)&&polishAtlas.complete&&polishAtlas.naturalWidth){
+    const cols=4,rows=3,sw=polishAtlas.naturalWidth/cols,sh=polishAtlas.naturalHeight/rows
+    const sx=(polishIndex%cols)*sw,sy=Math.floor(polishIndex/cols)*sh
+    drawImageContain(polishAtlas,sx,sy,sw,sh,x+artPad*.65,y+artPad*.65,w-artPad*1.3,h-artPad*1.3)
+    ctx.shadowBlur=0
+  }else if(Array.isArray(s.lbb)&&roleAtlas.complete&&roleAtlas.naturalWidth){
+    const sw=roleAtlas.naturalWidth/5,sh=roleAtlas.naturalHeight/3,sx=s.lbb[0]*sw,sy=s.lbb[1]*sh
+    const artX=x+artPad,artY=y+artPad,artW=w-artPad*2,artH=h-artPad*2
+    drawImageContain(roleAtlas,sx,sy,sw,sh,artX,artY,artW,artH)
+    ctx.shadowBlur=0
+    if(s.wild)drawWord("WILD",x,y+h*.61,w,h*.35,"#fff2a0","#512000")
+    if(s.bonus)drawWord("BONUS",x,y+h*.61,w,h*.35,"#fff45c","#6c1500")
   }else if(Number.isInteger(s.atlas)&&spriteAtlas.complete&&spriteAtlas.naturalWidth){
-    const sw=spriteAtlas.naturalWidth/3,sh=spriteAtlas.naturalHeight/2;
-    const sx=(s.atlas%3)*sw,sy=Math.floor(s.atlas/3)*sh;
-    // Cover centrado: llena cada celda Megaways sin deformar ni desplazar el recurso.
-    const ratio=w/h,sourceRatio=sw/sh;let cropX=sx,cropY=sy,cropW=sw,cropH=sh;
-    if(ratio>sourceRatio){cropH=sw/ratio;cropY=sy+(sh-cropH)/2}else{cropW=sh*ratio;cropX=sx+(sw-cropW)/2}
-    const glow=ctx.createRadialGradient(x+w/2,y+h/2,0,x+w/2,y+h/2,Math.max(w,h)*.58);
-    glow.addColorStop(0,isWin?"rgba(255,234,130,.26)":"rgba(255,210,70,.08)");
-    glow.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=glow;ctx.fillRect(x,y,w,h);
-    ctx.drawImage(spriteAtlas,cropX,cropY,cropW,cropH,x+1,y+1,w-2,h-2);
-    ctx.shadowBlur=0;
-    if(s.wild)drawWord("WILD",x,y+h*.62,w,h*.34,"#fff0a0","#512000");
-    if(s.bonus)drawWord("BONUS",x,y+h*.62,w,h*.34,"#fff45c","#6c1500");
-  }else if(s.type==="letter"){const bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,"#3c0710");bg.addColorStop(1,"#120106");ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);ctx.shadowColor=s.color;ctx.shadowBlur=isWin?22:7;ctx.fillStyle=s.color;ctx.strokeStyle="#ffc942";ctx.lineWidth=Math.max(2,w*.025);ctx.font=`1000 ${Math.max(30,Math.min(84,h*.72))}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.strokeText(s.label,x+w/2,y+h/2+2);ctx.fillText(s.label,x+w/2,y+h/2+2)}ctx.restore();ctx.save();roundRect(x,y,w,h,2);ctx.lineWidth=isWin?4:1.5;ctx.strokeStyle=isWin?"#fff37a":"rgba(204,91,34,.78)";ctx.stroke();ctx.restore()}
+    const sw=spriteAtlas.naturalWidth/3,sh=spriteAtlas.naturalHeight/2
+    const sx=(s.atlas%3)*sw,sy=Math.floor(s.atlas/3)*sh
+    drawImageContain(spriteAtlas,sx,sy,sw,sh,x+artPad*.55,y+artPad*.55,w-artPad*1.1,h-artPad*1.1)
+    ctx.shadowBlur=0
+    if(s.wild)drawWord("WILD",x,y+h*.62,w,h*.34,"#fff0a0","#512000")
+    if(s.bonus)drawWord("BONUS",x,y+h*.62,w,h*.34,"#fff45c","#6c1500")
+  }else if(s.type==="letter"){
+    const bg=ctx.createRadialGradient(x+w*.5,y+h*.38,0,x+w*.5,y+h*.48,Math.max(w,h)*.54)
+    bg.addColorStop(0,`${s.color}44`)
+    bg.addColorStop(.42,"rgba(65,4,11,.88)")
+    bg.addColorStop(1,"rgba(13,0,4,.96)")
+    ctx.fillStyle=bg
+    roundRect(x+artPad,y+artPad,w-artPad*2,h-artPad*2,Math.max(4,r-3))
+    ctx.fill()
+    ctx.shadowColor=s.color
+    ctx.shadowBlur=isWin?28:12
+    ctx.fillStyle=s.color
+    ctx.strokeStyle="#ffd86b"
+    ctx.lineWidth=Math.max(2.4,Math.min(w,h)*.035)
+    ctx.font=`1000 ${Math.max(34,Math.min(94,w*.62,h*.72))}px Georgia`
+    ctx.textAlign="center"
+    ctx.textBaseline="middle"
+    ctx.strokeText(s.label,x+w/2,y+h/2+2)
+    ctx.fillText(s.label,x+w/2,y+h/2+2)
+  }
+  ctx.restore()
+
+  ctx.save()
+  if(isWin){
+    ctx.globalAlpha=.9
+    ctx.strokeStyle="rgba(255,255,171,.8)"
+    ctx.lineWidth=2
+    roundRect(x-2,y-2,w+4,h+4,Math.max(6,r+2))
+    ctx.stroke()
+  }
+  ctx.restore()
+}
 function drawReels(){
   if(!display.length)return;
-  const pad=Math.max(3,Math.min(cw,ch)*.012),gap=Math.max(3,Math.min(cw,ch)*.008),t=performance.now();
-  const maxRows=MAX_ROWS;
-  const cell=Math.max(26,Math.min((cw-pad*2-gap*(REELS-1))/REELS,(ch-pad*2-gap*(maxRows-1))/maxRows));
-  const rw=cell,area=cell*maxRows+gap*(maxRows-1);
-  const gridW=rw*REELS+gap*(REELS-1);
-  const gridX=(cw-gridW)/2,gridY=(ch-area)/2;
-  const cascadeDuration=turbo?260:460;
+  const t=performance.now();
+  const pad=Math.max(10,Math.min(cw,ch)*.022),gap=Math.max(4,Math.min(cw,ch)*.01),columnGap=Math.max(5,Math.min(cw,ch)*.012);
+  const area=ch-pad*2,gridW=cw-pad*2,rw=(gridW-columnGap*(REELS-1))/REELS,gridX=pad,gridY=pad;
+  const cascadeDuration=turbo?260:500;
   const rawProgress=dropStart?Math.max(0,Math.min(1,(t-dropStart)/cascadeDuration)):1;
   const eased=1-Math.pow(1-rawProgress,3);
+
+  ctx.save();
+  const outer=ctx.createLinearGradient(gridX,gridY,gridX+gridW,gridY+area);
+  outer.addColorStop(0,"rgba(255,218,99,.54)");outer.addColorStop(.5,"rgba(91,28,5,.22)");outer.addColorStop(1,"rgba(255,202,72,.48)");
+  ctx.strokeStyle=outer;ctx.lineWidth=Math.max(3,Math.min(cw,ch)*.008);
+  roundRect(gridX-6,gridY-6,gridW+12,area+12,10);ctx.stroke();
+  ctx.restore();
+
   for(let r=0;r<REELS;r++){
-    const reel=display[r]||[],rows=Math.max(MIN_ROWS,reel.length),reelH=cell*rows+gap*(rows-1),x=gridX+r*(rw+gap),yOffset=gridY+(area-reelH)/2;
+    const reel=display[r]||[],rows=Math.max(MIN_ROWS,reel.length),x=gridX+r*(rw+columnGap),cellH=(area-gap*(rows-1))/rows,step=cellH+gap;
+    const tallReel=rows<=3;
+    const compactReel=rows>=6;
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(x,gridY,rw,area);
+    roundRect(x,gridY,rw,area,8);
     ctx.clip();
     const reelBg=ctx.createLinearGradient(x,gridY,x+rw,gridY+area);
-    reelBg.addColorStop(0,"rgba(47,4,10,.72)");
-    reelBg.addColorStop(.5,"rgba(20,0,4,.62)");
-    reelBg.addColorStop(1,"rgba(66,9,8,.7)");
+    reelBg.addColorStop(0,"rgba(79,7,13,.86)");
+    reelBg.addColorStop(.48,"rgba(21,0,5,.76)");
+    reelBg.addColorStop(1,"rgba(83,16,8,.84)");
     ctx.fillStyle=reelBg;
     ctx.fillRect(x,gridY,rw,area);
+    const reelShine=ctx.createLinearGradient(x,gridY,x+rw,gridY);
+    reelShine.addColorStop(0,"rgba(0,0,0,.45)");
+    reelShine.addColorStop(.5,"rgba(255,223,118,.09)");
+    reelShine.addColorStop(1,"rgba(0,0,0,.48)");
+    ctx.fillStyle=reelShine;ctx.fillRect(x,gridY,rw,area);
+    for(let y=gridY+cellH;y<gridY+area-1;y+=step){ctx.fillStyle="rgba(255,173,63,.16)";ctx.fillRect(x+3,y+gap*.44,rw-6,1.2)}
 
     reel.forEach((s,i)=>{
       const key=`${r}-${i}`;
       const isWinning=winning.has(key);
-      const pulse=isWinning?1+Math.sin(t/80)*.035:1;
+      const pulse=isWinning?1+Math.sin(t/70+r)*.04:1;
       const fall=(dropOffsets.get(key)||0)*(1-eased);
-      const bounce=dropOffsets.has(key)&&rawProgress<1?Math.sin(rawProgress*Math.PI)*Math.min(18,cell*.12):0;
-      const y=yOffset+i*(cell+gap)-(cell+gap)*fall+bounce;
-      const baseW=rw-4,baseH=cell-4;
-      const symbolW=baseW*pulse,symbolH=baseH*pulse;
-      const sx=x+2+(baseW-symbolW)/2,sy=y+2+(baseH-symbolH)/2;
-      drawSymbol(s,sx,sy,symbolW,symbolH,isWinning);
+      const bounce=dropOffsets.has(key)&&rawProgress<1?Math.sin(rawProgress*Math.PI)*Math.min(22,cellH*.16):0;
+      const y=gridY+i*step-step*fall+bounce;
+      const inset=Math.max(3,Math.min(rw,cellH)*.04),baseW=rw-inset*2,baseH=cellH-inset*2;
+      const maxVisualH=compactReel?baseH:Math.min(baseH,baseW*(tallReel?1.18:1.34));
+      const visualPadY=Math.max(0,(baseH-maxVisualH)/2);
+      const symbolW=baseW*pulse;
+      const boundedSymbolH=maxVisualH*pulse;
+      const sx=x+inset+(baseW-symbolW)/2,sy=y+inset+visualPadY+(maxVisualH-boundedSymbolH)/2;
+      drawSymbol(s,sx,sy,symbolW,boundedSymbolH,isWinning);
     });
     ctx.restore();
 
     const rail=ctx.createLinearGradient(x,gridY,x,gridY+area);
-    rail.addColorStop(0,"#8a3c14");rail.addColorStop(.5,"#3a1005");rail.addColorStop(1,"#a64a16");
-    ctx.fillStyle=rail;ctx.fillRect(x-1,gridY,2,area);ctx.fillRect(x+rw-1,gridY,2,area);
-    ctx.strokeStyle="#b45a24";ctx.lineWidth=1.2;ctx.strokeRect(x,gridY,rw,area);
+    rail.addColorStop(0,"#b96a22");rail.addColorStop(.18,"#ffd564");rail.addColorStop(.5,"#3a1005");rail.addColorStop(.82,"#c76f22");rail.addColorStop(1,"#5c1b04");
+    ctx.fillStyle=rail;ctx.fillRect(x-2,gridY,3,area);ctx.fillRect(x+rw-1,gridY,3,area);
+    ctx.strokeStyle="rgba(255,223,118,.4)";ctx.lineWidth=1.2;roundRect(x,gridY,rw,area,8);ctx.stroke();
   }
 }
 function drawParticles(){
@@ -131,6 +282,17 @@ function drawParticles(){
       ctx.stroke();
       ctx.fillStyle="rgba(255,255,255,.42)";
       ctx.beginPath();ctx.arc(-p.size*.35,-p.size*.22,p.size*.22,0,Math.PI*2);ctx.fill();
+    }else if(p.kind==="gem"){
+      ctx.beginPath();
+      ctx.moveTo(0,-p.size*1.45);
+      ctx.lineTo(p.size*1.15,-p.size*.2);
+      ctx.lineTo(0,p.size*1.45);
+      ctx.lineTo(-p.size*1.15,-p.size*.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,.52)";
+      ctx.lineWidth=1.2;
+      ctx.stroke();
     }else if(p.kind==="spark"){
       ctx.beginPath();
       for(let i=0;i<8;i++){
@@ -149,19 +311,20 @@ function draw(){ctx.clearRect(0,0,cw,ch);drawBackground();drawReels();drawPartic
 function loop(){draw();requestAnimationFrame(loop)}
 
 function burst(n=55, mode="mixed"){
-  const colors=["#ffd45d","#fff2ad","#45f2a7","#ff8121","#75e7ff"];
+  const colors=["#ffd45d","#fff2ad","#45f2a7","#ff8121","#75e7ff","#2378ff"];
   for(let i=0;i<n;i++){
     const coin=mode==="coins" || (mode==="mixed" && Math.random()<.34);
-    const spark=!coin && Math.random()<.55;
+    const gem=!coin && Math.random()<.18;
+    const spark=!coin && !gem && Math.random()<.55;
     particles.push({
       x:cw*(.2+Math.random()*.6),
       y:ch*(.22+Math.random()*.55),
       vx:(Math.random()-.5)*(coin?8:7),
       vy:-2-Math.random()*(coin?7:6),
-      gravity:coin?.075:.045,
-      size:coin?3+Math.random()*4:2+Math.random()*4,
+      gravity:coin?.075:gem?.035:.045,
+      size:coin?3+Math.random()*4:gem?4+Math.random()*4:2+Math.random()*4,
       color:coin?"#ffd45d":colors[Math.floor(Math.random()*colors.length)],
-      kind:coin?"coin":spark?"spark":"dot",
+      kind:coin?"coin":gem?"gem":spark?"spark":"dot",
       rot:Math.random()*Math.PI,
       spin:(Math.random()-.5)*7,
       start:performance.now(),
@@ -423,9 +586,10 @@ function buildPaytable() {
   for (const symbol of SYMBOLS) {
     const item = document.createElement('div')
     item.className = 'pay-item'
+    item.dataset.symbol = symbol.key.toLowerCase()
     const icon = symbol.type === 'bear' ? '🐻' : symbol.type === 'fox' ? '🦊' : symbol.type === 'eagle' ? '🦅' : symbol.type === 'horse' ? '🐴' : symbol.type === 'honey' ? '🍯' : symbol.wild ? 'W' : symbol.bonus ? 'B' : symbol.label
     const value = symbol.wild ? 'Sustituye' : symbol.bonus ? '3 = 8 FS' : `6 = ×${symbol.pay[6]}`
-    item.innerHTML = `<div class="pay-symbol">${icon}</div><span>${symbol.name}</span><strong>${value}</strong>`
+    item.innerHTML = `<div class="pay-symbol pay-symbol-${symbol.key.toLowerCase()}">${icon}</div><span>${symbol.name}</span><strong>${value}</strong>`
     E.payGrid.appendChild(item)
   }
 }

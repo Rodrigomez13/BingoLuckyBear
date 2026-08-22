@@ -1,6 +1,6 @@
 'use client'
 
-import { type TrucoCard, CARD_SPRITE_COLUMNS, CARD_SPRITE_ROWS, CARD_SPRITE_SRC, cardSpritePosition } from '@/lib/truco/cards'
+import { type TrucoCard, CARD_BACK_SRC, CARD_SPRITE_COLUMNS, CARD_SPRITE_ROWS, CARD_SPRITE_SRC, cardSpritePosition } from '@/lib/truco/cards'
 
 const SIZE = {
   sm: 'w-12 text-sm sm:w-16 lg:w-[4.5rem]',
@@ -30,7 +30,10 @@ export function PlayingCard({
   const Wrapper = selectable ? 'button' : 'div'
   const interactive = selectable ? 'cursor-pointer active:-translate-y-2 active:scale-[1.02] sm:hover:-translate-y-3 sm:hover:scale-[1.02] sm:hover:drop-shadow-[0_12px_24px_rgba(251,191,36,0.28)]' : ''
   const selectedClass = selected ? '-translate-y-3 scale-[1.02] drop-shadow-[0_0_20px_rgba(251,191,36,0.45)]' : ''
-  const backgroundPosition = faceDown || !card ? '0% 100%' : cardSpritePosition(card)
+  const showBack = faceDown || !card
+  const backgroundImage = showBack ? CARD_BACK_SRC : CARD_SPRITE_SRC
+  const backgroundSize = showBack ? '100% 100%' : `${CARD_SPRITE_COLUMNS * 100}% ${CARD_SPRITE_ROWS * 100}%`
+  const backgroundPosition = showBack ? 'center' : cardSpritePosition(card)
 
   return (
     <Wrapper
@@ -44,8 +47,8 @@ export function PlayingCard({
       <span
         className="block h-full w-full bg-no-repeat drop-shadow-xl"
         style={{
-          backgroundImage: `url(${CARD_SPRITE_SRC})`,
-          backgroundSize: `${CARD_SPRITE_COLUMNS * 100}% ${CARD_SPRITE_ROWS * 100}%`,
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize,
           backgroundPosition,
         }}
       />

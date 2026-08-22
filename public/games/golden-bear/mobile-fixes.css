@@ -237,3 +237,55 @@ html.embedded .topbar{min-height:46px;height:46px;border-radius:0 0 12px 12px}
   .utility-btn,.bonus-buy-btn{height:46px!important}
   .spin-btn{height:48px!important;width:100%!important}
 }
+
+.game-logo{
+  width:min(100%,230px)!important;
+  aspect-ratio:1.8/1!important;
+  margin:0 auto!important;
+  background:url("assets/golden-bear-logo-polish.webp") center/contain no-repeat!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+  text-shadow:none!important;
+}
+.game-logo span{display:none!important}
+.spin-btn{
+  background:url("assets/golden-bear-spin-orb-polish.webp") center/contain no-repeat!important;
+  color:transparent!important;
+  text-shadow:none!important;
+  border-color:transparent!important;
+  box-shadow:0 0 28px rgba(255,183,31,.36),0 10px 20px rgba(0,0,0,.34)!important;
+}
+.spin-btn:after{display:none!important}
+#turboBtn,#autoBtn{
+  color:transparent!important;
+  text-shadow:none!important;
+  background-color:transparent!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+#turboBtn{background-image:url("assets/golden-bear-turbo-button-polish.webp")!important}
+#autoBtn{background-image:url("assets/golden-bear-auto-button-polish.webp")!important}
+#turboBtn:hover:not(:disabled),#autoBtn:hover:not(:disabled){filter:brightness(1.12) saturate(1.1)}
+.bet-view{background-image:linear-gradient(rgba(7,3,1,.62),rgba(7,3,1,.68)),url("assets/golden-bear-bet-panel-polish.webp")!important;background-position:center!important;background-repeat:no-repeat!important;background-size:100% 100%!important}
+.pay-symbol-bear,.pay-symbol-fox,.pay-symbol-eagle,.pay-symbol-horse,.pay-symbol-honey,.pay-symbol-a,.pay-symbol-k,.pay-symbol-q,.pay-symbol-j,.pay-symbol-wild,.pay-symbol-bonus{
+  font-size:0!important;
+  background-image:url("assets/golden-bear-polish-symbols.webp")!important;
+  background-size:400% 300%!important;
+  background-repeat:no-repeat!important;
+}
+.pay-symbol-bear{background-position:0 0!important}
+.pay-symbol-fox{background-position:33.333% 0!important}
+.pay-symbol-eagle{background-position:66.666% 0!important}
+.pay-symbol-horse{background-position:100% 0!important}
+.pay-symbol-honey{background-position:0 50%!important}
+.pay-symbol-a{background-position:33.333% 50%!important}
+.pay-symbol-k{background-position:66.666% 50%!important}
+.pay-symbol-q{background-position:100% 50%!important}
+.pay-symbol-j{background-position:0 100%!important}
+.pay-symbol-wild{background-position:33.333% 100%!important}
+.pay-symbol-bonus{background-position:66.666% 100%!important}

@@ -67,6 +67,7 @@ const studioPillars = [
 const gameIcons: Record<PlatformGameId, IconType> = {
   bingo: Ticket,
   truco: Swords,
+  truco_anotador: Swords,
   golden_bear: Trophy,
   viborita: Gamepad2,
   future_games: Bot,

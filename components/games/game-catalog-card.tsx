@@ -3,12 +3,14 @@ import Link from 'next/link'
 import { ChevronRight, Gamepad2, Swords, Ticket, Trophy } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type { PlatformGame, PlatformGameId } from '@/lib/games/registry'
+import { walletModeLabel } from '@/lib/games/registry'
 
 type IconType = ComponentType<{ className?: string }>
 
 const catalogIcons: Partial<Record<PlatformGameId, IconType>> = {
   bingo: Ticket,
   truco: Swords,
+  truco_anotador: Swords,
   golden_bear: Trophy,
   viborita: Gamepad2,
 }
@@ -46,6 +48,9 @@ export function GameCatalogCard({ game, priority = false }: GameCatalogCardProps
       <div className="flex flex-1 flex-col p-3">
         <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/85">{game.subtitle}</p>
         <h3 className="mt-1 truncate text-xl font-black text-white">{game.name}</h3>
+        <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-200">
+          {walletModeLabel(game.walletMode)}
+        </span>
       </div>
 
       <span className="mx-3 mb-3 flex h-10 items-center justify-center rounded-xl bg-amber-300 px-3 text-xs font-black uppercase text-zinc-950 group-hover:bg-amber-200">

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { GameHeaderCompact, GameShell } from '@/components/games/game-shell'
 import { ViboritaGame } from '@/components/games/viborita-game'
 
 export const metadata: Metadata = {
@@ -7,5 +8,13 @@ export const metadata: Metadata = {
 }
 
 export default function ViboritaPage() {
-  return <ViboritaGame />
+  return (
+    <GameShell>
+      <GameHeaderCompact
+        gameName="Viborita LBB"
+        exitHref="/juegos"
+      />
+      <ViboritaGame />
+    </GameShell>
+  )
 }
