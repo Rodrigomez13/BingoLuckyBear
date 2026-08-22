@@ -197,9 +197,7 @@ export function ParticipationForm({
   }
 
   const goNext = () => {
-    console.log('[v0] goNext clicked, current step:', step)
     const validationError = validateStep(step)
-    console.log('[v0] validationError:', validationError)
     if (validationError) {
       setError(validationError)
       return
