@@ -49,6 +49,7 @@ const POT_OPTIONS = [
 
 interface RoomLobbyProps {
   initialRoomCode?: string | null
+  initialView?: 'home' | 'create' | 'join'
   onPlayBot: (target: 15 | 30, rules: TrucoRules) => void
   onPlayOnline: (config: { target: 15 | 30; rules: TrucoRules; roomCode: string; role: OnlineRole; secret: string }) => void
 }
@@ -60,7 +61,7 @@ interface AccountState {
   balance: number
 }
 
-export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobbyProps) {
+export function RoomLobby({ initialRoomCode, initialView = 'home', onPlayBot, onPlayOnline }: RoomLobbyProps) {
   const [target, setTarget] = useState<15 | 30>(30)
   const [florEnabled, setFlorEnabled] = useState(DEFAULT_TRUCO_RULES.florEnabled)
   const [scoreStyle, setScoreStyle] = useState<TrucoScoreStyle>(DEFAULT_TRUCO_RULES.scoreStyle)
@@ -137,6 +138,15 @@ export function RoomLobby({ initialRoomCode, onPlayBot, onPlayOnline }: RoomLobb
       setMode('join')
     }
   }, [initialRoomCode])
+
+  useEffect(() => {
+    if (initialView === 'create') {
+      setRoomCode(generateRoomCode())
+      setVisibility('public')
+      setPotPoints(0)
+    }
+    setMode(initialView)
+  }, [initialView])
 
   const roomLink = useMemo(() => {
     if (typeof window === 'undefined') return ''

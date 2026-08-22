@@ -17,7 +17,7 @@ import {
 import { BearLogo } from '@/components/bear-logo'
 import { UserMenu } from '@/components/user-menu'
 
-type GameShellSection = 'home' | 'truco' | 'bingo' | 'cartones' | 'ranking' | 'saldo'
+type GameShellSection = 'home' | 'truco' | 'sorteos' | 'cartones' | 'ranking' | 'saldo'
 
 interface GameShellProps {
   active: GameShellSection
@@ -31,7 +31,7 @@ interface GameShellProps {
 const navItems: Array<{ href: string; label: string; section: GameShellSection; icon: ReactNode }> = [
   { href: '/', label: 'Inicio', section: 'home', icon: <Home className="h-5 w-5" /> },
   { href: '/truco', label: 'Truco', section: 'truco', icon: <Swords className="h-5 w-5" /> },
-  { href: '/participar', label: 'Bingo', section: 'bingo', icon: <Radio className="h-5 w-5" /> },
+  { href: '/participar', label: 'Sorteos', section: 'sorteos', icon: <Radio className="h-5 w-5" /> },
   { href: '/mi-cuenta', label: 'Mis cartones', section: 'cartones', icon: <ShoppingCart className="h-5 w-5" /> },
   { href: '/truco/ranking', label: 'Ranking', section: 'ranking', icon: <Trophy className="h-5 w-5" /> },
   { href: '/mi-cuenta/jugador', label: 'Saldo', section: 'saldo', icon: <CircleDollarSign className="h-5 w-5" /> },
@@ -49,7 +49,7 @@ export function GameShell({ active, eyebrow, title, subtitle, children, aside }:
             <BearLogo size={54} />
             <div>
               <p className="font-mono text-xl font-black uppercase leading-5 text-amber-300">Lucky</p>
-              <p className="font-mono text-xl font-black uppercase leading-5 text-white">Bingo</p>
+              <p className="font-mono text-xl font-black uppercase leading-5 text-white">Lucky</p>
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Bear</p>
             </div>
           </Link>
